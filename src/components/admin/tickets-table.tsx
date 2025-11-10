@@ -7,8 +7,19 @@ import { Badge } from '@/components/ui/badge';
 import type { Raffle, Ticket } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, RotateCcw } from 'lucide-react';
 import { getRaffleById, updateTicketStatus as apiUpdateTicketStatus } from '@/lib/data';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const statusConfig = {
   paid: { label: 'Paid', variant: 'default', icon: CheckCircle },
@@ -20,15 +31,16 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
   const [raffle, setRaffle] = useState(initialRaffle);
   const { toast } = useToast();
 
-  const confirmPayment = (ticketNumber: number) => {
-    const success = apiUpdateTicketStatus(raffle.id, ticketNumber, 'paid');
+  const handleUpdateStatus = (ticketNumber: number, status: 'paid' | 'available') => {
+    const success = apiUpdateTicketStatus(raffle.id, ticketNumber, status);
     if (success) {
       setRaffle(getRaffleById(raffle.id)!); // Re-fetch to update state
-      toast({ title: 'Payment Confirmed', description: `Ticket #${ticketNumber} is now marked as paid.` });
+      toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
     } else {
-      toast({ title: 'Error', description: 'Could not confirm payment.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Could not update ticket status.', variant: 'destructive' });
     }
   };
+
 
   return (
     <Card>
@@ -61,11 +73,35 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
                   </TableCell>
                   <TableCell>{ticket.buyerName || 'N/A'}</TableCell>
                   <TableCell>{ticket.buyerPhone || 'N/A'}</TableCell>
-                  <TableCell>
+                  <TableCell className="space-x-2">
                     {ticket.status === 'reserved' && (
-                      <Button size="sm" onClick={() => confirmPayment(ticket.number)}>
+                      <Button size="sm" onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
                         Confirm Payment
                       </Button>
+                    )}
+                     {ticket.status !== 'available' && (
+                       <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Liberar
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action will mark ticket #{ticket.number} as available and remove any buyer information. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleUpdateStatus(ticket.number, 'available')}>
+                              Continue
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </TableCell>
                 </TableRow>

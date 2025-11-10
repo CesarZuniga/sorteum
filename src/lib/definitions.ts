@@ -7,6 +7,7 @@ export type Ticket = {
   buyerEmail?: string;
   buyerPhone?: string;
   purchaseDate?: string;
+  reservationExpiresAt?: string;
 };
 
 export type Raffle = {

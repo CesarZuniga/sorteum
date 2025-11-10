@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getRaffleById, updateTicketStatus } from '@/lib/data';
-import type { Ticket } from '@/lib/definitions';
+import type { Ticket, Raffle } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
-import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check } from 'lucide-react';
+import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,13 +43,22 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 };
 
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
-  const raffle = getRaffleById(params.id);
+  const [raffleState, setRaffleState] = useState<Raffle | undefined>(() => getRaffleById(params.id));
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
-  const [raffleState, setRaffleState] = useState(raffle);
   const [randomCount, setRandomCount] = useState<number>(1);
   const { toast } = useToast();
+
+   useEffect(() => {
+    // Periodically re-fetch data to check for expired reservations
+    const interval = setInterval(() => {
+      setRaffleState(getRaffleById(params.id));
+    }, 60 * 1000); // every minute
+
+    return () => clearInterval(interval);
+  }, [params.id]);
+
 
   if (!raffleState) {
     notFound();
@@ -96,7 +105,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     setSuggestedTickets([]);
   };
 
-  const handlePurchase = (e: React.FormEvent) => {
+  const handleReserve = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTickets.length === 0) {
       toast({ title: 'No tickets selected', description: 'Please select one or more tickets.', variant: 'destructive' });
@@ -108,7 +117,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     }
 
     selectedTickets.forEach(ticket => {
-        updateTicketStatus(raffleState.id, ticket.number, 'paid', buyerInfo);
+        updateTicketStatus(raffleState.id, ticket.number, 'reserved', buyerInfo);
     });
 
     setRaffleState(getRaffleById(params.id)!); // Re-fetch to update UI
@@ -116,8 +125,9 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     setBuyerInfo({ name: '', email: '', phone: '' });
 
     toast({
-      title: '¡Compra Exitosa!',
-      description: `Tus boletos han sido comprados. Total: ${formatCurrency(totalPrice)}`,
+      title: '¡Boletos Reservados!',
+      description: `Tus boletos han sido reservados por 15 minutos. Total: ${formatCurrency(totalPrice)}`,
+      action: (<div className="flex items-center"><Clock className="mr-2"/> Completa tu pago.</div>)
     });
   };
 
@@ -205,7 +215,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
             <Card>
               <CardContent className="p-6">
                  <h2 className="text-2xl font-bold mb-4 font-headline">Confirm Purchase</h2>
-                <form onSubmit={handlePurchase} className="space-y-4">
+                <form onSubmit={handleReserve} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <Label htmlFor="name">Full Name</Label>
@@ -223,7 +233,10 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                   <div className="text-xl font-bold">
                     Total: {formatCurrency(totalPrice)}
                   </div>
-                  <Button type="submit" className="w-full" size="lg">Comprar Boletos</Button>
+                  <Button type="submit" className="w-full" size="lg">Reservar Boletos</Button>
+                   <p className="text-xs text-center text-muted-foreground pt-2">
+                    Tienes 15 minutos para completar tu pago o los boletos serán liberados.
+                  </p>
                 </form>
               </CardContent>
             </Card>
