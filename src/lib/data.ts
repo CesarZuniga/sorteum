@@ -125,6 +125,21 @@ export const createRaffle = (raffleData: Omit<Raffle, 'id' | 'tickets' | 'active
     return newRaffle;
 };
 
+export const updateRaffle = (id: string, raffleData: Partial<Omit<Raffle, 'id' | 'tickets' | 'active' | 'ticketCount'>>): Raffle | undefined => {
+    const raffleIndex = raffles.findIndex(r => r.id === id);
+    if (raffleIndex === -1) {
+        return undefined;
+    }
+    const updatedRaffle = {
+        ...raffles[raffleIndex],
+        ...raffleData,
+        active: new Date(raffleData.deadline || raffles[raffleIndex].deadline) > new Date(),
+    };
+    raffles[raffleIndex] = updatedRaffle;
+    return updatedRaffle;
+}
+
+
 export const updateTicketStatus = (
   raffleId: string,
   ticketNumber: number,
