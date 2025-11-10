@@ -52,6 +52,7 @@ function StatusDisplay({ result }: { result: TicketStatus }) {
         <Hourglass className="h-8 w-8" />
         <div>
           <h3 className="font-bold">Estado: Pendiente de Pago</h3>
+          {result.ticket?.buyerName ? <p>Boleto reservado por: <strong>{result.ticket.buyerName}</strong>.</p> : null}
           <p>Completa tu pago para participar en la rifa '{result.raffle?.name}'.</p>
         </div>
       </div>
@@ -64,6 +65,7 @@ function StatusDisplay({ result }: { result: TicketStatus }) {
         <CheckCircle2 className="h-8 w-8" />
         <div>
           <h3 className="font-bold">Estado: Pagado</h3>
+          {result.ticket?.buyerName ? <p>Comprado por: <strong>{result.ticket.buyerName}</strong>.</p> : null}
           <p>¡Mucha suerte en el sorteo de la rifa '{result.raffle?.name}'!</p>
         </div>
       </div>
@@ -106,7 +108,15 @@ export default function CheckStatusPage() {
           raffle: raffle,
         });
       } else {
-        setSearchResult({ status: 'not-found' });
+        const raffleForAvailableCheck = raffles.find(r => r.id === selectedRaffleId);
+        const ticketIsReal = raffleForAvailableCheck?.tickets.some(t => t.number === parseInt(ticketNumber, 10));
+        
+        if (ticketIsReal && raffleForAvailableCheck) {
+            const ticket = raffleForAvailableCheck.tickets.find(t => t.number === parseInt(ticketNumber, 10))!;
+             setSearchResult({ status: 'available', ticket: ticket, raffle: raffleForAvailableCheck });
+        } else {
+            setSearchResult({ status: 'not-found' });
+        }
       }
       setIsLoading(false);
     }, 500); 
