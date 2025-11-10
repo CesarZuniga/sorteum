@@ -10,23 +10,33 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side.
+    if (typeof window === 'undefined') {
+      // On the server, return a dummy object or null
+      return null;
+    }
+    // Initialize Firebase only on the client side.
     return initializeFirebase();
   }, []);
 
   useEffect(() => {
-    if (firebaseServices.firebaseApp && firebaseServices.auth && firebaseServices.firestore) {
-      setIsInitialized(true);
-    }
-  }, [firebaseServices]);
+    // This effect runs only on the client, after hydration.
+    setIsMounted(true);
+  }, []);
 
-  if (!isInitialized) {
-    return <div>Loading Firebase...</div>;
+  // On the server, or on the client before it has mounted, render nothing or a placeholder
+  // that matches the server. This avoids the hydration mismatch.
+  if (!isMounted || !firebaseServices) {
+    // To avoid layout shift, you might render a skeleton UI here
+    // that matches the server-rendered layout. For now, returning children is simplest.
+    // If children also depend on Firebase, they must handle the loading state.
+    // A simple loading div can also work if the mismatch is handled correctly.
+     return <div>Loading Firebase...</div>;
   }
 
+  // Once mounted on the client and services are available, render the full provider.
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}
