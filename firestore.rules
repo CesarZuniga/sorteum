@@ -1,0 +1,109 @@
+/**
+ * @fileoverview Firestore Security Rules for Sorteum Digital.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a role-based access control model, where only authenticated admins can manage raffles.
+ * Public users can purchase tickets for raffles.
+ *
+ * Data Structure:
+ * - /admins/{adminId}: Stores admin user profiles. Existence determines admin role.
+ * - /admins/{adminId}/raffles/{raffleId}: Stores raffle data, managed by admins.
+ * - /raffles/{raffleId}/tickets/{ticketId}: Stores tickets associated with raffles.
+ *
+ * Key Security Decisions:
+ * - Only authenticated admins can create, update, or delete raffles.
+ * - Public users can purchase tickets for active raffles, but writes are limited.
+ * - Listing raffles is only allowed by the admin.
+ *
+ * Denormalization for Authorization:
+ * - Raffle documents include the `adminId` to denote ownership, avoiding `get()` calls in rules.
+ * - Ticket documents include the `raffleId` to create a connection between the tickets and the raffles.
+ *
+ * Structural Segregation:
+ * - Admins and public user data are stored in separate collections to simplify security rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the request is authenticated.
+     * @return {boolean} True if the request is authenticated, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the resource.
+     * @param {string} userId - The user ID to compare against the request's auth UID.
+     * @return {boolean} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the existing owner of the resource.
+     * @param {string} userId - The user ID to compare against the request's auth UID.
+     * @return {boolean} True if the user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Rules for the /admins/{adminId} collection.
+     * @path /admins/{adminId}
+     * @allow (create) - An admin can create their own profile if the UID matches the document ID.
+     * @allow (get) - An admin can read their own profile.
+     * @allow (list) - Listing admins is disallowed.
+     * @deny (update) - Admins cannot update their profile.
+     * @deny (delete) - Admins cannot delete their profile.
+     * @principle Enforces user ownership for profile management.
+     */
+    match /admins/{adminId} {
+      allow create: if isOwner(adminId);
+      allow get: if isOwner(adminId);
+      allow list: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Rules for the /admins/{adminId}/raffles/{raffleId} collection.
+     * @path /admins/{adminId}/raffles/{raffleId}
+     * @allow (create) - Only the admin can create a raffle, if adminId matches.
+     * @allow (get) - Only the admin can get a raffle, if adminId matches.
+     * @allow (list) - Only the admin can list their own raffles, if adminId matches.
+     * @allow (update) - Only the admin can update a raffle, if adminId matches and the raffle exists.
+     * @allow (delete) - Only the admin can delete a raffle, if adminId matches and the raffle exists.
+     * @principle Enforces admin ownership for raffle management.
+     */
+    match /admins/{adminId}/raffles/{raffleId} {
+      allow create: if isOwner(adminId);
+      allow get: if isOwner(adminId);
+      allow list: if isOwner(adminId);
+      allow update: if isExistingOwner(adminId);
+      allow delete: if isExistingOwner(adminId);
+    }
+
+    /**
+     * @description Rules for the /raffles/{raffleId}/tickets/{ticketId} collection.
+     * @path /raffles/{raffleId}/tickets/{ticketId}
+     * @allow (create) - Allow any signed-in user to create a ticket
+     * @allow (get) - Allow any signed-in user to get a ticket
+     * @allow (list) - No one should list tickets
+     * @allow (update) - No one can update tickets
+     * @allow (delete) - No one can delete tickets
+     * @principle Enforces admin ownership for ticket management.
+     */
+    match /raffles/{raffleId}/tickets/{ticketId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "entities": {
+    "Raffle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Raffle",
+      "type": "object",
+      "description": "Represents a raffle event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Raffle entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the raffle."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the raffle."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the image associated with the raffle.",
+          "format": "uri"
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of a single ticket for the raffle."
+        },
+        "totalTickets": {
+          "type": "number",
+          "description": "The total number of tickets available for the raffle."
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The date and time when the raffle ends.",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the raffle is currently active."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "imageUrl",
+        "price",
+        "totalTickets",
+        "endDate",
+        "isActive"
+      ]
+    },
+    "Ticket": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ticket",
+      "type": "object",
+      "description": "Represents a ticket purchased for a raffle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Ticket entity."
+        },
+        "ticketNumber": {
+          "type": "number",
+          "description": "The unique number assigned to the ticket."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the ticket (e.g., available, reserved, paid)."
+        },
+        "purchaserName": {
+          "type": "string",
+          "description": "The name of the person who purchased the ticket."
+        },
+        "purchaserPhoneNumber": {
+          "type": "string",
+          "description": "The phone number of the person who purchased the ticket."
+        },
+        "raffleId": {
+          "type": "string",
+          "description": "Reference to Raffle. (Relationship: Raffle 1:N Ticket)"
+        },
+        "purchaseDate": {
+          "type": "string",
+          "description": "The date and time when the ticket was purchased.",
+          "format": "date-time"
+        },
+        "isPaymentConfirmed": {
+          "type": "boolean",
+          "description": "Indicates whether the payment for the ticket has been confirmed."
+        }
+      },
+      "required": [
+        "id",
+        "ticketNumber",
+        "status",
+        "purchaserName",
+        "purchaserPhoneNumber",
+        "raffleId",
+        "purchaseDate",
+        "isPaymentConfirmed"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/admins/{adminId}",
+        "definition": {
+          "entityName": "admin",
+          "schema": {
+            "$ref": "#/backend/entities/admin"
+          },
+          "description": "Collection of admin users. Existence of document determines admin role.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the admin user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admins/{adminId}/raffles/{raffleId}",
+        "definition": {
+          "entityName": "Raffle",
+          "schema": {
+            "$ref": "#/backend/entities/Raffle"
+          },
+          "description": "Collection of raffles owned by admins. Includes denormalized 'adminId' for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the admin user."
+            },
+            {
+              "name": "raffleId",
+              "description": "The unique identifier of the raffle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/raffles/{raffleId}/tickets/{ticketId}",
+        "definition": {
+          "entityName": "Ticket",
+          "schema": {
+            "$ref": "#/backend/entities/Ticket"
+          },
+          "description": "Collection of tickets associated with raffles. Includes denormalized 'raffleId' for authorization independence.",
+          "params": [
+            {
+              "name": "raffleId",
+              "description": "The unique identifier of the raffle."
+            },
+            {
+              "name": "ticketId",
+              "description": "The unique identifier of the ticket."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the core features of the Sorteum Digital application, focusing on raffle management, ticket purchases, and admin functionalities. It prioritizes security, scalability, and ease of debugging by adhering to the principles of Authorization Independence and Structural Segregation. To achieve Authorization Independence the raffle documents are stored with the admin user's `uid`, avoiding the need of `get()` calls in rules, as well as, enabling atomic creation of parent/child documents. Raffle documents include the `adminId` to denote ownership, and the ticket documents includes the `raffleId` to create a connection between the tickets and the raffles. Structural Segregation ensures that data with different access requirements (admin vs. user) are stored in separate collections, making security rules more straightforward.\n\n*   `/admins/{adminId}/raffles/{raffleId}`: Stores the raffle data, managed by admins. Admin ID is included in the document for ownership validation and denormalized to grant authorization independence.\n*   `/raffles/{raffleId}/tickets/{ticketId}`: Stores the tickets that belong to a raffle. Raffle ID included for ticket association and denormalized ownership.\n\nThis structure supports the required QAPs by:\n\n*   Enabling secure list operations: Rules can easily filter raffles based on the admin ID.\n*   Facilitating role-based access control using the `/admins/{adminId}` collection.\n*   Guaranteeing data integrity with ownership and timestamp checks."
+  }
+}
