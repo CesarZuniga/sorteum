@@ -88,4 +88,11 @@ export default function NewRafflePage() {
 
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button variant="ghost" asChild><Link href="/admin/raffles">Cancel</Link></Button
+            <Button variant="ghost" asChild><Link href="/admin/raffles">Cancel</Link></Button>
+            <SubmitButton />
+          </CardFooter>
+        </Card>
+      </form>
+    </div>
+  );
+}

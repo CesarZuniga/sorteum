@@ -7,9 +7,22 @@ import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { initializeFirebaseServer } from '@/firebase/server';
-import { collection, getDoc, getDocs, doc } from 'firebase/firestore';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDoc, getDocs, doc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth/server';
+import { firebaseConfig } from '@/firebase/config';
+
+// Helper function to initialize Firebase on the server
+async function initializeFirebaseServer() {
+    if (!getApps().length) {
+        initializeApp(firebaseConfig);
+    }
+    const app = getApp();
+    const firestore = getFirestore(app);
+    const auth = getAuth(app);
+    return { app, firestore, auth };
+}
+
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -154,8 +167,7 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-    const { app, firestore } = await initializeFirebaseServer();
-    const auth = getAuth(app);
+    const { app, firestore, auth } = await initializeFirebaseServer();
     const user = auth.currentUser;
 
     if (!user) {
