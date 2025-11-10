@@ -2,126 +2,79 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import type { Raffle } from '@/lib/definitions';
-import { deleteRaffleAction } from '@/lib/actions';
-import { ButtonWithConfirmation } from '@/components/ui/button-with-confirmation';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Search } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
+export default function CheckStatusPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [raffleId, setRaffleId] = useState('');
+  const [ticketNumber, setTicketNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-export default function RafflesPage() {
-    const firestore = useFirestore();
-    const rafflesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'raffles') : null, [firestore]);
-    const { data: raffles, isLoading } = useCollection<Raffle>(rafflesQuery);
+  const handleStatusCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!raffleId.trim() || !ticketNumber.trim()) {
+        toast({
+            title: 'Información Incompleta',
+            description: 'Por favor, ingresa el ID de la rifa y el número del boleto.',
+            variant: 'destructive',
+        });
+        return;
+    }
+    
+    setIsLoading(true);
+    router.push(`/raffles/${raffleId.trim()}/tickets/${ticketNumber.trim()}`);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">Raffles</h1>
-          <p className="text-muted-foreground">Manage all your raffles here.</p>
-        </div>
-        <Button asChild>
-          <Link href="/admin/raffles/new">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Raffle
-          </Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Tickets Sold</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && <TableRow><TableCell>Loading...</TableCell></TableRow>}
-              {raffles?.map((raffle) => {
-                const sold = 0; // Simplified for now
-                return (
-                  <TableRow key={raffle.id}>
-                    <TableCell className="font-medium">
-                        <Link href={`/admin/raffles/${raffle.id}`} className="hover:underline">{raffle.name}</Link>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={raffle.active ? 'default' : 'secondary'}>
-                        {raffle.active ? 'Active' : 'Ended'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatCurrency(raffle.price)}</TableCell>
-                    <TableCell>{sold} / {raffle.ticketCount}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}`}>View</Link></DropdownMenuItem>
-                          <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}/edit`}>Edit</Link></DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the
-                                    "{raffle.name}" raffle and all associated data.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <form action={deleteRaffleAction} className="flex-grow">
-                                        <input type="hidden" name="id" value={raffle.id} />
-                                        <ButtonWithConfirmation
-                                            variant="destructive"
-                                            confirmationText="Delete"
-                                            cancelText="Cancel"
-                                        />
-                                    </form>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 bg-gray-50 dark:bg-gray-900/50">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 bg-primary/10 rounded-full mb-4">
+             <Search className="h-8 w-8 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-headline">Consultar Estado de Boleto</CardTitle>
+          <CardDescription>Ingresa los detalles para ver el estado de tu boleto.</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleStatusCheck}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="raffleId">ID de la Rifa</Label>
+              <Input
+                id="raffleId"
+                type="text"
+                placeholder="Pega el ID de la rifa aquí"
+                value={raffleId}
+                onChange={(e) => setRaffleId(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ticketNumber">Número de Boleto</Label>
+              <Input
+                id="ticketNumber"
+                type="number"
+                placeholder="Ej. 7"
+                value={ticketNumber}
+                onChange={(e) => setTicketNumber(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Consultando...' : 'Consultar Estado'}
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
