@@ -71,8 +71,8 @@ export default function NewRafflePage() {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input id="image" name="image" placeholder="https://..." />
+              <Label htmlFor="image">Raffle Image</Label>
+              <Input id="image" name="image" type="file" required />
               {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
             </div>
 
@@ -94,3 +94,5 @@ export default function NewRafflePage() {
     </div>
   );
 }
+
+    

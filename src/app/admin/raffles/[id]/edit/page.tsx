@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useActionState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useFormStatus } from 'react-dom';
 import { updateRaffleAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
 
       <form action={dispatch}>
         <input type="hidden" name="id" value={raffle.id} />
+         <input type="hidden" name="currentImage" value={raffle.image} />
         <Card>
           <CardHeader>
             <CardTitle>Edit Raffle</CardTitle>
@@ -102,8 +104,12 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input id="image" name="image" defaultValue={raffle.image} />
+              <Label htmlFor="image">Raffle Image</Label>
+              <div className="flex items-center gap-4">
+                <Image src={raffle.image} alt={raffle.name} width={80} height={80} className="rounded-md object-cover" />
+                <Input id="image" name="image" type="file" />
+              </div>
+              <p className="text-xs text-muted-foreground">Upload a new image to replace the current one. Leave blank to keep the existing image.</p>
               {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
             </div>
 
@@ -125,3 +131,5 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+    

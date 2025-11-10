@@ -7,6 +7,7 @@ import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpda
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebaseServer } from '@/firebase/server';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -120,6 +121,9 @@ export async function notifyWinnersAction(
 }
 
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
 const FormSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, 'Name is required'),
@@ -127,11 +131,20 @@ const FormSchema = z.object({
     price: z.coerce.number().min(0, 'Price must be a positive number'),
     ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1'),
     deadline: z.string().min(1, 'Deadline is required'),
-    image: z.string().url('Must be a valid image URL'),
+    image: z.any()
+      .refine(file => file?.size, 'Image is required.')
+      .refine(file => file.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+      .refine(file => ACCEPTED_IMAGE_TYPES.includes(file.type), '.jpg, .jpeg, .png and .webp files are accepted.'),
 });
 
 const CreateRaffle = FormSchema.omit({ id: true });
-const UpdateRaffle = FormSchema.omit({ ticketCount: true });
+const UpdateRaffle = FormSchema.omit({ ticketCount: true }).extend({
+    image: z.any()
+        .optional()
+        .refine(file => !file || file.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+        .refine(file => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), '.jpg, .jpeg, .png and .webp files are accepted.'),
+    currentImage: z.string().optional()
+});
 
 
 type CreateRaffleState = {
@@ -147,7 +160,7 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-    const { firestore } = initializeFirebaseServer();
+    const { firestore, storage } = initializeFirebaseServer();
     const validatedFields = CreateRaffle.safeParse({
         name: formData.get('name'),
         description: formData.get('description'),
@@ -163,15 +176,24 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
             message: 'Failed to create raffle. Please check the fields.',
         };
     }
+    
+    const { image, ...raffleData } = validatedFields.data;
 
     try {
+        const fileBuffer = Buffer.from(await image.arrayBuffer());
+        const imageName = `${Date.now()}-${image.name}`;
+        const imageRef = ref(storage, `raffles/${imageName}`);
+        await uploadBytes(imageRef, fileBuffer, { contentType: image.type });
+        const imageUrl = await getDownloadURL(imageRef);
+
         await apiCreateRaffle(firestore, {
-            ...validatedFields.data,
-            deadline: new Date(validatedFields.data.deadline).toISOString(),
+            ...raffleData,
+            image: imageUrl,
+            deadline: new Date(raffleData.deadline).toISOString(),
         });
-    } catch (e) {
+    } catch (e: any) {
         return {
-            message: 'Database Error: Failed to Create Raffle.',
+            message: `Database Error: Failed to Create Raffle. ${e.message}`,
         };
     }
 
@@ -181,7 +203,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function updateRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-    const { firestore } = initializeFirebaseServer();
+    const { firestore, storage } = initializeFirebaseServer();
     const validatedFields = UpdateRaffle.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
@@ -189,6 +211,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         price: formData.get('price'),
         deadline: formData.get('deadline'),
         image: formData.get('image'),
+        currentImage: formData.get('currentImage'),
     });
      if (!validatedFields.success) {
         return {
@@ -197,19 +220,30 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         };
     }
 
-    const { id, ...dataToUpdate } = validatedFields.data;
+    const { id, image, currentImage, ...dataToUpdate } = validatedFields.data;
 
     if (!id) {
         return { message: 'Raffle ID not found.' };
     }
 
+    let imageUrl = currentImage;
+
     try {
+        if (image && image.size > 0) {
+            const fileBuffer = Buffer.from(await image.arrayBuffer());
+            const imageName = `${Date.now()}-${image.name}`;
+            const imageRef = ref(storage, `raffles/${imageName}`);
+            await uploadBytes(imageRef, fileBuffer, { contentType: image.type });
+            imageUrl = await getDownloadURL(imageRef);
+        }
+
         await apiUpdateRaffle(firestore, id, {
             ...dataToUpdate,
+            image: imageUrl,
             deadline: new Date(dataToUpdate.deadline).toISOString(),
         });
-    } catch (e) {
-        return { message: 'Database Error: Failed to Update Raffle.' };
+    } catch (e: any) {
+        return { message: `Database Error: Failed to Update Raffle. ${e.message}` };
     }
 
     revalidatePath(`/admin/raffles`);
@@ -236,3 +270,5 @@ export async function deleteRaffleAction(formData: FormData) {
   revalidatePath('/admin/raffles');
   // No redirect needed if revalidating
 }
+
+    

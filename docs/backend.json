@@ -102,6 +102,36 @@
         "purchaseDate",
         "isPaid"
       ]
+    },
+    "File": {
+      "title": "File",
+      "type": "object",
+      "description": "Represents a file stored in Firebase Storage.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the file."
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the file.",
+          "format": "uri"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path of the file in Firebase Storage."
+        },
+        "contentType": {
+          "type": "string",
+          "description": "Content type of the file."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Date when the file was created.",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "url", "path", "contentType", "createdAt"]
     }
   },
   "auth": {
@@ -163,8 +193,25 @@
             }
           ]
         }
+      },
+       {
+        "path": "/files/{fileId}",
+        "definition": {
+          "entityName": "File",
+          "schema": {
+            "$ref": "#/backend/entities/File"
+          },
+          "description": "Stores file metadata for files uploaded to Firebase Storage. This allows for tracking and management of uploaded files.",
+          "params": [
+            {
+              "name": "fileId",
+              "description": "Unique identifier for the file."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the Sorteum Digital application, focusing on raffles and ticket management. It emphasizes authorization independence, clarity, and scalability. Raffles are stored in a top-level `raffles` collection, and tickets are stored as subcollections under each raffle document to ensure easy querying and data isolation. Admin roles are managed through a dedicated `roles_admin` collection. The structure ensures Authorization Independence via Denormalization by including key attributes like the raffle ID in each ticket document. This eliminates the need for security rules to traverse up the hierarchy to validate access. The structure also supports the required QAPs by segregating raffle data from ticket data and using path-based ownership for tickets within the respective raffle. Raffle management is restricted to admins via the `/roles_admin/{uid}` collection, while ticket purchases are controlled by rules at the `/raffles/{raffleId}/tickets/{ticketId}` level."
+    "reasoning": "The Firestore data structure is designed to support the Sorteum Digital application, focusing on raffles and ticket management. It emphasizes authorization independence, clarity, and scalability. Raffles are stored in a top-level `raffles` collection, and tickets are stored as subcollections under each raffle document to ensure easy querying and data isolation. Admin roles are managed through a dedicated `roles_admin` collection. A `files` collection is added to store metadata for uploaded files, enabling better file management and integration with Firebase Storage. The structure ensures Authorization Independence via Denormalization by including key attributes like the raffle ID in each ticket document. This eliminates the need for security rules to traverse up the hierarchy to validate access. The structure also supports the required QAPs by segregating raffle data from ticket data and using path-based ownership for tickets within the respective raffle. Raffle management is restricted to admins via the `/roles_admin/{uid}` collection, while ticket purchases are controlled by rules at the `/raffles/{raffleId}/tickets/{ticketId}` level."
   }
 }
+    
