@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect, type ReactNode } from 'react';
+import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 
@@ -9,30 +9,33 @@ interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
+/**
+ * This component ensures Firebase is initialized only on the client-side
+ * and provides the Firebase services to its children. It always renders its
+ * children to prevent hydration mismatches.
+ */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
+  // useMemo ensures that Firebase is initialized only once per client session.
   const firebaseServices = useMemo(() => {
+    // Firebase should only be initialized in the browser.
     if (typeof window === 'undefined') {
-      // On the server, return a dummy object or null
       return null;
     }
-    // Initialize Firebase only on the client side.
     return initializeFirebase();
   }, []);
 
-  useEffect(() => {
-    // This effect runs only on the client, after initial render.
-    setIsMounted(true);
-  }, []);
-
-  // Before the component has mounted on the client, or if services are not ready, render nothing.
-  // This prevents any child components from trying to access Firebase during SSR or initial hydration.
-  if (!isMounted || !firebaseServices) {
-    return null; 
+  // If we are on the server or Firebase services are not yet initialized,
+  // we still render the children wrapped in a provider with null services.
+  // Downstream components should handle the null case gracefully.
+  if (!firebaseServices) {
+    return (
+      <FirebaseProvider firebaseApp={null} auth={null} firestore={null}>
+        {children}
+      </FirebaseProvider>
+    );
   }
 
-  // Once mounted on the client and services are available, render the full provider with children.
+  // Once Firebase is initialized on the client, provide the actual services.
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}
