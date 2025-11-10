@@ -7,16 +7,16 @@ import { DollarSign, Ticket, Activity } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, collectionGroup } from 'firebase/firestore';
 
 export function DashboardMetrics() {
   const firestore = useFirestore();
 
   const rafflesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'raffles') : null), [firestore]);
-  const { data: raffles } = useCollection<Raffle>(rafflesQuery);
+  const { data: raffles, isLoading: isLoadingRaffles } = useCollection<Raffle>(rafflesQuery);
   
   const paidTicketsQuery = useMemoFirebase(() => (firestore ? query(collectionGroup(firestore, 'tickets'), where('status', '==', 'paid')) : null), [firestore]);
-  const { data: paidTickets } = useCollection<TicketType>(paidTicketsQuery);
+  const { data: paidTickets, isLoading: isLoadingTickets } = useCollection<TicketType>(paidTicketsQuery);
 
   const totalRevenue = useMemo(() => {
     if (!paidTickets || !raffles) return 0;
@@ -32,13 +32,13 @@ export function DashboardMetrics() {
   
   const activeRaffles = useMemo(() => {
     if (!raffles) return 0;
-    return raffles.filter(r => new Date(r.deadline) > new Date()).length;
+    return raffles.filter(r => r.active).length;
   }, [raffles]);
 
   const metrics = [
-    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign },
-    { title: 'Active Raffles', value: activeRaffles, icon: Activity },
-    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket },
+    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoadingRaffles || isLoadingTickets },
+    { title: 'Active Raffles', value: activeRaffles, icon: Activity, loading: isLoadingRaffles },
+    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket, loading: isLoadingTickets },
   ];
 
   return (
@@ -50,7 +50,11 @@ export function DashboardMetrics() {
             <metric.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metric.value}</div>
+            {metric.loading ? (
+                <div className="text-2xl font-bold">...</div>
+            ) : (
+                <div className="text-2xl font-bold">{metric.value}</div>
+            )}
           </CardContent>
         </Card>
       ))}
