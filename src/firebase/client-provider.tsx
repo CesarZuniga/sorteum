@@ -11,36 +11,31 @@ interface FirebaseClientProviderProps {
 
 /**
  * This component ensures Firebase is initialized only on the client-side
- * and defers rendering its children until the client has mounted.
- * This prevents hydration mismatches.
+ * and defers rendering its children until the client has mounted and Firebase services are available.
+ * This prevents hydration mismatches and race conditions with Firebase hooks.
  */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Use useEffect to set isMounted to true only on the client, after the initial render.
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Memoize Firebase initialization so it only runs once.
   const firebaseServices = useMemo(() => {
+    // This check is important. It ensures that Firebase is only initialized on the client.
     if (typeof window === 'undefined') {
       return null;
     }
     return initializeFirebase();
   }, []);
 
-  // While not mounted on the client, render nothing to match the server's output for this provider.
-  if (!isMounted) {
+  // If the services are not initialized (e.g., on the server), render nothing.
+  // This ensures the server-rendered output matches the initial client-render.
+  if (!firebaseServices) {
     return null;
   }
 
-  // Once mounted, provide the actual services.
+  // Once we have the services, we can render the actual provider.
   return (
     <FirebaseProvider
-      firebaseApp={firebaseServices?.firebaseApp ?? null}
-      auth={firebaseServices?.auth ?? null}
-      firestore={firebaseServices?.firestore ?? null}
+      firebaseApp={firebaseServices.firebaseApp}
+      auth={firebaseServices.auth}
+      firestore={firebaseServices.firestore}
     >
       {children}
     </FirebaseProvider>
