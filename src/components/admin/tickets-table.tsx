@@ -27,12 +27,23 @@ const statusConfig = {
   available: { label: 'Available', variant: 'outline', icon: XCircle },
 };
 
-export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
+export function TicketsTable({ initialRaffle, maxWinners }: { initialRaffle: Raffle, maxWinners: number }) {
   const [raffle, setRaffle] = useState(initialRaffle);
   const { toast } = useToast();
 
+  const currentWinnerCount = raffle.tickets.filter(t => t.isWinner).length;
+  const canMarkMoreWinners = currentWinnerCount < maxWinners;
+
   const handleUpdateStatus = (ticketNumber: number, status: 'paid' | 'available' | 'winner') => {
-    // We are reusing updateTicketStatus, but winner is a special case.
+    if (status === 'winner' && !canMarkMoreWinners) {
+        toast({
+            title: 'Winner Limit Reached',
+            description: `You can only select ${maxWinners} winner(s) for this raffle.`,
+            variant: 'destructive',
+        });
+        return;
+    }
+    
     const success = apiUpdateTicketStatus(raffle.id, ticketNumber, status as any);
     if (success) {
       setRaffle(getRaffleById(raffle.id)!); // Re-fetch to update state
@@ -47,7 +58,7 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
     <Card>
       <CardHeader>
         <CardTitle>Ticket Management</CardTitle>
-        <CardDescription>View and confirm payments for all tickets in this raffle.</CardDescription>
+        <CardDescription>View and confirm payments for all tickets. You can manually mark up to {maxWinners} winner(s). ({currentWinnerCount}/{maxWinners} selected).</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -112,7 +123,13 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
                       </>
                     )}
                     {ticket.status === 'paid' && !ticket.isWinner && (
-                        <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(ticket.number, 'winner')}>
+                        <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleUpdateStatus(ticket.number, 'winner')}
+                            disabled={!canMarkMoreWinners}
+                            title={!canMarkMoreWinners ? `Winner limit of ${maxWinners} reached.` : 'Mark as Winner'}
+                        >
                             <Trophy className="mr-2 h-4 w-4" />
                             Mark as Winner
                         </Button>

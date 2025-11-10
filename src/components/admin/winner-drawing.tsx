@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sparkles, Send, Trophy, AlertCircle, CheckCircle } from 'lucide-react';
+import React from 'react';
 
 function SubmitButton({ text, loadingText }: { text: string; loadingText: string }) {
   const { pending } = useFormStatus();
@@ -27,10 +28,23 @@ function SubmitButton({ text, loadingText }: { text: string; loadingText: string
   );
 }
 
-export function WinnerDrawing({ raffle }: { raffle: Raffle }) {
+interface WinnerDrawingProps {
+    raffle: Raffle;
+    winnerCount: number;
+    setWinnerCount: (count: number) => void;
+}
+
+export function WinnerDrawing({ raffle, winnerCount, setWinnerCount }: WinnerDrawingProps) {
   const [drawState, drawFormAction] = useFormState(drawWinnerAction, { success: false });
   const [notifyState, notifyFormAction] = useFormState(notifyWinnersAction, { success: false });
   
+  const handleWinnerCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const count = parseInt(e.target.value, 10);
+    if (!isNaN(count)) {
+        setWinnerCount(count);
+    }
+  };
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -58,7 +72,7 @@ export function WinnerDrawing({ raffle }: { raffle: Raffle }) {
             </div>
             <div>
               <Label htmlFor="winnerCount">Number of Winners</Label>
-              <Input id="winnerCount" name="winnerCount" type="number" min="1" defaultValue="1" required />
+              <Input id="winnerCount" name="winnerCount" type="number" min="1" value={winnerCount} onChange={handleWinnerCountChange} required />
             </div>
           </CardContent>
           <CardFooter>

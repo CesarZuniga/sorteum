@@ -1,3 +1,5 @@
+'use client';
+
 import { getRaffleById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { TicketsTable } from '@/components/admin/tickets-table';
@@ -7,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
+import { useState } from 'react';
 
 export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
   const raffle = getRaffleById(params.id);
+  const [winnerCount, setWinnerCount] = useState(1);
 
   if (!raffle) {
     notFound();
@@ -36,10 +40,10 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
             <TabsTrigger value="draw">Draw Winners</TabsTrigger>
         </TabsList>
         <TabsContent value="tickets">
-            <TicketsTable initialRaffle={raffle} />
+            <TicketsTable initialRaffle={raffle} maxWinners={winnerCount} />
         </TabsContent>
         <TabsContent value="draw">
-            <WinnerDrawing raffle={raffle} />
+            <WinnerDrawing raffle={raffle} winnerCount={winnerCount} setWinnerCount={setWinnerCount} />
         </TabsContent>
       </Tabs>
     </div>
