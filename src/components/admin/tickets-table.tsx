@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Raffle, Ticket } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Clock, XCircle, RotateCcw } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, RotateCcw, Trophy } from 'lucide-react';
 import { getRaffleById, updateTicketStatus as apiUpdateTicketStatus } from '@/lib/data';
 import {
   AlertDialog,
@@ -31,8 +31,9 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
   const [raffle, setRaffle] = useState(initialRaffle);
   const { toast } = useToast();
 
-  const handleUpdateStatus = (ticketNumber: number, status: 'paid' | 'available') => {
-    const success = apiUpdateTicketStatus(raffle.id, ticketNumber, status);
+  const handleUpdateStatus = (ticketNumber: number, status: 'paid' | 'available' | 'winner') => {
+    // We are reusing updateTicketStatus, but winner is a special case.
+    const success = apiUpdateTicketStatus(raffle.id, ticketNumber, status as any);
     if (success) {
       setRaffle(getRaffleById(raffle.id)!); // Re-fetch to update state
       toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
@@ -63,13 +64,20 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
             {raffle.tickets.map((ticket) => {
               const { label, variant, icon: Icon } = statusConfig[ticket.status];
               return (
-                <TableRow key={ticket.id}>
+                <TableRow key={ticket.id} className={ticket.isWinner ? 'bg-yellow-100 dark:bg-yellow-900/30' : ''}>
                   <TableCell className="font-medium">{String(ticket.number).padStart(3, '0')}</TableCell>
                   <TableCell>
-                    <Badge variant={variant as any}>
-                      <Icon className="mr-2 h-4 w-4" />
-                      {label}
-                    </Badge>
+                     {ticket.isWinner ? (
+                        <Badge variant="destructive" className="bg-yellow-500 text-yellow-950">
+                          <Trophy className="mr-2 h-4 w-4" />
+                          Winner
+                        </Badge>
+                      ) : (
+                        <Badge variant={variant as any}>
+                          <Icon className="mr-2 h-4 w-4" />
+                          {label}
+                        </Badge>
+                     )}
                   </TableCell>
                   <TableCell>{ticket.buyerName || 'N/A'}</TableCell>
                   <TableCell>{ticket.buyerPhone || 'N/A'}</TableCell>
@@ -102,6 +110,12 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
                         </AlertDialogContent>
                       </AlertDialog>
                       </>
+                    )}
+                    {ticket.status === 'paid' && !ticket.isWinner && (
+                        <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(ticket.number, 'winner')}>
+                            <Trophy className="mr-2 h-4 w-4" />
+                            Mark as Winner
+                        </Button>
                     )}
                   </TableCell>
                 </TableRow>

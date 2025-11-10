@@ -46,6 +46,7 @@ const generateTickets = (raffleId: string, count: number): Ticket[] => {
       status,
       buyerName,
       buyerPhone,
+      isWinner: false,
     };
   });
 };
@@ -143,7 +144,7 @@ export const updateRaffle = (id: string, raffleData: Partial<Omit<Raffle, 'id' |
 export const updateTicketStatus = (
   raffleId: string,
   ticketNumber: number,
-  status: 'reserved' | 'paid' | 'available',
+  status: 'reserved' | 'paid' | 'available' | 'winner',
   buyerInfo?: { name: string; email: string; phone: string }
 ) => {
   const raffleIndex = raffles.findIndex(r => r.id === raffleId);
@@ -153,6 +154,12 @@ export const updateTicketStatus = (
   if (ticketIndex === -1) return false;
 
   const ticket = raffles[raffleIndex].tickets[ticketIndex];
+  
+  if (status === 'winner') {
+    ticket.isWinner = true;
+    return true;
+  }
+
 
   // Logic to update status
   ticket.status = status;
@@ -163,6 +170,7 @@ export const updateTicketStatus = (
     ticket.buyerPhone = undefined;
     ticket.purchaseDate = undefined;
     ticket.reservationExpiresAt = undefined;
+    ticket.isWinner = false; // A ticket can't be available and a winner
   } else {
     if (buyerInfo) {
       ticket.buyerName = buyerInfo.name;
