@@ -1,15 +1,16 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getRaffles } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
 import { Ticket as TicketIcon, CheckCircle2, AlertCircle, Hourglass } from 'lucide-react';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type TicketStatus = {
   status: 'paid' | 'reserved' | 'not-found';
@@ -24,7 +25,7 @@ function StatusDisplay({ result }: { result: TicketStatus }) {
         <AlertCircle className="h-8 w-8" />
         <div>
           <h3 className="font-bold">Estado: Boleto no encontrado</h3>
-          <p>Verifica el número e intenta de nuevo.</p>
+          <p>Verifica el número de boleto y la rifa seleccionada e intenta de nuevo.</p>
         </div>
       </div>
     );
@@ -59,33 +60,35 @@ function StatusDisplay({ result }: { result: TicketStatus }) {
 
 export default function CheckStatusPage() {
   const [ticketNumber, setTicketNumber] = useState('');
+  const [selectedRaffleId, setSelectedRaffleId] = useState('');
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [searchResult, setSearchResult] = useState<TicketStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // getRaffles is synchronous in this mock, but in a real app it would be async
+    setRaffles(getRaffles());
+  }, []);
+
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setSearchResult(null);
 
-    const allRaffles = getRaffles();
+    const raffle = raffles.find(r => r.id === selectedRaffleId);
     let foundTicket: Ticket | undefined;
-    let foundRaffle: Raffle | undefined;
-
-    for (const raffle of allRaffles) {
-      const ticket = raffle.tickets.find(t => t.number === parseInt(ticketNumber, 10));
-      if (ticket) {
-        foundTicket = ticket;
-        foundRaffle = raffle;
-        break;
-      }
+    
+    if (raffle) {
+        foundTicket = raffle.tickets.find(t => t.number === parseInt(ticketNumber, 10));
     }
-
+    
     setTimeout(() => {
-      if (foundTicket && foundRaffle) {
+      if (foundTicket && raffle) {
         setSearchResult({
           status: foundTicket.status,
           ticket: foundTicket,
-          raffle: foundRaffle,
+          raffle: raffle,
         });
       } else {
         setSearchResult({ status: 'not-found' });
@@ -106,6 +109,21 @@ export default function CheckStatusPage() {
 
         <form onSubmit={handleSearch} className="mt-8 space-y-6">
           <div className="space-y-2">
+            <Label htmlFor="raffle">Selecciona la Rifa</Label>
+            <Select onValueChange={setSelectedRaffleId} value={selectedRaffleId} required>
+                <SelectTrigger id="raffle">
+                    <SelectValue placeholder="Elige una rifa..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {raffles.map(raffle => (
+                        <SelectItem key={raffle.id} value={raffle.id}>
+                            {raffle.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="ticketNumber">Ingresa tu número de boleto</Label>
             <Input
               id="ticketNumber"
@@ -114,9 +132,10 @@ export default function CheckStatusPage() {
               onChange={(e) => setTicketNumber(e.target.value)}
               placeholder="Ej: 0123"
               required
+              disabled={!selectedRaffleId}
             />
           </div>
-          <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+          <Button type="submit" className="w-full" size="lg" disabled={isLoading || !selectedRaffleId || !ticketNumber}>
             {isLoading ? 'Consultando...' : 'Consultar Estado'}
           </Button>
         </form>
