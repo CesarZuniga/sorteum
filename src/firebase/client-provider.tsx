@@ -24,9 +24,9 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []);
 
-  // If we are on the server or Firebase services are not yet initialized,
-  // we still render the children wrapped in a provider with null services.
-  // Downstream components should handle the null case gracefully.
+  // If we are on the server, we still render the children wrapped in a provider
+  // with null services. The actual FirebaseProvider will handle the loading state
+  // on the client.
   if (!firebaseServices) {
     return (
       <FirebaseProvider firebaseApp={null} auth={null} firestore={null}>

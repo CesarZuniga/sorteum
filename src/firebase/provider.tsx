@@ -68,6 +68,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+
   // Effect to subscribe to Firebase auth state changes, only if auth is available.
   useEffect(() => {
     if (auth) {
@@ -86,7 +93,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       // If no auth, set user to not loading and null.
       setUserAuthState({ user: null, isUserLoading: false, userError: null });
     }
-  }, [auth]); // Depends on the auth instance
+  }, [auth]);
   
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
@@ -101,6 +108,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
   
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <FirebaseContext.Provider value={contextValue}>
       {auth && <FirebaseErrorListener />}
