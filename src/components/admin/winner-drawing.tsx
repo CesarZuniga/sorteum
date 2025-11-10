@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { drawWinnerAction, notifyWinnersAction } from '@/lib/actions';
 import type { Raffle } from '@/lib/definitions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
