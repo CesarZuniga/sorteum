@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -66,7 +67,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     isUserLoading: true, // Start loading until first auth event
     userError: null,
   });
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
@@ -88,15 +88,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth]); // Depends on the auth instance
   
-   // Effect to check if core services are initialized
-  useEffect(() => {
-    if (firebaseApp && firestore && auth) {
-      setIsInitialized(true);
-    } else {
-      setIsInitialized(false);
-    }
-  }, [firebaseApp, firestore, auth]);
-
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);
@@ -110,10 +101,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userError: userAuthState.userError,
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
-
-  if (!isInitialized) {
-    return <div>Loading Firebase...</div>;
-  }
   
   return (
     <FirebaseContext.Provider value={contextValue}>
