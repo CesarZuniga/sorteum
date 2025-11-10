@@ -9,17 +9,8 @@ import { Firestore, getFirestore } from 'firebase/firestore';
 export function initializeFirebase() {
   if (typeof window !== 'undefined') {
     if (!getApps().length) {
-      let firebaseApp;
-      try {
-        // Attempt automatic initialization if config is available via SDK
-        firebaseApp = initializeApp({});
-      } catch (e) {
-        if (process.env.NODE_ENV !== "production") {
-          console.warn('Automatic initialization failed. Falling back to firebaseConfig object.', e);
-        }
-        // Fallback to explicit config if automatic fails
-        firebaseApp = initializeApp(firebaseConfig);
-      }
+      // Always initialize with the explicit config.
+      const firebaseApp = initializeApp(firebaseConfig);
       return getSdks(firebaseApp);
     }
     // If apps are already initialized, get the default app
