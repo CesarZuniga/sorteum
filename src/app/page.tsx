@@ -1,4 +1,5 @@
 
+
 import { RaffleCard } from '@/components/raffle-card';
 import { getRaffles } from '@/lib/data';
 import type { Raffle } from '@/lib/definitions';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { SiteHeader } from '@/components/site-header';
 
 function SecurePayments() {
     // Dummy SVGs for payment providers
@@ -115,55 +117,58 @@ export default function Home() {
   const raffles: Raffle[] = getRaffles();
 
   return (
-    <main>
-        <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
-            <Image 
-                src="https://picsum.photos/seed/car-hero/1200/800"
-                alt="Fondo de un carro de lujo"
-                fill
-                className="object-cover -z-10"
-                priority
-                data-ai-hint="luxury car"
-            />
-            <div className="absolute inset-0 bg-black/60 -z-10"></div>
-            <div className="container px-4">
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight !leading-tight font-headline mb-4 animate-fade-in-up">
-                    ¡Gana el Premio de tus Sueños!
-                </h1>
-                <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-200 mb-8 animate-fade-in-up animation-delay-300">
-                    Por la fracción de su costo, te ofrecemos la oportunidad de llevarte a casa premios increíbles. ¡No te quedes fuera!
-                </p>
-                <Button size="lg" asChild className="animate-fade-in-up animation-delay-600">
-                    <Link href="#active-raffles">Participa Ahora</Link>
-                </Button>
-            </div>
-        </section>
+    <>
+      <SiteHeader />
+      <main>
+          <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
+              <Image 
+                  src="https://picsum.photos/seed/car-hero/1200/800"
+                  alt="Fondo de un carro de lujo"
+                  fill
+                  className="object-cover -z-10"
+                  priority
+                  data-ai-hint="luxury car"
+              />
+              <div className="absolute inset-0 bg-black/60 -z-10"></div>
+              <div className="container px-4">
+                  <h1 className="text-4xl md:text-6xl font-bold tracking-tight !leading-tight font-headline mb-4 animate-fade-in-up">
+                      ¡Gana el Premio de tus Sueños!
+                  </h1>
+                  <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-200 mb-8 animate-fade-in-up animation-delay-300">
+                      Por la fracción de su costo, te ofrecemos la oportunidad de llevarte a casa premios increíbles. ¡No te quedes fuera!
+                  </p>
+                  <Button size="lg" asChild className="animate-fade-in-up animation-delay-600">
+                      <Link href="#active-raffles">Participa Ahora</Link>
+                  </Button>
+              </div>
+          </section>
 
-        <section id="active-raffles" className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900/50">
-            <div className="container mx-auto px-4">
-                <header className="text-center mb-12">
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-200 mb-2 font-headline">
-                    Rifas Activas
-                    </h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
-                    Explora nuestras rifas actuales y elige tu próximo gran premio. ¿La suerte está de tu lado?
-                    </p>
-                </header>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {raffles
-                    .filter((raffle) => raffle.active)
-                    .map((raffle) => (
-                    <RaffleCard key={raffle.id} raffle={raffle} />
-                    ))}
-                </div>
-            </div>
-        </section>
+          <section id="active-raffles" className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900/50">
+              <div className="container mx-auto px-4">
+                  <header className="text-center mb-12">
+                      <h2 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-200 mb-2 font-headline">
+                      Rifas Activas
+                      </h2>
+                      <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
+                      Explora nuestras rifas actuales y elige tu próximo gran premio. ¿La suerte está de tu lado?
+                      </p>
+                  </header>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {raffles
+                      .filter((raffle) => raffle.active)
+                      .map((raffle) => (
+                      <RaffleCard key={raffle.id} raffle={raffle} />
+                      ))}
+                  </div>
+              </div>
+          </section>
 
-        <SecurePayments />
-        <div id="faq">
-         <FaqSection />
-        </div>
-        <SiteFooter />
-    </main>
+          <SecurePayments />
+          <div id="faq">
+          <FaqSection />
+          </div>
+          <SiteFooter />
+      </main>
+    </>
   );
 }

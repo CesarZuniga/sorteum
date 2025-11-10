@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -24,6 +25,9 @@ export function SiteHeader() {
     <>
       <Button asChild variant="ghost">
         <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>Rifas</Link>
+      </Button>
+       <Button asChild variant="ghost">
+        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>Consultar Boleto</Link>
       </Button>
        <Button asChild variant="ghost">
         <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Contacto</Link>
