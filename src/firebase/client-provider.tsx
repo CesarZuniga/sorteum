@@ -15,6 +15,8 @@ interface FirebaseClientProviderProps {
  * This prevents hydration mismatches and race conditions with Firebase hooks.
  */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
   // Memoize Firebase initialization so it only runs once.
   const firebaseServices = useMemo(() => {
     // This check is important. It ensures that Firebase is only initialized on the client.
@@ -24,13 +26,18 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []);
 
-  // If the services are not initialized (e.g., on the server), render nothing.
-  // This ensures the server-rendered output matches the initial client-render.
-  if (!firebaseServices) {
+  // Use useEffect to set isMounted to true only on the client, after the initial render.
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+
+  // On the server, and on the initial client render, return null to match the server output.
+  if (!isMounted || !firebaseServices) {
     return null;
   }
 
-  // Once we have the services, we can render the actual provider.
+  // Once the component is mounted on the client and we have the services, render the actual provider.
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}
