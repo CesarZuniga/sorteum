@@ -3,7 +3,7 @@
 import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOutput } from '@/ai/flows/choose-lottery-winners-with-gen-ai';
 import { sendLotteryResults, SendLotteryResultsInput } from '@/ai/flows/automated-lottery-result-notifications';
 import { z } from 'zod';
-import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle } from './data';
+import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -212,4 +212,23 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
     revalidatePath(`/admin/raffles`);
     revalidatePath(`/admin/raffles/${id}`);
     redirect(`/admin/raffles/${id}`);
+}
+
+
+export async function deleteRaffleAction(formData: FormData) {
+  const id = formData.get('id');
+  if (typeof id !== 'string') {
+    // Handle error: ID is not a string
+    return;
+  }
+  
+  try {
+    apiDeleteRaffle(id);
+  } catch (e) {
+    // Handle database error
+    return;
+  }
+
+  revalidatePath('/admin/raffles');
+  redirect('/admin/raffles');
 }

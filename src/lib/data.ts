@@ -189,3 +189,12 @@ export const updateTicketStatus = (
 
   return true;
 };
+
+export const deleteRaffle = (id: string): boolean => {
+    const raffleIndex = raffles.findIndex(r => r.id === id);
+    if (raffleIndex === -1) {
+        return false;
+    }
+    raffles.splice(raffleIndex, 1);
+    return true;
+};
