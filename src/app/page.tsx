@@ -4,9 +4,6 @@ import { getRaffles } from '@/lib/data';
 import type { Raffle } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -57,7 +54,7 @@ function FaqSection() {
             <div className="container mx-auto px-4">
                 <div className="text-center mb-10">
                     <h2 className="text-3xl font-bold tracking-tight mb-2 font-headline">Preguntas Frecuentes</h2>
-                    <p className="text-muted-foreground">¿Tienes dudas? Encuentra aquí las respuestas a las preguntas más comunes.</p>
+                    <p className="text-muted-foreground">¿Tienes dudas? Encuentra here las respuestas a las preguntas más comunes.</p>
                 </div>
                 <Accordion type="single" collapsible className="max-w-3xl mx-auto">
                     {faqs.map((faq, index) => (
@@ -74,59 +71,39 @@ function FaqSection() {
     );
 }
 
-function ContactSection() {
-    return (
-        <section className="py-12 md:py-20 bg-white dark:bg-gray-800">
-            <div className="container mx-auto px-4 max-w-3xl">
-                <div className="text-center mb-10">
-                    <h2 className="text-3xl font-bold tracking-tight mb-2 font-headline">¿Tienes alguna pregunta? ¡Contáctanos!</h2>
-                    <p className="text-muted-foreground">Nuestro equipo de soporte está listo para ayudarte.</p>
-                </div>
-                <form className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nombre</Label>
-                            <Input id="name" placeholder="Tu nombre" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" placeholder="tu@email.com" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="message">Mensaje</Label>
-                        <Textarea id="message" placeholder="Escribe tu mensaje aquí..." rows={5} />
-                    </div>
-                    <div className="text-center pt-4">
-                        <Button type="submit" size="lg">Enviar Mensaje</Button>
-                    </div>
-                </form>
-            </div>
-        </section>
-    )
-}
-
 function SiteFooter() {
     return (
         <footer className="bg-gray-900 text-gray-300">
             <div className="container mx-auto px-4 py-8">
-                <div className="flex flex-col md:flex-row justify-between items-center">
-                    <div className="mb-4 md:mb-0">
+                <div className="grid md:grid-cols-3 gap-8 text-center md:text-left">
+                     <div>
                         <span className="text-lg font-bold">Sorteum</span>
+                        <p className="text-sm text-gray-400 mt-2">Gana el premio de tus sueños.</p>
                     </div>
-                    <div className="flex space-x-4 mb-4 md:mb-0">
-                        <Link href="#" className="hover:text-white"><Twitter className="h-5 w-5"/></Link>
-                        <Link href="#" className="hover:text-white"><Facebook className="h-5 w-5"/></Link>
-                        <Link href="#" className="hover:text-white"><Instagram className="h-5 w-5"/></Link>
+                    <div>
+                        <h4 className="font-semibold mb-3">Enlaces Rápidos</h4>
+                        <ul className="space-y-2">
+                            <li><Link href="/#active-raffles" className="hover:text-white text-sm">Rifas Activas</Link></li>
+                            <li><Link href="/contact" className="hover:text-white text-sm">Contacto</Link></li>
+                            <li><Link href="/#faq" className="hover:text-white text-sm">Preguntas Frecuentes</Link></li>
+                        </ul>
                     </div>
-                    <div className="text-sm">
+                    <div>
+                         <h4 className="font-semibold mb-3">Síguenos</h4>
+                        <div className="flex space-x-4 justify-center md:justify-start">
+                            <Link href="#" className="hover:text-white"><Twitter className="h-5 w-5"/></Link>
+                            <Link href="#" className="hover:text-white"><Facebook className="h-5 w-5"/></Link>
+                            <Link href="#" className="hover:text-white"><Instagram className="h-5 w-5"/></Link>
+                        </div>
+                    </div>
+                </div>
+                <div className="text-center text-xs text-gray-500 mt-8 pt-6 border-t border-gray-700">
+                    <p>© {new Date().getFullYear()} Sorteum Digital. Todos los derechos reservados.</p>
+                    <div className="mt-2">
                         <Link href="#" className="hover:text-white">Términos y Condiciones</Link>
                         <span className="mx-2">|</span>
                         <Link href="#" className="hover:text-white">Política de Privacidad</Link>
                     </div>
-                </div>
-                <div className="text-center text-xs text-gray-500 mt-6 pt-6 border-t border-gray-700">
-                    © {new Date().getFullYear()} Sorteum Digital. Todos los derechos reservados.
                 </div>
             </div>
         </footer>
@@ -183,10 +160,10 @@ export default function Home() {
         </section>
 
         <SecurePayments />
-        <FaqSection />
-        <ContactSection />
+        <div id="faq">
+         <FaqSection />
+        </div>
         <SiteFooter />
     </main>
   );
 }
-

@@ -25,6 +25,9 @@ export function SiteHeader() {
       <Button asChild variant="ghost">
         <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>Rifas</Link>
       </Button>
+       <Button asChild variant="ghost">
+        <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Contacto</Link>
+      </Button>
       <Button asChild variant="ghost">
         <Link href="/login">Admin Login</Link>
       </Button>
