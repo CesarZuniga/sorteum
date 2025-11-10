@@ -73,7 +73,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     }
 
     selectedTickets.forEach(ticket => {
-        updateTicketStatus(raffleState.id, ticket.number, 'reserved', buyerInfo);
+        updateTicketStatus(raffleState.id, ticket.number, 'paid', buyerInfo);
     });
 
     setRaffleState(getRaffleById(params.id)!); // Re-fetch to update UI
@@ -81,8 +81,8 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     setBuyerInfo({ name: '', email: '', phone: '' });
 
     toast({
-      title: 'Tickets Reserved!',
-      description: `Your tickets have been reserved. Please complete payment. Total: ${formatCurrency(totalPrice)}`,
+      title: '¡Compra Exitosa!',
+      description: `Tus boletos han sido comprados. Total: ${formatCurrency(totalPrice)}`,
     });
   };
 
@@ -165,7 +165,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                   <div className="text-xl font-bold">
                     Total: {formatCurrency(totalPrice)}
                   </div>
-                  <Button type="submit" className="w-full" size="lg">Reserve Tickets</Button>
+                  <Button type="submit" className="w-full" size="lg">Comprar Boletos</Button>
                 </form>
               </CardContent>
             </Card>
