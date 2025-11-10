@@ -26,14 +26,20 @@ export const createRaffle = async (
     ...raffleData,
     id: raffleDocRef.id,
     active: new Date(raffleData.deadline) > new Date(),
-    tickets: [], // tickets will be a subcollection
+    tickets: [], // This is for the type, tickets are a subcollection
   };
 
-  batch.set(raffleDocRef, {
+  const rafflePayload = {
     ...raffleData,
     id: raffleDocRef.id, // denormalizing id for querying
     active: new Date(raffleData.deadline) > new Date(),
-  });
+  };
+
+  // Remove tickets property before setting document
+  delete (rafflePayload as any).tickets;
+
+
+  batch.set(raffleDocRef, rafflePayload);
 
   const ticketsCollectionRef = collection(raffleDocRef, 'tickets');
   for (let i = 0; i < raffleData.ticketCount; i++) {
