@@ -10,7 +10,7 @@ import { revalidatePath } from 'next/cache';
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
   criteria: z.string().min(10, 'Please provide more detailed criteria.'),
-  winnerCount: z.number().min(1),
+  winnerCount: z.coerce.number().min(1),
 });
 
 type DrawWinnerState = {
