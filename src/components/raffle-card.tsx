@@ -2,13 +2,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { Raffle } from '@/lib/definitions';
+import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
 import { Ticket } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, where, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { collection } from 'firebase/firestore';
 
 type RaffleCardProps = {
   raffle: Raffle;
@@ -17,18 +16,10 @@ type RaffleCardProps = {
 export function RaffleCard({ raffle }: RaffleCardProps) {
   const firestore = useFirestore();
   const ticketsCollection = useMemoFirebase(() => collection(firestore, 'raffles', raffle.id, 'tickets'), [firestore, raffle.id]);
-  const { data: tickets, isLoading } = useCollection(ticketsCollection);
+  const { data: tickets, isLoading } = useCollection<TicketType>(ticketsCollection);
 
-  const [soldTickets, setSoldTickets] = useState(0);
-
-  useEffect(() => {
-    if (tickets) {
-        setSoldTickets(tickets.filter(t => t.status !== 'available').length);
-    }
-  }, [tickets]);
-
-
-  const progress = (soldTickets / raffle.ticketCount) * 100;
+  const soldTickets = tickets ? tickets.filter(t => t.status !== 'available').length : 0;
+  const progress = soldTickets > 0 ? (soldTickets / raffle.ticketCount) * 100 : 0;
   const placeholder = PlaceHolderImages.find(p => p.imageUrl === raffle.image);
 
   return (

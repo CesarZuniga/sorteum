@@ -1,39 +1,49 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Activity } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query } from 'firebase/firestore';
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { useState, useEffect } from 'react';
 
 export function DashboardMetrics() {
   const firestore = useFirestore();
   const rafflesCollection = useMemoFirebase(() => collection(firestore, 'raffles'), [firestore]);
-  const { data: raffles, isLoading } = useCollection<Raffle>(rafflesCollection);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [totalTicketsSold, setTotalTicketsSold] = useState(0);
+  const { data: raffles, isLoading: rafflesIsLoading } = useCollection<Raffle>(rafflesCollection);
+
+  const [allTickets, setAllTickets] = useState<TicketType[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
 
   useEffect(() => {
-    if (raffles) {
-      const fetchMetrics = async () => {
-        let revenue = 0;
-        let ticketsSold = 0;
-        for (const raffle of raffles) {
-          const ticketsQuery = query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '==', 'paid'));
-          const ticketsSnapshot = await getDocs(ticketsQuery);
-          ticketsSold += ticketsSnapshot.size;
-          revenue += ticketsSnapshot.size * raffle.price;
-        }
-        setTotalRevenue(revenue);
-        setTotalTicketsSold(ticketsSold);
+    if (raffles && raffles.length > 0) {
+      const fetchAllTickets = async () => {
+        setTicketsLoading(true);
+        const ticketPromises = raffles.map(raffle => 
+            getDocs(query(collection(firestore, 'raffles', raffle.id, 'tickets')))
+        );
+        const ticketSnapshots = await Promise.all(ticketPromises);
+        const tickets = ticketSnapshots.flatMap(snap => snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TicketType)));
+        setAllTickets(tickets);
+        setTicketsLoading(false);
       };
-      fetchMetrics();
+      fetchAllTickets();
+    } else if (!rafflesIsLoading) {
+        setTicketsLoading(false);
     }
-  }, [raffles, firestore]);
+  }, [raffles, firestore, rafflesIsLoading]);
 
+  const totalRevenue = allTickets
+    .filter(ticket => ticket.status === 'paid')
+    .reduce((acc, ticket) => {
+        const raffle = raffles?.find(r => r.id === ticket.raffleId);
+        return acc + (raffle?.price || 0);
+    }, 0);
+
+  const totalTicketsSold = allTickets.filter(t => t.status === 'paid').length;
+  
+  const isLoading = rafflesIsLoading || ticketsLoading;
   const activeRaffles = raffles ? raffles.filter(r => r.active).length : 0;
 
   const metrics = [

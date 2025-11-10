@@ -48,7 +48,7 @@ export function TicketsTable({ raffleId, maxWinners }: { raffleId: string, maxWi
         return;
     }
     
-    const success = await apiUpdateTicketStatus(raffleId, ticketNumber, status as any);
+    const success = await apiUpdateTicketStatus(firestore, raffleId, ticketNumber, status as any);
     if (success) {
       toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
     } else {

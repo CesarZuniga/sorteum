@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import type { Ticket } from './definitions';
+import { firestore } from './firebase-config';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -36,7 +36,7 @@ export async function drawWinnerAction(
     }
 
     const { raffleId, criteria, winnerCount } = validatedFields.data;
-    const raffle = await getRaffleById(raffleId);
+    const raffle = await getRaffleById(firestore, raffleId);
 
     if (!raffle) {
       return { success: false, error: 'Raffle not found.' };
@@ -85,7 +85,7 @@ export async function notifyWinnersAction(
         }
 
         const { raffleId, winningNumbers } = validatedFields.data;
-        const raffle = await getRaffleById(raffleId);
+        const raffle = await getRaffleById(firestore, raffleId);
         if (!raffle) {
             return { success: false, error: "Raffle not found." };
         }
@@ -162,7 +162,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     }
 
     try {
-        await apiCreateRaffle({
+        await apiCreateRaffle(firestore, {
             ...validatedFields.data,
             // @ts-ignore
             ticketCount: validatedFields.data.ticketCount,
@@ -202,7 +202,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
     }
 
     try {
-        await apiUpdateRaffle(id, {
+        await apiUpdateRaffle(firestore, id, {
             ...dataToUpdate,
             deadline: new Date(dataToUpdate.deadline).toISOString(),
         });
@@ -224,7 +224,7 @@ export async function deleteRaffleAction(formData: FormData) {
   }
   
   try {
-    await apiDeleteRaffle(id);
+    await apiDeleteRaffle(firestore, id);
   } catch (e) {
     // Handle database error
     return;

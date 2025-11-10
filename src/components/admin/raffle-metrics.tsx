@@ -4,8 +4,7 @@ import { DollarSign, Ticket, Clock, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { collection } from 'firebase/firestore';
 
 export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
   const firestore = useFirestore();
@@ -13,23 +12,15 @@ export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
 
   const { data: tickets, isLoading } = useCollection<TicketType>(ticketsCollection);
   
-  const [paidTickets, setPaidTickets] = useState(0);
-  const [reservedTickets, setReservedTickets] = useState(0);
-  
-  useEffect(() => {
-    if (tickets) {
-        setPaidTickets(tickets.filter(t => t.status === 'paid').length);
-        setReservedTickets(tickets.filter(t => t.status === 'reserved').length);
-    }
-  }, [tickets]);
-
+  const paidTickets = tickets ? tickets.filter(t => t.status === 'paid').length : 0;
+  const reservedTickets = tickets ? tickets.filter(t => t.status === 'reserved').length : 0;
 
   const availableTickets = tickets ? raffle.ticketCount - paidTickets - reservedTickets : raffle.ticketCount;
   
   const soldTickets = paidTickets + reservedTickets;
   const totalRevenue = paidTickets * raffle.price;
   const potentialRevenue = raffle.ticketCount * raffle.price;
-  const salesProgress = (soldTickets / raffle.ticketCount) * 100;
+  const salesProgress = soldTickets > 0 ? (soldTickets / raffle.ticketCount) * 100 : 0;
 
   const metrics = [
     { title: 'Ingresos (Pagado)', value: formatCurrency(totalRevenue), icon: DollarSign },

@@ -16,6 +16,7 @@ import { getRaffleById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import {format} from 'date-fns/format'
 import type { Raffle } from '@/lib/definitions';
+import { useFirestore } from '@/firebase';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -32,17 +33,18 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const initialState = { message: undefined, errors: {} };
   const [state, dispatch] = useFormState(updateRaffleAction, initialState);
+  const firestore = useFirestore();
 
   useEffect(() => {
     const fetchRaffle = async () => {
-        const raffleData = await getRaffleById(params.id);
+        const raffleData = await getRaffleById(firestore, params.id);
         if (raffleData) {
             setRaffle(raffleData as Raffle);
         }
         setLoading(false);
     };
     fetchRaffle();
-  }, [params.id]);
+  }, [params.id, firestore]);
 
 
   if (loading) {

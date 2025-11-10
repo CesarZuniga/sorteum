@@ -11,19 +11,16 @@ import {
   query,
   where,
   Timestamp,
+  Firestore,
 } from 'firebase/firestore';
 import type { Raffle, Ticket } from './definitions';
-import { firestore } from './firebase-config'; // Assuming you have this config
+// import { firestore } from './firebase-config'; // Assuming you have this config
 
 // Configuration for reservation time in minutes
 const RESERVATION_DURATION_MINUTES = 15;
 
-const rafflesCollection = collection(firestore, 'raffles');
-
-const getRaffleDoc = (id: string) => doc(firestore, 'raffles', id);
-const getTicketsCollection = (raffleId: string) => collection(firestore, 'raffles', raffleId, 'tickets');
-const getTicketDoc = (raffleId: string, ticketId: string) => doc(firestore, 'raffles', raffleId, 'tickets', ticketId);
-
+const getRaffleDoc = (db: Firestore, id: string) => doc(db, 'raffles', id);
+const getTicketsCollection = (db: Firestore, raffleId: string) => collection(db, 'raffles', raffleId, 'tickets');
 
 // Helper to convert Firestore Timestamp to ISO string for client-side usage
 const toISOStringOrUndefined = (date: any): string | undefined => {
@@ -34,7 +31,8 @@ const toISOStringOrUndefined = (date: any): string | undefined => {
 };
 
 
-export const getRaffles = async (): Promise<Raffle[]> => {
+export const getRaffles = async (db: Firestore): Promise<Raffle[]> => {
+  const rafflesCollection = collection(db, 'raffles');
   const snapshot = await getDocs(rafflesCollection);
   const raffles: Raffle[] = [];
   for (const doc of snapshot.docs) {
@@ -47,15 +45,15 @@ export const getRaffles = async (): Promise<Raffle[]> => {
       price: data.price,
       ticketCount: data.ticketCount,
       deadline: toISOStringOrUndefined(data.deadline) || new Date().toISOString(),
-      active: new Date(data.deadline.toDate()) > new Date(),
+      active: data.deadline ? new Date(data.deadline.toDate()) > new Date() : false,
       tickets: [], // Tickets are now a subcollection
     });
   }
   return raffles;
 };
 
-export const getRaffleById = async (id: string): Promise<Raffle | undefined> => {
-  const raffleDoc = await getDoc(getRaffleDoc(id));
+export const getRaffleById = async (db: Firestore, id: string): Promise<Raffle | undefined> => {
+  const raffleDoc = await getDoc(getRaffleDoc(db, id));
   if (!raffleDoc.exists()) {
     return undefined;
   }
@@ -70,12 +68,12 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
     price: data.price,
     ticketCount: data.ticketCount,
     deadline: toISOStringOrUndefined(data.deadline) || new Date().toISOString(),
-    active: new Date(data.deadline.toDate()) > new Date(),
+    active: data.deadline ? new Date(data.deadline.toDate()) > new Date() : false,
     tickets: [], // Initialize empty
   };
 
   // Fetch tickets from subcollection
-  const ticketsSnapshot = await getDocs(getTicketsCollection(id));
+  const ticketsSnapshot = await getDocs(getTicketsCollection(db, id));
   raffle.tickets = ticketsSnapshot.docs.map(ticketDoc => {
       const ticketData = ticketDoc.data();
       return {
@@ -96,7 +94,8 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
 };
 
 
-export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'tickets' | 'active'>): Promise<string> => {
+export const createRaffle = async (db: Firestore, raffleData: Omit<Raffle, 'id' | 'tickets' | 'active'>): Promise<string> => {
+    const rafflesCollection = collection(db, 'raffles');
     const newRaffleData = {
         ...raffleData,
         deadline: Timestamp.fromDate(new Date(raffleData.deadline)),
@@ -105,8 +104,8 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'tickets' | '
     
     const raffleDocRef = await addDoc(rafflesCollection, newRaffleData);
 
-    const batch = writeBatch(firestore);
-    const ticketsCollectionRef = getTicketsCollection(raffleDocRef.id);
+    const batch = writeBatch(db);
+    const ticketsCollectionRef = getTicketsCollection(db, raffleDocRef.id);
 
     for (let i = 1; i <= raffleData.ticketCount; i++) {
         const ticketDocRef = doc(ticketsCollectionRef); // Auto-generate ID
@@ -122,22 +121,23 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'tickets' | '
     return raffleDocRef.id;
 };
 
-export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 'id' | 'tickets' | 'active' | 'ticketCount'>>): Promise<void> => {
+export const updateRaffle = async (db: Firestore, id: string, raffleData: Partial<Omit<Raffle, 'id' | 'tickets' | 'active' | 'ticketCount'>>): Promise<void> => {
     const dataToUpdate: any = { ...raffleData };
     if (raffleData.deadline) {
         dataToUpdate.deadline = Timestamp.fromDate(new Date(raffleData.deadline));
     }
-    await updateDoc(getRaffleDoc(id), dataToUpdate);
+    await updateDoc(getRaffleDoc(db, id), dataToUpdate);
 };
 
 export const updateTicketStatus = async (
+  db: Firestore,
   raffleId: string,
   ticketNumber: number,
   status: 'reserved' | 'paid' | 'available' | 'winner',
   buyerInfo?: { name: string; email: string; phone: string }
 ): Promise<boolean> => {
   
-  const ticketsQuery = query(getTicketsCollection(raffleId), where("number", "==", ticketNumber));
+  const ticketsQuery = query(getTicketsCollection(db, raffleId), where("number", "==", ticketNumber));
   const querySnapshot = await getDocs(ticketsQuery);
   
   if (querySnapshot.empty) {
@@ -179,10 +179,10 @@ export const updateTicketStatus = async (
   return true;
 };
 
-export const deleteRaffle = async (id: string): Promise<boolean> => {
+export const deleteRaffle = async (db: Firestore, id: string): Promise<boolean> => {
     // Note: Deleting a document does not delete its subcollections.
     // For a production app, a Cloud Function would be needed to clean up tickets.
     // For this project, we'll just delete the raffle document.
-    await deleteDoc(getRaffleDoc(id));
+    await deleteDoc(getRaffleDoc(db, id));
     return true;
 };

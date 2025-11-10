@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,9 +23,8 @@ export default function CheckStatusPage() {
   const activeRafflesQuery = useMemoFirebase(() => query(collection(firestore, 'raffles'), where('active', '==', true)), [firestore]);
   const { data: raffles } = useCollection<Raffle>(activeRafflesQuery);
 
-  const { data: ticketsForSelectedRaffle } = useCollection<Ticket>(
-      selectedRaffleId ? collection(firestore, `raffles/${selectedRaffleId}/tickets`) : undefined
-  );
+  const ticketsCollectionRef = useMemoFirebase(() => selectedRaffleId ? collection(firestore, `raffles/${selectedRaffleId}/tickets`) : undefined, [firestore, selectedRaffleId]);
+  const { data: ticketsForSelectedRaffle } = useCollection<Ticket>(ticketsCollectionRef);
 
 
   const handleSearch = (e: React.FormEvent) => {

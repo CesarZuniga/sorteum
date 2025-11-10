@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { updateTicketStatus } from '@/lib/data';
@@ -119,7 +119,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     }
 
     const promises = selectedTickets.map(ticket => {
-        return updateTicketStatus(raffleState.id, ticket.number, 'reserved', buyerInfo);
+        return updateTicketStatus(firestore, raffleState.id, ticket.number, 'reserved', buyerInfo);
     });
 
     await Promise.all(promises);
