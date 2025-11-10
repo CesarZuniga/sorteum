@@ -75,11 +75,10 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
                   <TableCell>{ticket.buyerPhone || 'N/A'}</TableCell>
                   <TableCell className="space-x-2">
                     {ticket.status === 'reserved' && (
-                      <Button size="sm" onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
-                        Confirm Payment
-                      </Button>
-                    )}
-                     {ticket.status !== 'available' && (
+                        <>
+                        <Button size="sm" onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
+                            Confirm Payment
+                        </Button>
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="outline">
@@ -102,6 +101,7 @@ export function TicketsTable({ initialRaffle }: { initialRaffle: Raffle }) {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      </>
                     )}
                   </TableCell>
                 </TableRow>
