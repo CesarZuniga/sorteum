@@ -22,7 +22,7 @@ export default function CheckStatusPage() {
 
   useEffect(() => {
     // getRaffles is synchronous in this mock, but in a real app it would be async
-    setRaffles(getRaffles());
+    setRaffles(getRaffles().filter(raffle => raffle.active));
   }, []);
 
 
