@@ -1,42 +1,42 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getRaffles } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
 import { Ticket as TicketIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TicketStatusDisplay, TicketStatus } from '@/components/ticket-status-display';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 
 export default function CheckStatusPage() {
   const [ticketNumber, setTicketNumber] = useState('');
   const [selectedRaffleId, setSelectedRaffleId] = useState('');
-  const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [searchResult, setSearchResult] = useState<TicketStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const firestore = useFirestore();
+  
+  const activeRafflesQuery = useMemoFirebase(() => query(collection(firestore, 'raffles'), where('active', '==', true)), [firestore]);
+  const { data: raffles } = useCollection<Raffle>(activeRafflesQuery);
 
-  useEffect(() => {
-    // getRaffles is synchronous in this mock, but in a real app it would be async
-    setRaffles(getRaffles().filter(raffle => raffle.active));
-  }, []);
+  const { data: ticketsForSelectedRaffle } = useCollection<Ticket>(
+      selectedRaffleId ? collection(firestore, `raffles/${selectedRaffleId}/tickets`) : undefined
+  );
 
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!ticketsForSelectedRaffle) return;
+
     setIsLoading(true);
     setSearchResult(null);
 
-    const raffle = raffles.find(r => r.id === selectedRaffleId);
-    let foundTicket: Ticket | undefined;
-    
-    if (raffle) {
-        foundTicket = raffle.tickets.find(t => t.number === parseInt(ticketNumber, 10));
-    }
+    const raffle = raffles?.find(r => r.id === selectedRaffleId);
+    const foundTicket = ticketsForSelectedRaffle.find(t => t.number === parseInt(ticketNumber, 10));
     
     setTimeout(() => {
       if (foundTicket && raffle) {
@@ -46,15 +46,7 @@ export default function CheckStatusPage() {
           raffle: raffle,
         });
       } else {
-        const raffleForAvailableCheck = raffles.find(r => r.id === selectedRaffleId);
-        const ticketIsReal = raffleForAvailableCheck?.tickets.some(t => t.number === parseInt(ticketNumber, 10));
-        
-        if (ticketIsReal && raffleForAvailableCheck) {
-            const ticket = raffleForAvailableCheck.tickets.find(t => t.number === parseInt(ticketNumber, 10))!;
-             setSearchResult({ status: 'available', ticket: ticket, raffle: raffleForAvailableCheck });
-        } else {
-            setSearchResult({ status: 'not-found' });
-        }
+        setSearchResult({ status: 'not-found' });
       }
       setIsLoading(false);
     }, 500); 
@@ -78,7 +70,7 @@ export default function CheckStatusPage() {
                     <SelectValue placeholder="Elige una rifa..." />
                 </SelectTrigger>
                 <SelectContent>
-                    {raffles.map(raffle => (
+                    {raffles?.map(raffle => (
                         <SelectItem key={raffle.id} value={raffle.id}>
                             {raffle.name}
                         </SelectItem>

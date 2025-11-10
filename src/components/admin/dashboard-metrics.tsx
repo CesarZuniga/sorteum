@@ -1,26 +1,43 @@
-import { getRaffles } from '@/lib/data';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Activity } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
+import { useState, useEffect } from 'react';
 
 export function DashboardMetrics() {
-  const raffles = getRaffles();
+  const firestore = useFirestore();
+  const rafflesCollection = useMemoFirebase(() => collection(firestore, 'raffles'), [firestore]);
+  const { data: raffles, isLoading } = useCollection<Raffle>(rafflesCollection);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalTicketsSold, setTotalTicketsSold] = useState(0);
 
-  const activeRaffles = raffles.filter(r => r.active).length;
-  
-  const totalTicketsSold = raffles.reduce((acc, raffle) => {
-    return acc + raffle.tickets.filter(t => t.status === 'paid').length;
-  }, 0);
-  
-  const totalRevenue = raffles.reduce((acc, raffle) => {
-    const paidTickets = raffle.tickets.filter(t => t.status === 'paid').length;
-    return acc + (paidTickets * raffle.price);
-  }, 0);
+  useEffect(() => {
+    if (raffles) {
+      const fetchMetrics = async () => {
+        let revenue = 0;
+        let ticketsSold = 0;
+        for (const raffle of raffles) {
+          const ticketsQuery = query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '==', 'paid'));
+          const ticketsSnapshot = await getDocs(ticketsQuery);
+          ticketsSold += ticketsSnapshot.size;
+          revenue += ticketsSnapshot.size * raffle.price;
+        }
+        setTotalRevenue(revenue);
+        setTotalTicketsSold(ticketsSold);
+      };
+      fetchMetrics();
+    }
+  }, [raffles, firestore]);
+
+  const activeRaffles = raffles ? raffles.filter(r => r.active).length : 0;
 
   const metrics = [
-    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign },
-    { title: 'Active Raffles', value: activeRaffles, icon: Activity },
-    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket },
+    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },
+    { title: 'Active Raffles', value: activeRaffles, icon: Activity, loading: isLoading },
+    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket, loading: isLoading },
   ];
 
   return (
@@ -32,7 +49,7 @@ export function DashboardMetrics() {
             <metric.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metric.value}</div>
+            <div className="text-2xl font-bold">{metric.loading ? '...' : metric.value}</div>
           </CardContent>
         </Card>
       ))}

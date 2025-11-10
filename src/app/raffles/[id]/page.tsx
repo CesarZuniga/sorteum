@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getRaffleById, updateTicketStatus } from '@/lib/data';
+import { updateTicketStatus } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
 import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock } from 'lucide-react';
@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -43,29 +45,28 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 };
 
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
-  const [raffleState, setRaffleState] = useState<Raffle | undefined>(() => getRaffleById(params.id));
+  const firestore = useFirestore();
+  const raffleRef = useMemoFirebase(() => doc(firestore, 'raffles', params.id), [firestore, params.id]);
+  const ticketsRef = useMemoFirebase(() => collection(firestore, 'raffles', params.id, 'tickets'), [firestore, params.id]);
+
+  const { data: raffleState, isLoading: isRaffleLoading } = useDoc<Raffle>(raffleRef);
+  const { data: tickets, isLoading: areTicketsLoading } = useCollection<Ticket>(ticketsRef);
+
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
   const { toast } = useToast();
 
-   useEffect(() => {
-    // Periodically re-fetch data to check for expired reservations
-    const interval = setInterval(() => {
-      setRaffleState(getRaffleById(params.id));
-    }, 60 * 1000); // every minute
-
-    return () => clearInterval(interval);
-  }, [params.id]);
-
+   if (isRaffleLoading) {
+    return <div>Loading raffle...</div>
+   }
 
   if (!raffleState) {
     notFound();
   }
 
   const handleSelectTicket = (ticket: Ticket) => {
-    // If a ticket is suggested, selecting it should confirm it
     if (suggestedTickets.find(st => st.id === ticket.id)) {
         setSuggestedTickets(prev => prev.filter(st => st.id !== ticket.id));
     }
@@ -78,7 +79,8 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   };
 
   const handleRandomSelect = () => {
-    const availableTickets = raffleState.tickets.filter(
+    if (!tickets) return;
+    const availableTickets = tickets.filter(
       (t) => t.status === 'available' && !selectedTickets.find(st => st.id === t.id)
     );
 
@@ -105,7 +107,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     setSuggestedTickets([]);
   };
 
-  const handleReserve = (e: React.FormEvent) => {
+  const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTickets.length === 0) {
       toast({ title: 'No tickets selected', description: 'Please select one or more tickets.', variant: 'destructive' });
@@ -116,11 +118,12 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
       return;
     }
 
-    selectedTickets.forEach(ticket => {
-        updateTicketStatus(raffleState.id, ticket.number, 'reserved', buyerInfo);
+    const promises = selectedTickets.map(ticket => {
+        return updateTicketStatus(raffleState.id, ticket.number, 'reserved', buyerInfo);
     });
 
-    setRaffleState(getRaffleById(params.id)!); // Re-fetch to update UI
+    await Promise.all(promises);
+
     setSelectedTickets([]);
     setBuyerInfo({ name: '', email: '', phone: '' });
 
@@ -192,7 +195,8 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
               </div>
 
               <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2">
-                {raffleState.tickets.map((ticket) => (
+                {areTicketsLoading && <p>Loading tickets...</p>}
+                {tickets && tickets.map((ticket) => (
                   <TicketItem
                     key={ticket.id}
                     ticket={ticket}

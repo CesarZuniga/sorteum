@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useFormState, useFormStatus } from 'react-dom';
 import { updateRaffleAction } from '@/lib/actions';
@@ -14,6 +15,7 @@ import { AlertCircle } from 'lucide-react';
 import { getRaffleById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import {format} from 'date-fns/format'
+import type { Raffle } from '@/lib/definitions';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,15 +28,31 @@ function SubmitButton() {
 }
 
 export default function EditRafflePage({ params }: { params: { id: string } }) {
-  const raffle = getRaffleById(params.id);
+  const [raffle, setRaffle] = useState<Raffle | null>(null);
+  const [loading, setLoading] = useState(true);
   const initialState = { message: undefined, errors: {} };
   const [state, dispatch] = useFormState(updateRaffleAction, initialState);
+
+  useEffect(() => {
+    const fetchRaffle = async () => {
+        const raffleData = await getRaffleById(params.id);
+        if (raffleData) {
+            setRaffle(raffleData as Raffle);
+        }
+        setLoading(false);
+    };
+    fetchRaffle();
+  }, [params.id]);
+
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!raffle) {
     notFound();
   }
   
-  // The API returns an ISO string, but the input type="date" needs yyyy-MM-dd
   const deadlineForInput = format(new Date(raffle.deadline), 'yyyy-MM-dd');
 
   return (
@@ -57,18 +75,18 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
             <div className="space-y-2">
               <Label htmlFor="name">Raffle Name</Label>
               <Input id="name" name="name" defaultValue={raffle.name} />
-              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name}</p>}
+              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" defaultValue={raffle.description} />
-              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description}</p>}
+              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description[0]}</p>}
             </div>
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="price">Ticket Price ($)</Label>
                     <Input id="price" name="price" type="number" step="0.01" defaultValue={raffle.price} />
-                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price}</p>}
+                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price[0]}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="ticketCount">Total Number of Tickets</Label>
@@ -79,12 +97,12 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
             <div className="space-y-2">
               <Label htmlFor="deadline">Deadline</Label>
               <Input id="deadline" name="deadline" type="date" defaultValue={deadlineForInput} />
-              {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline}</p>}
+              {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="image">Image URL</Label>
               <Input id="image" name="image" defaultValue={raffle.image} />
-              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image}</p>}
+              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
             </div>
 
             {state.message && (

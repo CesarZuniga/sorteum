@@ -45,34 +45,34 @@ export default function NewRafflePage() {
             <div className="space-y-2">
               <Label htmlFor="name">Raffle Name</Label>
               <Input id="name" name="name" placeholder="e.g., Luxury Watch Raffle" />
-              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name}</p>}
+              {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" placeholder="A brief description of the raffle prize." />
-              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description}</p>}
+              {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description[0]}</p>}
             </div>
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="price">Ticket Price ($)</Label>
                     <Input id="price" name="price" type="number" step="0.01" placeholder="25.00" />
-                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price}</p>}
+                    {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price[0]}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="ticketCount">Total Number of Tickets</Label>
                     <Input id="ticketCount" name="ticketCount" type="number" placeholder="100" />
-                    {state.errors?.ticketCount && <p className="text-sm text-destructive">{state.errors.ticketCount}</p>}
+                    {state.errors?.ticketCount && <p className="text-sm text-destructive">{state.errors.ticketCount[0]}</p>}
                 </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="deadline">Deadline</Label>
               <Input id="deadline" name="deadline" type="date" />
-              {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline}</p>}
+              {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="image">Image URL</Label>
               <Input id="image" name="image" placeholder="https://..." />
-              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image}</p>}
+              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
             </div>
 
             {state.message && (

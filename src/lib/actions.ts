@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import type { Ticket } from './definitions';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -35,7 +36,7 @@ export async function drawWinnerAction(
     }
 
     const { raffleId, criteria, winnerCount } = validatedFields.data;
-    const raffle = getRaffleById(raffleId);
+    const raffle = await getRaffleById(raffleId);
 
     if (!raffle) {
       return { success: false, error: 'Raffle not found.' };
@@ -84,7 +85,7 @@ export async function notifyWinnersAction(
         }
 
         const { raffleId, winningNumbers } = validatedFields.data;
-        const raffle = getRaffleById(raffleId);
+        const raffle = await getRaffleById(raffleId);
         if (!raffle) {
             return { success: false, error: "Raffle not found." };
         }
@@ -161,7 +162,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     }
 
     try {
-        apiCreateRaffle({
+        await apiCreateRaffle({
             ...validatedFields.data,
             // @ts-ignore
             ticketCount: validatedFields.data.ticketCount,
@@ -201,7 +202,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
     }
 
     try {
-        apiUpdateRaffle(id, {
+        await apiUpdateRaffle(id, {
             ...dataToUpdate,
             deadline: new Date(dataToUpdate.deadline).toISOString(),
         });
@@ -223,12 +224,12 @@ export async function deleteRaffleAction(formData: FormData) {
   }
   
   try {
-    apiDeleteRaffle(id);
+    await apiDeleteRaffle(id);
   } catch (e) {
     // Handle database error
     return;
   }
 
   revalidatePath('/admin/raffles');
-  redirect('/admin/raffles');
+  // No redirect needed if revalidating
 }
