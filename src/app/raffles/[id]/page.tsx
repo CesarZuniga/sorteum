@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { getRaffleById, updateTicketStatus } from '@/lib/data';
 import type { Ticket } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
-import { Calendar, DollarSign, Ticket as TicketIcon } from 'lucide-react';
+import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [raffleState, setRaffleState] = useState(raffle);
+  const [randomCount, setRandomCount] = useState<number>(1);
   const { toast } = useToast();
 
   if (!raffleState) {
@@ -59,6 +60,30 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
         ? prev.filter((t) => t.id !== ticket.id)
         : [...prev, ticket]
     );
+  };
+
+  const handleRandomSelect = () => {
+    const availableTickets = raffleState.tickets.filter(
+      (t) => t.status === 'available' && !selectedTickets.find(st => st.id === t.id)
+    );
+
+    if (randomCount > availableTickets.length) {
+      toast({
+        title: 'Boletos insuficientes',
+        description: `Solo hay ${availableTickets.length} boletos disponibles para seleccionar.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const shuffled = availableTickets.sort(() => 0.5 - Math.random());
+    const randomSelection = shuffled.slice(0, randomCount);
+    
+    // Add new random tickets to existing selection, avoiding duplicates
+    setSelectedTickets(prev => {
+        const newTickets = randomSelection.filter(rt => !prev.find(pt => pt.id === rt.id));
+        return [...prev, ...newTickets];
+    });
   };
   
   const handlePurchase = (e: React.FormEvent) => {
@@ -125,6 +150,21 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
           <Card>
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-4 font-headline">Select Your Tickets</h2>
+              <div className="flex items-center gap-2 mb-4">
+                  <Input 
+                    type="number" 
+                    min="1"
+                    value={randomCount}
+                    onChange={(e) => setRandomCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    className="w-24"
+                    aria-label="Number of random tickets to select"
+                  />
+                  <Button variant="outline" onClick={handleRandomSelect}>
+                    <Shuffle className="h-4 w-4 mr-2" />
+                    Selección Rápida
+                  </Button>
+              </div>
+
               <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2">
                 {raffleState.tickets.map((ticket) => (
                   <TicketItem
