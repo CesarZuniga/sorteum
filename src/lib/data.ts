@@ -31,7 +31,8 @@ export const createRaffle = async (
 
   batch.set(raffleDocRef, {
     ...raffleData,
-    // we dont store tickets array in the document
+    id: raffleDocRef.id, // denormalizing id for querying
+    active: new Date(raffleData.deadline) > new Date(),
   });
 
   const ticketsCollectionRef = collection(raffleDocRef, 'tickets');

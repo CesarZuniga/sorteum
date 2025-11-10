@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebaseServer } from '@/firebase/server';
 import { collection, getDoc, getDocs, doc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth/server';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -153,7 +154,14 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-    const { firestore } = await initializeFirebaseServer();
+    const { app, firestore } = await initializeFirebaseServer();
+    const auth = getAuth(app);
+    const user = auth.currentUser;
+
+    if (!user) {
+        return { message: 'Authentication Error: You must be logged in to create a raffle.' };
+    }
+
     const validatedFields = CreateRaffle.safeParse({
         name: formData.get('name'),
         description: formData.get('description'),
@@ -176,6 +184,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         await apiCreateRaffle(firestore, {
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
+            adminId: user.uid, // Add adminId for ownership
         });
     } catch (e: any) {
         return {
@@ -224,6 +233,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
 
     revalidatePath(`/admin/raffles`);
     revalidatePath(`/admin/raffles/${id}`);
+    revalidatePath(`/raffles/${id}`);
     redirect(`/admin/raffles/${id}`);
 }
 
@@ -244,5 +254,5 @@ export async function deleteRaffleAction(formData: FormData) {
   }
 
   revalidatePath('/admin/raffles');
-  // No redirect needed if revalidating
+  revalidatePath('/');
 }
