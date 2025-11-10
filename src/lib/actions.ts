@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { initializeFirebase } from '@/firebase';
+import { initializeFirebaseServer } from '@/firebase/server';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -24,7 +24,7 @@ export async function drawWinnerAction(
   prevState: DrawWinnerState,
   formData: FormData
 ): Promise<DrawWinnerState> {
-  const { firestore } = initializeFirebase();
+  const { firestore } = initializeFirebaseServer();
   try {
     const validatedFields = drawWinnerSchema.safeParse({
       raffleId: formData.get('raffleId'),
@@ -75,7 +75,7 @@ export async function notifyWinnersAction(
     prevState: NotifyState,
     formData: FormData,
 ): Promise<NotifyState> {
-    const { firestore } = initializeFirebase();
+    const { firestore } = initializeFirebaseServer();
     try {
         const validatedFields = notifyWinnersSchema.safeParse({
             raffleId: formData.get('raffleId'),
@@ -125,7 +125,7 @@ const FormSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     description: z.string().min(1, 'Description is required'),
     price: z.coerce.number().min(0, 'Price must be a positive number'),
-    ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1').optional(),
+    ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1'),
     deadline: z.string().min(1, 'Deadline is required'),
     image: z.string().url('Must be a valid image URL'),
 });
@@ -147,7 +147,7 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-    const { firestore } = initializeFirebase();
+    const { firestore } = initializeFirebaseServer();
     const validatedFields = CreateRaffle.safeParse({
         name: formData.get('name'),
         description: formData.get('description'),
@@ -167,8 +167,6 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     try {
         await apiCreateRaffle(firestore, {
             ...validatedFields.data,
-            // @ts-ignore
-            ticketCount: validatedFields.data.ticketCount,
             deadline: new Date(validatedFields.data.deadline).toISOString(),
         });
     } catch (e) {
@@ -183,7 +181,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function updateRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-    const { firestore } = initializeFirebase();
+    const { firestore } = initializeFirebaseServer();
     const validatedFields = UpdateRaffle.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
@@ -221,7 +219,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function deleteRaffleAction(formData: FormData) {
-  const { firestore } = initializeFirebase();
+  const { firestore } = initializeFirebaseServer();
   const id = formData.get('id');
   if (typeof id !== 'string') {
     // Handle error: ID is not a string

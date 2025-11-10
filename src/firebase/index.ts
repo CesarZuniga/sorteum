@@ -2,37 +2,36 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { Auth, getAuth } from 'firebase/auth';
+import { Firestore, getFirestore } from 'firebase/firestore';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+// This is the client-side initialization function
 export function initializeFirebase() {
-  if (!getApps().length) {
-    // Important! initializeApp() is called without any arguments because Firebase App Hosting
-    // integrates with the initializeApp() function to provide the environment variables needed to
-    // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
-    // without arguments.
-    let firebaseApp;
-    try {
-      // Attempt to initialize via Firebase App Hosting environment variables
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Only warn in production because it's normal to use the firebaseConfig to initialize
-      // during development
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
+  if (typeof window !== 'undefined') {
+    if (!getApps().length) {
+      let firebaseApp;
+      try {
+        // Attempt automatic initialization if config is available via SDK
+        firebaseApp = initializeApp({});
+      } catch (e) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn('Automatic initialization failed. Falling back to firebaseConfig object.', e);
+        }
+        // Fallback to explicit config if automatic fails
+        firebaseApp = initializeApp(firebaseConfig);
       }
-      firebaseApp = initializeApp(firebaseConfig);
+      return getSdks(firebaseApp);
     }
-
-    return getSdks(firebaseApp);
+    // If apps are already initialized, get the default app
+    return getSdks(getApp());
   }
-
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+  // This case should ideally not be hit on the client.
+  // If it is, it means server-side code is trying to call a client function.
+  throw new Error("Firebase cannot be initialized on the server via this function.");
 }
 
-export function getSdks(firebaseApp: FirebaseApp) {
+
+export function getSdks(firebaseApp: FirebaseApp): { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore; } {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
