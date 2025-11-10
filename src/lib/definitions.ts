@@ -1,3 +1,4 @@
+
 export type Ticket = {
   id: string;
   raffleId: string;
@@ -13,6 +14,7 @@ export type Ticket = {
 
 export type Raffle = {
   id: string;
+  adminId: string; // Keep adminId for ownership logic
   name: string;
   description: string;
   image: string;
@@ -20,5 +22,5 @@ export type Raffle = {
   ticketCount: number;
   deadline: string; // ISO date string
   active: boolean;
-  tickets: Ticket[];
+  tickets?: Ticket[]; // Make optional as it's a subcollection
 };

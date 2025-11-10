@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { updateTicketStatus } from '@/lib/data';
+import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
 import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock } from 'lucide-react';
@@ -14,9 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, orderBy, query } from 'firebase/firestore';
-
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -47,27 +44,41 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 };
 
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
-  const firestore = useFirestore();
+  const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
+  const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
   const { toast } = useToast();
 
-  const raffleRef = useMemoFirebase(() => (firestore ? doc(firestore, 'raffles', params.id) : null), [firestore, params.id]);
-  const { data: raffle, isLoading: isRaffleLoading } = useDoc<Raffle>(raffleRef);
+  useEffect(() => {
+    async function loadData() {
+        const [raffleData, ticketsData] = await Promise.all([
+            getRaffleById(params.id),
+            getTicketsByRaffleId(params.id)
+        ]);
+        setRaffle(raffleData);
+        setTickets(ticketsData.sort((a,b) => a.number - b.number));
+    }
+    loadData();
+  }, [params.id]);
 
-  const ticketsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'raffles', params.id, 'tickets'), orderBy('number')) : null), [firestore, params.id]);
-  const { data: tickets, isLoading: areTicketsLoading } = useCollection<Ticket>(ticketsQuery);
 
-
-  if (isRaffleLoading || areTicketsLoading) {
+  if (raffle === undefined || tickets === null) {
     return <div>Loading...</div>;
   }
 
   if (!raffle) {
     notFound();
   }
+  
+  const refreshTickets = async () => {
+    const ticketsData = await getTicketsByRaffleId(params.id);
+    setTickets(ticketsData.sort((a,b) => a.number - b.number));
+  }
+
 
   const handleSelectTicket = (ticket: Ticket) => {
     if (suggestedTickets.find(st => st.id === ticket.id)) {
@@ -112,7 +123,6 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
 
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
     if (selectedTickets.length === 0) {
       toast({ title: 'No tickets selected', description: 'Please select one or more tickets.', variant: 'destructive' });
       return;
@@ -123,11 +133,12 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     }
 
     const promises = selectedTickets.map(ticket => {
-      return updateTicketStatus(firestore, raffle.id, ticket.number, 'reserved', buyerInfo);
+      return updateTicketStatus(raffle.id, ticket.number, 'reserved', buyerInfo);
     });
     
     await Promise.all(promises);
 
+    await refreshTickets();
 
     setSelectedTickets([]);
     setSuggestedTickets([]);

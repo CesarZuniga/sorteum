@@ -1,22 +1,34 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Activity } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, collectionGroup } from 'firebase/firestore';
+import { getRaffles, getTicketsByRaffleId } from '@/lib/data';
 
 export function DashboardMetrics() {
-  const firestore = useFirestore();
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [allTickets, setAllTickets] = useState<TicketType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const rafflesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'raffles') : null), [firestore]);
-  const { data: raffles, isLoading: isLoadingRaffles } = useCollection<Raffle>(rafflesQuery);
-  
-  const paidTicketsQuery = useMemoFirebase(() => (firestore ? query(collectionGroup(firestore, 'tickets'), where('status', '==', 'paid')) : null), [firestore]);
-  const { data: paidTickets, isLoading: isLoadingTickets } = useCollection<TicketType>(paidTicketsQuery);
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      const rafflesData = await getRaffles();
+      setRaffles(rafflesData);
+
+      const ticketsPromises = rafflesData.map(r => getTicketsByRaffleId(r.id));
+      const ticketsArrays = await Promise.all(ticketsPromises);
+      setAllTickets(ticketsArrays.flat());
+      
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  const paidTickets = useMemo(() => allTickets.filter(t => t.status === 'paid'), [allTickets]);
 
   const totalRevenue = useMemo(() => {
     if (!paidTickets || !raffles) return 0;
@@ -36,9 +48,9 @@ export function DashboardMetrics() {
   }, [raffles]);
 
   const metrics = [
-    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoadingRaffles || isLoadingTickets },
-    { title: 'Active Raffles', value: activeRaffles, icon: Activity, loading: isLoadingRaffles },
-    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket, loading: isLoadingTickets },
+    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },
+    { title: 'Active Raffles', value: activeRaffles, icon: Activity, loading: isLoading },
+    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket, loading: isLoading },
   ];
 
   return (

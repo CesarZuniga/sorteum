@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,14 +22,24 @@ import {
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { deleteRaffleAction } from '@/lib/actions';
 import { ButtonWithConfirmation } from '@/components/ui/button-with-confirmation';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { getRaffles, getTicketsByRaffleId } from '@/lib/data';
 
 
 function RaffleRow({raffle}: {raffle: Raffle}) {
-  const firestore = useFirestore();
-  const soldTicketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '!=', 'available')) : null, [firestore, raffle.id]);
-  const { data: soldTickets, isLoading } = useCollection<TicketType>(soldTicketsQuery);
+  const [soldTicketsCount, setSoldTicketsCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTickets() {
+      setIsLoading(true);
+      const tickets = await getTicketsByRaffleId(raffle.id);
+      const sold = tickets.filter(t => t.status !== 'available').length;
+      setSoldTicketsCount(sold);
+      setIsLoading(false);
+    }
+    loadTickets();
+  }, [raffle.id]);
+
 
   return (
       <TableRow key={raffle.id}>
@@ -41,7 +52,7 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
           </Badge>
         </TableCell>
         <TableCell>{formatCurrency(raffle.price)}</TableCell>
-        <TableCell>{isLoading ? '...' : soldTickets?.length} / {raffle.ticketCount}</TableCell>
+        <TableCell>{isLoading ? '...' : soldTicketsCount} / {raffle.ticketCount}</TableCell>
         <TableCell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -87,9 +98,18 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
 }
 
 export default function RafflesPage() {
-  const firestore = useFirestore();
-  const rafflesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'raffles') : null, [firestore]);
-  const { data: raffles, isLoading } = useCollection<Raffle>(rafflesQuery);
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      const data = await getRaffles();
+      setRaffles(data);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   return (
     <div className="space-y-6">

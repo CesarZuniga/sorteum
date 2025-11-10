@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import type { Raffle } from '@/lib/definitions';
 import { TicketsTable } from '@/components/admin/tickets-table';
@@ -11,17 +11,22 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { getRaffleById } from '@/lib/data';
 
 export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
-  const firestore = useFirestore();
-  const raffleRef = useMemoFirebase(() => firestore ? doc(firestore, 'raffles', params.id) : null, [firestore, params.id]);
-  const { data: raffle, isLoading } = useDoc<Raffle>(raffleRef);
-  
+  const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [winnerCount, setWinnerCount] = useState(1);
 
-  if (isLoading) {
+  useEffect(() => {
+    async function loadRaffle() {
+      const raffleData = await getRaffleById(params.id);
+      setRaffle(raffleData);
+    }
+    loadRaffle();
+  }, [params.id]);
+
+
+  if (raffle === undefined) {
     return <div>Loading...</div>;
   }
 

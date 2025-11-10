@@ -3,32 +3,31 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { Raffle } from '@/lib/definitions';
+import type { Raffle, Ticket } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
-import { Ticket } from 'lucide-react';
+import { Ticket as TicketIcon } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { getTicketsByRaffleId } from '@/lib/data';
+
 
 type RaffleCardProps = {
   raffle: Raffle;
 };
 
 export function RaffleCard({ raffle }: RaffleCardProps) {
-  const firestore = useFirestore();
+  const [soldTicketsCount, setSoldTicketsCount] = useState(0);
 
-  const ticketsQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '!=', 'available'))
-        : null,
-    [firestore, raffle.id]
-  );
-  const { data: soldTickets } = useCollection(ticketsQuery);
+  useEffect(() => {
+    async function loadTickets() {
+        const tickets = await getTicketsByRaffleId(raffle.id);
+        setSoldTicketsCount(tickets.filter(t => t.status !== 'available').length);
+    }
+    loadTickets();
+  }, [raffle.id]);
   
-  const soldTicketsCount = soldTickets?.length || 0;
   const progress = soldTicketsCount > 0 ? (soldTicketsCount / raffle.ticketCount) * 100 : 0;
   const placeholder = PlaceHolderImages.find(p => p.imageUrl === raffle.image);
 
@@ -56,7 +55,7 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
             <div className="flex items-center justify-between mb-1">
                 <span className="font-medium text-primary">{formatCurrency(raffle.price)}</span>
                 <div className="flex items-center gap-1">
-                    <Ticket className="h-4 w-4" />
+                    <TicketIcon className="h-4 w-4" />
                     <span>{soldTicketsCount} / {raffle.ticketCount}</span>
                 </div>
             </div>

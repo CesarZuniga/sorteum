@@ -1,17 +1,16 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { RaffleCard } from '@/components/raffle-card';
 import type { Raffle } from '@/lib/definitions';
+import { getRaffles } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
 
 
 function SecurePayments() {
@@ -117,15 +116,19 @@ function SiteFooter() {
 }
 
 export default function Home() {
-  const firestore = useFirestore();
-  const activeRafflesQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(collection(firestore, 'raffles'), where('active', '==', true))
-        : null,
-    [firestore]
-  );
-  const { data: raffles, isLoading } = useCollection<Raffle>(activeRafflesQuery);
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      const allRaffles = await getRaffles();
+      const activeRaffles = allRaffles.filter(r => r.active);
+      setRaffles(activeRaffles);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   return (
     <>
