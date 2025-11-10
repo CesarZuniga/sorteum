@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RaffleMetrics } from '@/components/admin/raffle-metrics';
 
 export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
   const raffle = getRaffleById(params.id);
@@ -26,6 +27,8 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
         <h1 className="text-3xl font-bold tracking-tight font-headline">{raffle.name}</h1>
         <p className="text-muted-foreground">{raffle.description}</p>
       </div>
+
+      <RaffleMetrics raffle={raffle} />
 
       <Tabs defaultValue="tickets">
         <TabsList className="grid w-full grid-cols-2">
