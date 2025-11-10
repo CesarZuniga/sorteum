@@ -1,21 +1,16 @@
-import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
+
+'use client';
+import type { Raffle } from '@/lib/definitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Clock, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useMemo } from 'react';
 
 export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
-  const firestore = useFirestore();
-  const ticketsCollection = useMemoFirebase(() => collection(firestore, 'raffles', raffle.id, 'tickets'), [firestore, raffle.id]);
-
-  const { data: tickets, isLoading } = useCollection<TicketType>(ticketsCollection);
-  
-  const paidTickets = tickets ? tickets.filter(t => t.status === 'paid').length : 0;
-  const reservedTickets = tickets ? tickets.filter(t => t.status === 'reserved').length : 0;
-
-  const availableTickets = tickets ? raffle.ticketCount - paidTickets - reservedTickets : raffle.ticketCount;
+  const paidTickets = useMemo(() => raffle.tickets.filter(t => t.status === 'paid').length, [raffle.tickets]);
+  const reservedTickets = useMemo(() => raffle.tickets.filter(t => t.status === 'reserved').length, [raffle.tickets]);
+  const availableTickets = useMemo(() => raffle.ticketCount - paidTickets - reservedTickets, [raffle.ticketCount, paidTickets, reservedTickets]);
   
   const soldTickets = paidTickets + reservedTickets;
   const totalRevenue = paidTickets * raffle.price;
@@ -37,10 +32,10 @@ export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
             </CardHeader>
             <CardContent>
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted-foreground text-sm">{isLoading ? '...' : soldTickets} de {raffle.ticketCount} boletos vendidos</span>
-                    <span className="font-bold text-lg">{isLoading ? '...' : salesProgress.toFixed(0)}%</span>
+                    <span className="text-muted-foreground text-sm">{soldTickets} de {raffle.ticketCount} boletos vendidos</span>
+                    <span className="font-bold text-lg">{salesProgress.toFixed(0)}%</span>
                 </div>
-                <Progress value={isLoading ? 0 : salesProgress} />
+                <Progress value={salesProgress} />
                  <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
                     <span>{formatCurrency(totalRevenue)}</span>
                     <span>{formatCurrency(potentialRevenue)}</span>
@@ -55,7 +50,7 @@ export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
                 <metric.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? '...' : metric.value}</div>
+                <div className="text-2xl font-bold">{metric.value}</div>
             </CardContent>
             </Card>
         ))}

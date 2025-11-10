@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,57 +9,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // If user is already logged in, redirect to admin page.
-    // We also wait until the user loading is finished.
-    if (!isUserLoading && user) {
-      router.push('/admin');
-    }
-  }, [user, isUserLoading, router]);
-
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
-      router.push('/admin');
-    } catch (error: any) {
-      toast({
-        title: 'Login Failed',
-        description: error.message || 'Invalid email or password.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Simulate authentication
+    setTimeout(() => {
+      if (email === 'admin@sorteum.com' && password === 'password') {
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome back!',
+        });
+        router.push('/admin');
+      } else {
+        toast({
+          title: 'Login Failed',
+          description: 'Invalid email or password.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+      }
+    }, 1000);
   };
-
-  if (isUserLoading || user) {
-    return (
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
-            <p>Loading...</p>
-        </div>
-    );
-  }
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">

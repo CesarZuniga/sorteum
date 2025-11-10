@@ -1,3 +1,4 @@
+
 import { DashboardMetrics } from '@/components/admin/dashboard-metrics';
 
 export default function AdminDashboardPage() {

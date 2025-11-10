@@ -2,106 +2,125 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import type { Ticket, Raffle } from '@/lib/definitions';
-import { Ticket as TicketIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { getRaffles } from '@/lib/data';
+import { formatCurrency } from '@/lib/utils';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TicketStatusDisplay, TicketStatus } from '@/components/ticket-status-display';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import type { Raffle } from '@/lib/definitions';
+import { deleteRaffleAction } from '@/lib/actions';
+import { ButtonWithConfirmation } from '@/components/ui/button-with-confirmation';
 
+export default function RafflesPage() {
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
 
-export default function CheckStatusPage() {
-  const [ticketNumber, setTicketNumber] = useState('');
-  const [selectedRaffleId, setSelectedRaffleId] = useState('');
-  const [searchResult, setSearchResult] = useState<TicketStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const firestore = useFirestore();
-  
-  const activeRafflesQuery = useMemoFirebase(() => query(collection(firestore, 'raffles'), where('active', '==', true)), [firestore]);
-  const { data: raffles } = useCollection<Raffle>(activeRafflesQuery);
-
-  const ticketsCollectionRef = useMemoFirebase(() => selectedRaffleId ? collection(firestore, `raffles/${selectedRaffleId}/tickets`) : undefined, [firestore, selectedRaffleId]);
-  const { data: ticketsForSelectedRaffle } = useCollection<Ticket>(ticketsCollectionRef);
-
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticketsForSelectedRaffle) return;
-
-    setIsLoading(true);
-    setSearchResult(null);
-
-    const raffle = raffles?.find(r => r.id === selectedRaffleId);
-    const foundTicket = ticketsForSelectedRaffle.find(t => t.number === parseInt(ticketNumber, 10));
-    
-    setTimeout(() => {
-      if (foundTicket && raffle) {
-        setSearchResult({
-          status: foundTicket.status,
-          ticket: foundTicket,
-          raffle: raffle,
-        });
-      } else {
-        setSearchResult({ status: 'not-found' });
-      }
-      setIsLoading(false);
-    }, 500); 
-  };
+  useEffect(() => {
+    setRaffles(getRaffles());
+  }, []);
 
   return (
-    <div className="container mx-auto px-4 py-12 flex justify-center">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center text-center">
-            <div className="flex items-center justify-center h-16 w-16 bg-primary/10 rounded-full mb-6">
-                <TicketIcon className="h-8 w-8 text-primary" />
-            </div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">Consulta el Estado de tu Boleto</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">Raffles</h1>
+          <p className="text-muted-foreground">Manage all your raffles here.</p>
         </div>
-
-        <form onSubmit={handleSearch} className="mt-8 space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="raffle">Selecciona la Rifa</Label>
-            <Select onValueChange={setSelectedRaffleId} value={selectedRaffleId} required>
-                <SelectTrigger id="raffle">
-                    <SelectValue placeholder="Elige una rifa..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {raffles?.map(raffle => (
-                        <SelectItem key={raffle.id} value={raffle.id}>
-                            {raffle.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ticketNumber">Ingresa tu número de boleto</Label>
-            <Input
-              id="ticketNumber"
-              type="number"
-              value={ticketNumber}
-              onChange={(e) => setTicketNumber(e.target.value)}
-              placeholder="Ej: 0123"
-              required
-              disabled={!selectedRaffleId}
-            />
-          </div>
-          <Button type="submit" className="w-full" size="lg" disabled={isLoading || !selectedRaffleId || !ticketNumber}>
-            {isLoading ? 'Consultando...' : 'Consultar Estado'}
-          </Button>
-        </form>
-
-        {searchResult && <TicketStatusDisplay result={searchResult} />}
-
-        <div className="text-center mt-8">
-            <Link href="/#faq" className="text-sm text-muted-foreground underline">
-                ¿Tienes dudas? Lee nuestras Preguntas Frecuentes
-            </Link>
-        </div>
+        <Button asChild>
+          <Link href="/admin/raffles/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Raffle
+          </Link>
+        </Button>
       </div>
+
+      <Card>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Tickets Sold</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {raffles.map((raffle) => {
+                const sold = raffle.tickets.filter(t => t.status !== 'available').length;
+                return (
+                  <TableRow key={raffle.id}>
+                    <TableCell className="font-medium">
+                        <Link href={`/admin/raffles/${raffle.id}`} className="hover:underline">{raffle.name}</Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={raffle.active ? 'default' : 'secondary'}>
+                        {raffle.active ? 'Active' : 'Ended'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatCurrency(raffle.price)}</TableCell>
+                    <TableCell>{sold} / {raffle.ticketCount}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                           <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}`}>View</Link></DropdownMenuItem>
+                          <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}/edit`}>Edit</Link></DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                           <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the
+                                    "{raffle.name}" raffle and all associated data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <form action={deleteRaffleAction} className="flex-grow">
+                                        <input type="hidden" name="id" value={raffle.id} />
+                                        <ButtonWithConfirmation
+                                            variant="destructive"
+                                            confirmationText="Delete"
+                                            cancelText="Cancel"
+                                        />
+                                    </form>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

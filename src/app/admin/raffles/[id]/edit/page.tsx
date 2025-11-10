@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useActionState } from 'react';
@@ -17,7 +18,6 @@ import { getRaffleById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import {format} from 'date-fns/format'
 import type { Raffle } from '@/lib/definitions';
-import { useFirestore } from '@/firebase';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -31,28 +31,19 @@ function SubmitButton() {
 
 export default function EditRafflePage({ params }: { params: { id: string } }) {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
-  const [loading, setLoading] = useState(true);
   const initialState = { message: undefined, errors: {} };
   const [state, dispatch] = useActionState(updateRaffleAction, initialState);
-  const firestore = useFirestore();
 
   useEffect(() => {
-    const fetchRaffle = async () => {
-        const raffleData = await getRaffleById(firestore, params.id);
-        if (raffleData) {
-            setRaffle(raffleData as Raffle);
-        }
-        setLoading(false);
-    };
-    fetchRaffle();
-  }, [params.id, firestore]);
+    const raffleData = getRaffleById(params.id);
+    if (raffleData) {
+      setRaffle(raffleData);
+    }
+  }, [params.id]);
 
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   if (!raffle) {
+    if(raffle === null) return <div>Loading...</div>;
     notFound();
   }
   
@@ -69,7 +60,6 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
 
       <form action={dispatch}>
         <input type="hidden" name="id" value={raffle.id} />
-         <input type="hidden" name="currentImage" value={raffle.image} />
         <Card>
           <CardHeader>
             <CardTitle>Edit Raffle</CardTitle>
@@ -104,12 +94,11 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Raffle Image</Label>
-              <div className="flex items-center gap-4">
-                <Image src={raffle.image} alt={raffle.name} width={80} height={80} className="rounded-md object-cover" />
-                <Input id="image" name="image" type="file" />
-              </div>
-              <p className="text-xs text-muted-foreground">Upload a new image to replace the current one. Leave blank to keep the existing image.</p>
+              <Label htmlFor="image">Image URL</Label>
+               <div className="flex items-center gap-4">
+                    <Image src={raffle.image} alt={raffle.name} width={80} height={80} className="rounded-md object-cover" />
+                    <Input id="image" name="image" type="url" defaultValue={raffle.image} />
+                </div>
               {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
             </div>
 
@@ -128,8 +117,3 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
           </CardFooter>
         </Card>
       </form>
-    </div>
-  );
-}
-
-    

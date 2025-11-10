@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -12,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -71,8 +73,8 @@ export default function NewRafflePage() {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Raffle Image</Label>
-              <Input id="image" name="image" type="file" required />
+              <Label htmlFor="image">Image URL</Label>
+              <Input id="image" name="image" type="url" placeholder="https://example.com/image.png" defaultValue={PlaceHolderImages[0].imageUrl} />
               {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
             </div>
 
@@ -86,13 +88,4 @@ export default function NewRafflePage() {
 
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button variant="ghost" asChild><Link href="/admin/raffles">Cancel</Link></Button>
-            <SubmitButton />
-          </CardFooter>
-        </Card>
-      </form>
-    </div>
-  );
-}
-
-    
+            <Button variant="ghost" asChild><Link href="/admin/raffles">Cancel</Link></Button

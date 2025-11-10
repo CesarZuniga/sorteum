@@ -1,16 +1,16 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { RaffleCard } from '@/components/raffle-card';
 import type { Raffle } from '@/lib/definitions';
+import { getRaffles } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
 
 
 function SecurePayments() {
@@ -115,15 +115,12 @@ function SiteFooter() {
     );
 }
 
-
 export default function Home() {
-  const firestore = useFirestore();
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
 
-  const rafflesQuery = useMemoFirebase(() => {
-    return query(collection(firestore, 'raffles'), where('active', '==', true));
-  }, [firestore]);
-
-  const { data: raffles, isLoading } = useCollection<Raffle>(rafflesQuery);
+  useEffect(() => {
+    setRaffles(getRaffles().filter(r => r.active));
+  }, []);
 
   return (
     <>
@@ -163,8 +160,7 @@ export default function Home() {
                       </p>
                   </header>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {isLoading && <p>Loading raffles...</p>}
-                  {raffles && raffles.map((raffle) => (
+                  {raffles.map((raffle) => (
                       <RaffleCard key={raffle.id} raffle={raffle} />
                   ))}
                   </div>
