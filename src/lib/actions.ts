@@ -9,7 +9,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDoc, getDocs, doc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth/server';
+import { getAuth } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 
 // Helper function to initialize Firebase on the server
