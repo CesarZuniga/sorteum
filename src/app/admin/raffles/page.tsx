@@ -1,12 +1,11 @@
+
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { getRaffles } from '@/lib/data';
-import type { Raffle } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -26,7 +25,7 @@ import { deleteRaffleAction } from '@/lib/actions';
 
 
 export default function RafflesPage() {
-  const [raffles, setRaffles] = useState<Raffle[]>(getRaffles());
+  const raffles = getRaffles();
 
   return (
     <div className="space-y-6">
