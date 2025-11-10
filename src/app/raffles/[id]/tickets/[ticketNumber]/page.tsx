@@ -1,31 +1,44 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { TicketStatusDisplay, TicketStatus } from '@/components/ticket-status-display';
 import { Ticket as TicketIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
-import { getRaffleById } from '@/lib/data';
 import type { Raffle, Ticket } from '@/lib/definitions';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where, getDocs } from 'firebase/firestore';
+
 
 export default function TicketStatusPage({ params }: { params: { id: string, ticketNumber: string } }) {
   const [result, setResult] = useState<TicketStatus | null>(null);
+  const firestore = useFirestore();
+
+  const raffleRef = useMemoFirebase(() => firestore ? doc(firestore, 'raffles', params.id) : null, [firestore, params.id]);
+  const {data: raffle, isLoading: isRaffleLoading} = useDoc<Raffle>(raffleRef);
 
   useEffect(() => {
-    const raffle = getRaffleById(params.id);
+    if (!firestore || !raffle) return;
+
     const ticketNum = parseInt(params.ticketNumber, 10);
-    const ticket = raffle?.tickets.find(t => t.number === ticketNum);
+    const ticketsQuery = query(collection(firestore, 'raffles', params.id, 'tickets'), where('number', '==', ticketNum));
 
-    if (ticket && raffle) {
-        setResult({ status: ticket.status, ticket, raffle });
-    } else {
-        setResult({ status: 'not-found', raffle: raffle });
-    }
-  }, [params.id, params.ticketNumber]);
+    getDocs(ticketsQuery).then(snapshot => {
+        if (snapshot.empty) {
+            setResult({ status: 'not-found', raffle: raffle });
+        } else {
+            const ticketDoc = snapshot.docs[0];
+            const ticket = { id: ticketDoc.id, ...ticketDoc.data() } as Ticket;
+            setResult({ status: ticket.status, ticket, raffle });
+        }
+    });
 
-  if (!result) {
+  }, [firestore, raffle, params.id, params.ticketNumber]);
+
+
+  if (!result || isRaffleLoading) {
       return (
         <div className="container mx-auto px-4 py-12 flex justify-center">
             <div className="w-full max-w-md text-center">

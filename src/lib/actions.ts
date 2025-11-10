@@ -4,9 +4,11 @@
 import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOutput } from '@/ai/flows/choose-lottery-winners-with-gen-ai';
 import { sendLotteryResults, SendLotteryResultsInput } from '@/ai/flows/automated-lottery-result-notifications';
 import { z } from 'zod';
-import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { initializeFirebaseServer } from '@/firebase/server';
+import { collection, getDoc, getDocs, doc } from 'firebase/firestore';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -25,6 +27,7 @@ export async function drawWinnerAction(
   formData: FormData
 ): Promise<DrawWinnerState> {
   try {
+    const { firestore } = await initializeFirebaseServer();
     const validatedFields = drawWinnerSchema.safeParse({
       raffleId: formData.get('raffleId'),
       criteria: formData.get('criteria'),
@@ -36,13 +39,15 @@ export async function drawWinnerAction(
     }
 
     const { raffleId, criteria, winnerCount } = validatedFields.data;
-    const raffle = getRaffleById(raffleId);
+    const raffleDoc = await getDoc(doc(firestore, "raffles", raffleId));
 
-    if (!raffle) {
+    if (!raffleDoc.exists()) {
       return { success: false, error: 'Raffle not found.' };
     }
+    const raffle = {id: raffleDoc.id, ...raffleDoc.data()};
 
-    const ticketNumbers = raffle.tickets.map((t) => t.number);
+    const ticketsSnapshot = await getDocs(collection(firestore, 'raffles', raffleId, 'tickets'));
+    const ticketNumbers = ticketsSnapshot.docs.map(doc => doc.data().number as number);
 
     const aiInput: ChooseLotteryWinnersInput = {
       raffleName: raffle.name,
@@ -75,6 +80,7 @@ export async function notifyWinnersAction(
     formData: FormData,
 ): Promise<NotifyState> {
     try {
+        const { firestore } = await initializeFirebaseServer();
         const validatedFields = notifyWinnersSchema.safeParse({
             raffleId: formData.get('raffleId'),
             winningNumbers: formData.get('winningNumbers'),
@@ -85,16 +91,18 @@ export async function notifyWinnersAction(
         }
 
         const { raffleId, winningNumbers } = validatedFields.data;
-        const raffle = getRaffleById(raffleId);
-        if (!raffle) {
+        const raffleDoc = await getDoc(doc(firestore, "raffles", raffleId));
+        if (!raffleDoc.exists()) {
             return { success: false, error: "Raffle not found." };
         }
-
+        const raffle = {id: raffleDoc.id, ...raffleDoc.data()};
+        
+        const ticketsSnapshot = await getDocs(collection(firestore, 'raffles', raffleId, 'tickets'));
         const participantPhoneNumbers = [
             ...new Set(
-                raffle.tickets
-                .filter(t => t.buyerPhone)
-                .map(t => t.buyerPhone!)
+                ticketsSnapshot.docs
+                .map(doc => doc.data().buyerPhone)
+                .filter(phone => !!phone) as string[]
             )
         ];
 
@@ -145,6 +153,7 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
+    const { firestore } = await initializeFirebaseServer();
     const validatedFields = CreateRaffle.safeParse({
         name: formData.get('name'),
         description: formData.get('description'),
@@ -164,7 +173,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     const raffleData = validatedFields.data;
 
     try {
-        apiCreateRaffle({
+        await apiCreateRaffle(firestore, {
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
         });
@@ -180,6 +189,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function updateRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
+    const { firestore } = await initializeFirebaseServer();
     const validatedFields = UpdateRaffle.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
@@ -204,7 +214,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
 
 
     try {
-        apiUpdateRaffle(id, {
+        await apiUpdateRaffle(firestore, id, {
             ...dataToUpdate,
             deadline: new Date(dataToUpdate.deadline).toISOString(),
         });
@@ -219,6 +229,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function deleteRaffleAction(formData: FormData) {
+  const { firestore } = await initializeFirebaseServer();
   const id = formData.get('id');
   if (typeof id !== 'string') {
     // Handle error: ID is not a string
@@ -226,7 +237,7 @@ export async function deleteRaffleAction(formData: FormData) {
   }
   
   try {
-    apiDeleteRaffle(id);
+    await apiDeleteRaffle(firestore, id);
   } catch (e) {
     // Handle database error
     return;

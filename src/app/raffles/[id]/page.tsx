@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getRaffleById, updateTicketStatus } from '@/lib/data';
+import { updateTicketStatus } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
 import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock } from 'lucide-react';
@@ -14,6 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, orderBy, query } from 'firebase/firestore';
+
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -44,25 +47,25 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 };
 
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
-  const [raffle, setRaffle] = useState<Raffle | null>(null);
+  const firestore = useFirestore();
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const raffleData = getRaffleById(params.id);
-    if (raffleData) {
-      setRaffle(raffleData);
-    }
-  }, [params.id]);
+  const raffleRef = useMemoFirebase(() => (firestore ? doc(firestore, 'raffles', params.id) : null), [firestore, params.id]);
+  const { data: raffle, isLoading: isRaffleLoading } = useDoc<Raffle>(raffleRef);
 
-  const tickets = useMemo(() => raffle?.tickets || [], [raffle]);
+  const ticketsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'raffles', params.id, 'tickets'), orderBy('number')) : null), [firestore, params.id]);
+  const { data: tickets, isLoading: areTicketsLoading } = useCollection<Ticket>(ticketsQuery);
+
+
+  if (isRaffleLoading || areTicketsLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!raffle) {
-    // Wait for the raffle to load in case of slow data fetching
-    if (raffle === null) return <div>Loading...</div>;
     notFound();
   }
 
@@ -79,6 +82,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   };
 
   const handleRandomSelect = () => {
+    if (!tickets) return;
     const availableTickets = tickets.filter(
       (t) => t.status === 'available' && !selectedTickets.find(st => st.id === t.id)
     );
@@ -106,8 +110,9 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     setSuggestedTickets([]);
   };
 
-  const handleReserve = (e: React.FormEvent) => {
+  const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore) return;
     if (selectedTickets.length === 0) {
       toast({ title: 'No tickets selected', description: 'Please select one or more tickets.', variant: 'destructive' });
       return;
@@ -117,14 +122,13 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
       return;
     }
 
-    selectedTickets.forEach(ticket => {
-      updateTicketStatus(raffle.id, ticket.number, 'reserved', buyerInfo);
+    const promises = selectedTickets.map(ticket => {
+      return updateTicketStatus(firestore, raffle.id, ticket.number, 'reserved', buyerInfo);
     });
+    
+    await Promise.all(promises);
 
-    const updatedRaffle = getRaffleById(raffle.id);
-    if(updatedRaffle) {
-      setRaffle(updatedRaffle);
-    }
+
     setSelectedTickets([]);
     setSuggestedTickets([]);
     setBuyerInfo({ name: '', email: '', phone: '' });
@@ -197,7 +201,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
               </div>
 
               <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2">
-                {tickets.map((ticket) => (
+                {tickets?.map((ticket) => (
                   <TicketItem
                     key={ticket.id}
                     ticket={ticket}

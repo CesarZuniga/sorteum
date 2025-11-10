@@ -1,35 +1,38 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Activity } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { getRaffles } from '@/lib/data';
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
 
 export function DashboardMetrics() {
-  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    setRaffles(getRaffles());
-  }, []);
+  const rafflesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'raffles') : null), [firestore]);
+  const { data: raffles } = useCollection<Raffle>(rafflesQuery);
+  
+  const paidTicketsQuery = useMemoFirebase(() => (firestore ? query(collectionGroup(firestore, 'tickets'), where('status', '==', 'paid')) : null), [firestore]);
+  const { data: paidTickets } = useCollection<TicketType>(paidTicketsQuery);
 
   const totalRevenue = useMemo(() => {
-    return raffles
-      .flatMap(raffle => raffle.tickets)
-      .filter(ticket => ticket.status === 'paid')
-      .reduce((acc, ticket) => {
+    if (!paidTickets || !raffles) return 0;
+    
+    return paidTickets.reduce((acc, ticket) => {
         const raffle = raffles.find(r => r.id === ticket.raffleId);
         return acc + (raffle?.price || 0);
       }, 0);
-  }, [raffles]);
 
-  const totalTicketsSold = useMemo(() => {
-    return raffles.flatMap(r => r.tickets).filter(t => t.status === 'paid').length;
-  }, [raffles]);
+  }, [paidTickets, raffles]);
+
+  const totalTicketsSold = paidTickets?.length ?? 0;
   
   const activeRaffles = useMemo(() => {
-    return raffles.filter(r => r.active).length;
+    if (!raffles) return 0;
+    return raffles.filter(r => new Date(r.deadline) > new Date()).length;
   }, [raffles]);
 
   const metrics = [

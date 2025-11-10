@@ -1,15 +1,26 @@
 
 'use client';
-import type { Raffle } from '@/lib/definitions';
+import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Clock, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useMemo } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+
 
 export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
-  const paidTickets = useMemo(() => raffle.tickets.filter(t => t.status === 'paid').length, [raffle.tickets]);
-  const reservedTickets = useMemo(() => raffle.tickets.filter(t => t.status === 'reserved').length, [raffle.tickets]);
+  const firestore = useFirestore();
+
+  const paidTicketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '==', 'paid')) : null, [firestore, raffle.id]);
+  const { data: paidTicketsData } = useCollection<TicketType>(paidTicketsQuery);
+  const paidTickets = paidTicketsData?.length || 0;
+  
+  const reservedTicketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '==', 'reserved')) : null, [firestore, raffle.id]);
+  const { data: reservedTicketsData } = useCollection<TicketType>(reservedTicketsQuery);
+  const reservedTickets = reservedTicketsData?.length || 0;
+
   const availableTickets = useMemo(() => raffle.ticketCount - paidTickets - reservedTickets, [raffle.ticketCount, paidTickets, reservedTickets]);
   
   const soldTickets = paidTickets + reservedTickets;

@@ -8,7 +8,7 @@ import type { Raffle, Ticket } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Clock, XCircle, RotateCcw, Trophy } from 'lucide-react';
-import { updateTicketStatus, getRaffleById } from '@/lib/data';
+import { updateTicketStatus } from '@/lib/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, orderBy, query } from 'firebase/firestore';
+
 
 const statusConfig = {
   paid: { label: 'Paid', variant: 'default', icon: CheckCircle },
@@ -29,17 +32,22 @@ const statusConfig = {
 
 interface TicketsTableProps {
     raffle: Raffle;
-    setRaffle: (raffle: Raffle) => void;
     maxWinners: number;
 }
 
-export function TicketsTable({ raffle, setRaffle, maxWinners }: TicketsTableProps) {
+export function TicketsTable({ raffle, maxWinners }: TicketsTableProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
 
-  const currentWinnerCount = raffle.tickets.filter(t => t.isWinner).length;
+  const ticketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'raffles', raffle.id, 'tickets'), orderBy('number')) : null, [firestore, raffle.id]);
+  const { data: tickets, isLoading } = useCollection<Ticket>(ticketsQuery);
+
+  const currentWinnerCount = tickets?.filter(t => t.isWinner).length || 0;
   const canMarkMoreWinners = currentWinnerCount < maxWinners;
 
   const handleUpdateStatus = (ticketNumber: number, status: 'paid' | 'available' | 'winner') => {
+    if (!firestore) return;
+
     if (status === 'winner' && !canMarkMoreWinners) {
         toast({
             title: 'Winner Limit Reached',
@@ -49,18 +57,15 @@ export function TicketsTable({ raffle, setRaffle, maxWinners }: TicketsTableProp
         return;
     }
     
-    const success = updateTicketStatus(raffle.id, ticketNumber, status);
-    if (success) {
-      toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
-      const updatedRaffle = getRaffleById(raffle.id);
-      if (updatedRaffle) {
-          setRaffle(updatedRaffle);
+    updateTicketStatus(firestore, raffle.id, ticketNumber, status).then(success => {
+      if (success) {
+        toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
+      } else {
+        toast({ title: 'Error', description: 'Could not update ticket status.', variant: 'destructive' });
       }
-    } else {
-      toast({ title: 'Error', description: 'Could not update ticket status.', variant: 'destructive' });
-    }
+    });
   };
-
+  
   return (
     <Card>
       <CardHeader>
@@ -79,7 +84,8 @@ export function TicketsTable({ raffle, setRaffle, maxWinners }: TicketsTableProp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {raffle.tickets.map((ticket) => {
+            {isLoading && <TableRow><TableCell colSpan={5}>Loading tickets...</TableCell></TableRow>}
+            {tickets?.map((ticket) => {
               const { label, variant, icon: Icon } = statusConfig[ticket.status];
               return (
                 <TableRow key={ticket.id} className={ticket.isWinner ? 'bg-yellow-100 dark:bg-yellow-900/30' : ''}>

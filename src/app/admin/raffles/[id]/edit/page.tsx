@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useActionState } from 'react';
+import { useMemo, useActionState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFormStatus } from 'react-dom';
@@ -14,10 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { getRaffleById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import {format} from 'date-fns/format'
 import type { Raffle } from '@/lib/definitions';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -30,20 +32,18 @@ function SubmitButton() {
 }
 
 export default function EditRafflePage({ params }: { params: { id: string } }) {
-  const [raffle, setRaffle] = useState<Raffle | null>(null);
+  const firestore = useFirestore();
+  const raffleRef = useMemoFirebase(() => firestore ? doc(firestore, 'raffles', params.id) : null, [firestore, params.id]);
+  const {data: raffle, isLoading} = useDoc<Raffle>(raffleRef);
+  
   const initialState = { message: undefined, errors: {} };
   const [state, dispatch] = useActionState(updateRaffleAction, initialState);
 
-  useEffect(() => {
-    const raffleData = getRaffleById(params.id);
-    if (raffleData) {
-      setRaffle(raffleData);
-    }
-  }, [params.id]);
-
-
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  
   if (!raffle) {
-    if(raffle === null) return <div>Loading...</div>;
     notFound();
   }
   
@@ -117,3 +117,6 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
           </CardFooter>
         </Card>
       </form>
+    </div>
+  );
+}

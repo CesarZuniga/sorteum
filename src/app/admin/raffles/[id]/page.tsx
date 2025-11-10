@@ -1,9 +1,9 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { notFound } from 'next/navigation';
-import { getRaffleById } from '@/lib/data';
-import type { Raffle, Ticket } from '@/lib/definitions';
+import type { Raffle } from '@/lib/definitions';
 import { TicketsTable } from '@/components/admin/tickets-table';
 import { WinnerDrawing } from '@/components/admin/winner-drawing';
 import Link from 'next/link';
@@ -11,20 +11,21 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
-  const [raffle, setRaffle] = useState<Raffle | null>(null);
+  const firestore = useFirestore();
+  const raffleRef = useMemoFirebase(() => firestore ? doc(firestore, 'raffles', params.id) : null, [firestore, params.id]);
+  const { data: raffle, isLoading } = useDoc<Raffle>(raffleRef);
+  
   const [winnerCount, setWinnerCount] = useState(1);
 
-  useEffect(() => {
-    const raffleData = getRaffleById(params.id);
-    if (raffleData) {
-      setRaffle(raffleData);
-    }
-  }, [params.id]);
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!raffle) {
-    if (raffle === null) return <div>Loading...</div>;
     notFound();
   }
 
@@ -49,7 +50,7 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
             <TabsTrigger value="draw">Draw Winners</TabsTrigger>
         </TabsList>
         <TabsContent value="tickets">
-            <TicketsTable raffle={raffle} setRaffle={setRaffle} maxWinners={winnerCount} />
+            <TicketsTable raffle={raffle} maxWinners={winnerCount} />
         </TabsContent>
         <TabsContent value="draw">
             <WinnerDrawing raffle={raffle} winnerCount={winnerCount} setWinnerCount={setWinnerCount} />

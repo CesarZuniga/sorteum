@@ -1,12 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getRaffles } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -20,16 +18,78 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import type { Raffle } from '@/lib/definitions';
+import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { deleteRaffleAction } from '@/lib/actions';
 import { ButtonWithConfirmation } from '@/components/ui/button-with-confirmation';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+
+
+function RaffleRow({raffle}: {raffle: Raffle}) {
+  const firestore = useFirestore();
+  const soldTicketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'raffles', raffle.id, 'tickets'), where('status', '!=', 'available')) : null, [firestore, raffle.id]);
+  const { data: soldTickets, isLoading } = useCollection<TicketType>(soldTicketsQuery);
+
+  return (
+      <TableRow key={raffle.id}>
+        <TableCell className="font-medium">
+            <Link href={`/admin/raffles/${raffle.id}`} className="hover:underline">{raffle.name}</Link>
+        </TableCell>
+        <TableCell>
+          <Badge variant={raffle.active ? 'default' : 'secondary'}>
+            {raffle.active ? 'Active' : 'Ended'}
+          </Badge>
+        </TableCell>
+        <TableCell>{formatCurrency(raffle.price)}</TableCell>
+        <TableCell>{isLoading ? '...' : soldTickets?.length} / {raffle.ticketCount}</TableCell>
+        <TableCell>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button aria-haspopup="true" size="icon" variant="ghost">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}`}>View</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}/edit`}>Edit</Link></DropdownMenuItem>
+              <DropdownMenuSeparator />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the
+                        "{raffle.name}" raffle and all associated data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <form action={deleteRaffleAction} className="flex-grow">
+                            <input type="hidden" name="id" value={raffle.id} />
+                            <ButtonWithConfirmation
+                                variant="destructive"
+                                confirmationText="Delete"
+                                cancelText="Cancel"
+                            />
+                        </form>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+  )
+}
 
 export default function RafflesPage() {
-  const [raffles, setRaffles] = useState<Raffle[]>([]);
-
-  useEffect(() => {
-    setRaffles(getRaffles());
-  }, []);
+  const firestore = useFirestore();
+  const rafflesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'raffles') : null, [firestore]);
+  const { data: raffles, isLoading } = useCollection<Raffle>(rafflesQuery);
 
   return (
     <div className="space-y-6">
@@ -61,63 +121,10 @@ export default function RafflesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {raffles.map((raffle) => {
-                const sold = raffle.tickets.filter(t => t.status !== 'available').length;
-                return (
-                  <TableRow key={raffle.id}>
-                    <TableCell className="font-medium">
-                        <Link href={`/admin/raffles/${raffle.id}`} className="hover:underline">{raffle.name}</Link>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={raffle.active ? 'default' : 'secondary'}>
-                        {raffle.active ? 'Active' : 'Ended'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatCurrency(raffle.price)}</TableCell>
-                    <TableCell>{sold} / {raffle.ticketCount}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}`}>View</Link></DropdownMenuItem>
-                          <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}/edit`}>Edit</Link></DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the
-                                    "{raffle.name}" raffle and all associated data.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <form action={deleteRaffleAction} className="flex-grow">
-                                        <input type="hidden" name="id" value={raffle.id} />
-                                        <ButtonWithConfirmation
-                                            variant="destructive"
-                                            confirmationText="Delete"
-                                            cancelText="Cancel"
-                                        />
-                                    </form>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+              {raffles?.map((raffle) => (
+                <RaffleRow key={raffle.id} raffle={raffle} />
+              ))}
             </TableBody>
           </Table>
         </CardContent>
