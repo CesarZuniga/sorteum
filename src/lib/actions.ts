@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { getRaffleById, createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { firestore } from './firebase-config';
+import { initializeFirebase } from '@/firebase';
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -24,6 +24,7 @@ export async function drawWinnerAction(
   prevState: DrawWinnerState,
   formData: FormData
 ): Promise<DrawWinnerState> {
+  const { firestore } = initializeFirebase();
   try {
     const validatedFields = drawWinnerSchema.safeParse({
       raffleId: formData.get('raffleId'),
@@ -74,6 +75,7 @@ export async function notifyWinnersAction(
     prevState: NotifyState,
     formData: FormData,
 ): Promise<NotifyState> {
+    const { firestore } = initializeFirebase();
     try {
         const validatedFields = notifyWinnersSchema.safeParse({
             raffleId: formData.get('raffleId'),
@@ -145,6 +147,7 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
+    const { firestore } = initializeFirebase();
     const validatedFields = CreateRaffle.safeParse({
         name: formData.get('name'),
         description: formData.get('description'),
@@ -180,6 +183,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function updateRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
+    const { firestore } = initializeFirebase();
     const validatedFields = UpdateRaffle.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
@@ -217,6 +221,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
 
 
 export async function deleteRaffleAction(formData: FormData) {
+  const { firestore } = initializeFirebase();
   const id = formData.get('id');
   if (typeof id !== 'string') {
     // Handle error: ID is not a string

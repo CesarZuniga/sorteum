@@ -14,7 +14,6 @@ import {
   Firestore,
 } from 'firebase/firestore';
 import type { Raffle, Ticket } from './definitions';
-// import { firestore } from './firebase-config'; // Assuming you have this config
 
 // Configuration for reservation time in minutes
 const RESERVATION_DURATION_MINUTES = 15;
@@ -180,9 +179,14 @@ export const updateTicketStatus = async (
 };
 
 export const deleteRaffle = async (db: Firestore, id: string): Promise<boolean> => {
-    // Note: Deleting a document does not delete its subcollections.
-    // For a production app, a Cloud Function would be needed to clean up tickets.
-    // For this project, we'll just delete the raffle document.
+    const ticketsRef = getTicketsCollection(db, id);
+    const ticketsSnapshot = await getDocs(ticketsRef);
+    const batch = writeBatch(db);
+    ticketsSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+
     await deleteDoc(getRaffleDoc(db, id));
     return true;
 };
