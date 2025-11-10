@@ -1,0 +1,87 @@
+/**
+ * @fileOverview Firestore Security Rules for Sorteum Digital.
+ *
+ * Core Philosophy:
+ * This ruleset implements a role-based access control model, with specific rules for admins and general users.
+ * Admins, identified by their presence in the `roles_admin` collection, have full CRUD access to raffles.
+ * Users can read raffles and create tickets, but other operations are restricted.
+ *
+ * Data Structure:
+ * - `/raffles/{raffleId}`: Stores raffle information.
+ * - `/raffles/{raffleId}/tickets/{ticketId}`: Stores tickets for each raffle.
+ * - `/roles_admin/{uid}`: Indicates admin privileges.
+ *
+ * Key Security Decisions:
+ * - Raffle management (create, update, delete) is restricted to admins.
+ * - Users can only create tickets under a specific raffle.
+ * - No public listing of tickets is allowed.
+ *
+ * Denormalization for Authorization:
+ * - The `Ticket` entity includes a `raffleId` to allow direct authorization checks without needing to traverse the data hierarchy.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows admins to create, read, update, and delete raffles. Users can read raffle information.
+     * @path /raffles/{raffleId}
+     * @allow (read) if true
+     * @allow (create, update, delete) if isAdmin()
+     * @deny (create) if !isAdmin()
+     * @principle Enforces admin-only access for modifying raffle data.
+     */
+    match /raffles/{raffleId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Allows users to create tickets for a specific raffle. Admins can manage ticket status.
+     * @path /raffles/{raffleId}/tickets/{ticketId}
+     * @allow (create) if isSignedIn() && request.resource.data.raffleId == raffleId;
+     * @deny (create) if !isSignedIn()
+     * @deny (create) if request.resource.data.raffleId != raffleId
+     * @allow (read) if false;
+     * @allow (update, delete) if isAdmin()
+     * @principle Enforces ticket creation by authenticated users only, with raffle ID validation.
+     */
+    match /raffles/{raffleId}/tickets/{ticketId} {
+      allow get, list: if false;
+      allow create: if isSignedIn() && request.resource.data.raffleId == raffleId;
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+        /**
+         * @description Indicates admin privileges. Existence of a document with the user's UID grants admin access to create, update, and delete raffles.
+         * @path /roles_admin/{uid}
+         */
+        match /roles_admin/{uid} {
+            allow get: if isSignedIn() && request.auth.uid == uid;
+            allow list: if false;
+            allow create: if false;
+            allow update: if false;
+            allow delete: if false;
+    }
+
+
+    /**
+     * @description Checks if the user is signed in.
+     * @returns {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user has admin privileges by verifying the existence of a document in the `/roles_admin` collection with their UID.
+     * @returns {boolean} True if the user is an admin, false otherwise.
+     */
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+  }
+}
