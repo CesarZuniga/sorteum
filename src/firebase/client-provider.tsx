@@ -22,21 +22,17 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   }, []);
 
   useEffect(() => {
-    // This effect runs only on the client, after hydration.
+    // This effect runs only on the client, after initial render.
     setIsMounted(true);
   }, []);
 
-  // On the server, or on the client before it has mounted, render nothing or a placeholder
-  // that matches the server. This avoids the hydration mismatch.
+  // Before the component has mounted on the client, or if services are not ready, render nothing.
+  // This prevents any child components from trying to access Firebase during SSR or initial hydration.
   if (!isMounted || !firebaseServices) {
-    // To avoid layout shift, you might render a skeleton UI here
-    // that matches the server-rendered layout. For now, returning children is simplest.
-    // If children also depend on Firebase, they must handle the loading state.
-    // A simple loading div can also work if the mismatch is handled correctly.
-     return <div>Loading Firebase...</div>;
+    return null; 
   }
 
-  // Once mounted on the client and services are available, render the full provider.
+  // Once mounted on the client and services are available, render the full provider with children.
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}
