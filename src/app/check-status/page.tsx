@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getRaffles } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
-import { Ticket as TicketIcon, CheckCircle2, AlertCircle, Hourglass } from 'lucide-react';
+import { Ticket as TicketIcon, CheckCircle2, AlertCircle, Hourglass, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type TicketStatus = {
-  status: 'paid' | 'reserved' | 'not-found';
+  status: 'paid' | 'reserved' | 'available' | 'not-found';
   ticket?: Ticket;
   raffle?: Raffle;
 };
@@ -26,6 +26,21 @@ function StatusDisplay({ result }: { result: TicketStatus }) {
         <div>
           <h3 className="font-bold">Estado: Boleto no encontrado</h3>
           <p>Verifica el número de boleto y la rifa seleccionada e intenta de nuevo.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (result.status === 'available') {
+    return (
+      <div className="mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center gap-4">
+        <ShoppingCart className="h-8 w-8" />
+        <div>
+          <h3 className="font-bold">Estado: Boleto Disponible</h3>
+          <p>Este boleto aún no ha sido comprado. ¡Puedes ser el afortunado!</p>
+           <Button asChild variant="link" className="p-0 h-auto text-blue-700 dark:text-blue-300">
+             <Link href={`/raffles/${result.raffle?.id}`}>Comprar este boleto</Link>
+           </Button>
         </div>
       </div>
     );
