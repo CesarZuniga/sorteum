@@ -22,9 +22,11 @@ export default function RafflesPage() {
           <h1 className="text-3xl font-bold tracking-tight font-headline">Raffles</h1>
           <p className="text-muted-foreground">Manage all your raffles here.</p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Raffle
+        <Button asChild>
+          <Link href="/admin/raffles/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Raffle
+          </Link>
         </Button>
       </div>
 

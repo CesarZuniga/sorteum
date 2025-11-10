@@ -84,6 +84,18 @@ export const getRaffleById = (id: string): Raffle | undefined => {
   return raffles.find((raffle) => raffle.id === id);
 };
 
+export const createRaffle = (raffleData: Omit<Raffle, 'id' | 'tickets' | 'active'>): Raffle => {
+    const newId = String(raffles.length + 1);
+    const newRaffle: Raffle = {
+        ...raffleData,
+        id: newId,
+        tickets: generateTickets(newId, raffleData.ticketCount),
+        active: new Date(raffleData.deadline) > new Date(),
+    };
+    raffles.unshift(newRaffle);
+    return newRaffle;
+};
+
 // In a real app, these would be database operations
 export const updateTicketStatus = (
   raffleId: string,
