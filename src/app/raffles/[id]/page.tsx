@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { getRaffleById, updateTicketStatus } from '@/lib/data';
 import type { Ticket } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
-import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle } from 'lucide-react';
+import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-const TicketItem = ({ ticket, onSelect, isSelected }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean }) => {
+const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
     switch (ticket.status) {
       case 'paid':
@@ -22,9 +22,9 @@ const TicketItem = ({ ticket, onSelect, isSelected }: { ticket: Ticket, onSelect
       case 'reserved':
         return 'bg-yellow-500 text-white cursor-not-allowed';
       case 'available':
-        return isSelected
-          ? 'bg-primary text-primary-foreground'
-          : 'bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800';
+        if (isSelected) return 'bg-primary text-primary-foreground';
+        if (isSuggested) return 'bg-blue-300 dark:bg-blue-700 hover:bg-blue-400 dark:hover:bg-blue-600';
+        return 'bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800';
       default:
         return 'bg-gray-200';
     }
@@ -35,7 +35,7 @@ const TicketItem = ({ ticket, onSelect, isSelected }: { ticket: Ticket, onSelect
       disabled={ticket.status !== 'available'}
       onClick={() => onSelect(ticket)}
       className={`flex items-center justify-center p-2 rounded-md font-semibold transition-colors duration-200 ${getStatusClasses()}`}
-      aria-label={`Ticket number ${ticket.number}, status ${ticket.status}${isSelected ? ', selected' : ''}`}
+      aria-label={`Ticket number ${ticket.number}, status ${ticket.status}${isSelected ? ', selected' : ''}${isSuggested ? ', suggested' : ''}`}
     >
       {String(ticket.number).padStart(3, '0')}
     </button>
@@ -45,6 +45,7 @@ const TicketItem = ({ ticket, onSelect, isSelected }: { ticket: Ticket, onSelect
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
   const raffle = getRaffleById(params.id);
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
+  const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [raffleState, setRaffleState] = useState(raffle);
   const [randomCount, setRandomCount] = useState<number>(1);
@@ -55,6 +56,11 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   }
 
   const handleSelectTicket = (ticket: Ticket) => {
+    // If a ticket is suggested, selecting it should confirm it
+    if (suggestedTickets.find(st => st.id === ticket.id)) {
+        setSuggestedTickets(prev => prev.filter(st => st.id !== ticket.id));
+    }
+
     setSelectedTickets((prev) =>
       prev.find((t) => t.id === ticket.id)
         ? prev.filter((t) => t.id !== ticket.id)
@@ -73,19 +79,23 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
         description: `Solo hay ${availableTickets.length} boletos disponibles para seleccionar.`,
         variant: 'destructive',
       });
+      setSuggestedTickets([]);
       return;
     }
 
     const shuffled = availableTickets.sort(() => 0.5 - Math.random());
     const randomSelection = shuffled.slice(0, randomCount);
-    
-    // Add new random tickets to existing selection, avoiding duplicates
-    setSelectedTickets(prev => {
-        const newTickets = randomSelection.filter(rt => !prev.find(pt => pt.id === rt.id));
-        return [...prev, ...newTickets];
-    });
+    setSuggestedTickets(randomSelection);
   };
   
+  const acceptSuggestion = () => {
+    setSelectedTickets(prev => {
+        const newTickets = suggestedTickets.filter(st => !prev.find(pt => pt.id === st.id));
+        return [...prev, ...newTickets];
+    });
+    setSuggestedTickets([]);
+  };
+
   const handlePurchase = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTickets.length === 0) {
@@ -163,6 +173,12 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                     <Shuffle className="h-4 w-4 mr-2" />
                     Selección Rápida
                   </Button>
+                  {suggestedTickets.length > 0 && (
+                    <Button onClick={acceptSuggestion}>
+                        <Check className="h-4 w-4 mr-2" />
+                        Aceptar Sugerencia
+                    </Button>
+                  )}
               </div>
 
               <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2">
@@ -172,11 +188,13 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                     ticket={ticket}
                     onSelect={handleSelectTicket}
                     isSelected={!!selectedTickets.find((t) => t.id === ticket.id)}
+                    isSuggested={!!suggestedTickets.find((t) => t.id === ticket.id)}
                   />
                 ))}
               </div>
                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-400"></span>Available</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-300"></span>Suggested</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500"></span>Reserved</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500"></span>Paid</div>
               </div>
