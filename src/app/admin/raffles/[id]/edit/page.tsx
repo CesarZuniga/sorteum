@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useActionState } from 'react';
 import Link from 'next/link';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { updateRaffleAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,7 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [loading, setLoading] = useState(true);
   const initialState = { message: undefined, errors: {} };
-  const [state, dispatch] = useFormState(updateRaffleAction, initialState);
+  const [state, dispatch] = useActionState(updateRaffleAction, initialState);
   const firestore = useFirestore();
 
   useEffect(() => {

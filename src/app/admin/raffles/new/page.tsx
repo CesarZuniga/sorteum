@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { createRaffleAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +25,7 @@ function SubmitButton() {
 
 export default function NewRafflePage() {
   const initialState = { message: undefined, errors: {} };
-  const [state, dispatch] = useFormState(createRaffleAction, initialState);
+  const [state, dispatch] = useActionState(createRaffleAction, initialState);
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react-dom';
 import { drawWinnerAction, notifyWinnersAction } from '@/lib/actions';
 import type { Raffle } from '@/lib/definitions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,8 +35,8 @@ interface WinnerDrawingProps {
 }
 
 export function WinnerDrawing({ raffle, winnerCount, setWinnerCount }: WinnerDrawingProps) {
-  const [drawState, drawFormAction] = useFormState(drawWinnerAction, { success: false });
-  const [notifyState, notifyFormAction] = useFormState(notifyWinnersAction, { success: false });
+  const [drawState, drawFormAction] = useActionState(drawWinnerAction, { success: false });
+  const [notifyState, notifyFormAction] = useActionState(notifyWinnersAction, { success: false });
   
   const handleWinnerCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const count = parseInt(e.target.value, 10);
