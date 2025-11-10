@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -100,9 +101,7 @@ export default function RafflesPage() {
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <form action={deleteRaffleAction}>
                                       <input type="hidden" name="id" value={raffle.id} />
-                                      <AlertDialogAction asChild>
-                                          <Button type="submit" variant="destructive">Delete</Button>
-                                      </AlertDialogAction>
+                                      <Button type="submit" variant="destructive">Delete</Button>
                                   </form>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
