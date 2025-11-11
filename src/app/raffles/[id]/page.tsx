@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -190,7 +189,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
           <Card>
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-4 font-headline">Select Your Tickets</h2>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                   <Input 
                     type="number" 
                     min="1"
@@ -211,7 +210,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                   )}
               </div>
 
-              <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {tickets?.map((ticket) => (
                   <TicketItem
                     key={ticket.id}
