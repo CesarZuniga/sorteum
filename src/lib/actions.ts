@@ -164,11 +164,12 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     }
     
     const supabase = createSupabaseServerClient(); // Use the server-side client
-    const { data, error } = await supabase.auth.getUser();
-    console.log('esta es la data: ',data);
-    console.log('este es el error: ',error);
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    console.log('Supabase getUser data:', userData); // Added log
+    console.log('Supabase getUser error:', userError); // Added log
 
-    if (error || !data?.user) {
+    if (userError || !userData?.user) {
+        console.error('Authentication failed in createRaffleAction:', userError); // Added log
         return {
             message: 'Authentication Error: User not logged in.',
         };
@@ -180,7 +181,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         await apiCreateRaffle({
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: data.user.id, // Use the actual authenticated user's ID
+            adminId: userData.user.id, // Use the actual authenticated user's ID
         });
     } catch (e: any) {
         return {
