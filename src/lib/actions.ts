@@ -164,9 +164,9 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     }
     
     const supabase = createSupabaseServerClient(); // Use the server-side client
-    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
 
-    if (userError || !userData?.user) {
+    if (error || !data?.user) {
         return {
             message: 'Authentication Error: User not logged in.',
         };
@@ -178,7 +178,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         await apiCreateRaffle({
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: userData.user.id, // Use the actual authenticated user's ID
+            adminId: data.user.id, // Use the actual authenticated user's ID
         });
     } catch (e: any) {
         return {
