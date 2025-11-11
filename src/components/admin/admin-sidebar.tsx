@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, LogOut, Ticket, Users } from 'lucide-react';
 import {
   Sidebar,
@@ -13,9 +13,17 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '../logo';
 import Link from 'next/link';
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { Button } from '@/components/ui/button'; // Import Button component
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login'); // Redirect to login page after logout
+  };
 
   const menuItems = [
     {
@@ -60,10 +68,10 @@ export function AdminSidebar() {
               asChild
               tooltip={{ children: 'Log Out', side: 'right' }}
             >
-              <Link href="/">
+              <Button variant="ghost" onClick={handleLogout} className="w-full justify-start"> {/* Use Button and onClick */}
                 <LogOut />
                 <span>Log Out</span>
-              </Link>
+              </Button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
