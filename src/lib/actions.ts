@@ -167,7 +167,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Loaded' : 'NOT LOADED');
     console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Loaded' : 'NOT LOADED');
 
-    const supabase = createSupabaseServerClient(); // Use the server-side client
+    const supabase = await createSupabaseServerClient(); // AWAIT this call
     const { data: userData, error: userError } = await supabase.auth.getUser();
     console.log('CREATE_RAFFLE_ACTION: Supabase getUser data:', userData); // Added log
     console.log('CREATE_RAFFLE_ACTION: Supabase getUser error:', userError); // Added log
@@ -221,7 +221,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return { message: 'Raffle ID not found.' };
     }
 
-    const supabase = createSupabaseServerClient(); // Use the server-side client
+    const supabase = await createSupabaseServerClient(); // AWAIT this call
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -254,7 +254,7 @@ export async function deleteRaffleAction(formData: FormData) {
     return;
   }
   
-  const supabase = createSupabaseServerClient(); // Use the server-side client
+  const supabase = await createSupabaseServerClient(); // AWAIT this call
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {

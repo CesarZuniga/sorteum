@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export function createSupabaseServerClient() {
+export async function createSupabaseServerClient() { // Hacemos la función async
   const cookieStore = cookies();
 
   console.log('SERVER_CLIENT: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Loaded' : 'NOT LOADED');
@@ -12,7 +12,6 @@ export function createSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // Hacemos el método 'get' asíncrono y 'await' la obtención del valor de la cookie
         async get(name: string) {
           const cookieValue = await cookieStore.get(name)?.value; 
           console.log(`SERVER_CLIENT: Getting cookie "${name}":`, cookieValue ? 'Found' : 'Not Found');
