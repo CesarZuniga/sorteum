@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/ssr';
+import { createMiddlewareClient } from '@supabase/ssr/dist/edge/middleware'; // Intentar la ruta específica para Edge
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
