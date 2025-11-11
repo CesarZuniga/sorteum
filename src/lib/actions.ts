@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import the server client
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -163,6 +163,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         };
     }
     
+    const supabase = createSupabaseServerClient(); // Use the server-side client
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -213,11 +214,20 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return { message: 'Raffle ID not found.' };
     }
 
+    const supabase = createSupabaseServerClient(); // Use the server-side client
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData?.user) {
+        return {
+            message: 'Authentication Error: User not logged in.',
+        };
+    }
 
     try {
         await apiUpdateRaffle(id, {
             ...dataToUpdate,
             deadline: new Date(dataToUpdate.deadline).toISOString(),
+            adminId: userData.user.id, // Ensure adminId is passed for RLS if needed
         });
     } catch (e: any) {
         return { message: `Database Error: Failed to Update Raffle. ${e.message}` };
@@ -237,11 +247,19 @@ export async function deleteRaffleAction(formData: FormData) {
     return;
   }
   
+  const supabase = createSupabaseServerClient(); // Use the server-side client
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
+      // This should ideally be handled by RLS, but as a fallback
+      return { message: 'Authentication Error: User not logged in.' };
+  }
+
   try {
     await apiDeleteRaffle(id);
   } catch (e) {
     // Handle database error
-    return;
+    return { message: `Database Error: Failed to Delete Raffle. ${e.message}` };
   }
 
   revalidatePath('/admin/raffles');
