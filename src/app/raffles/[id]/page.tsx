@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { format } from 'date-fns'; // Importamos format de date-fns
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -180,7 +181,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              <span>Ends: {new Date(raffle.deadline).toLocaleDateString()}</span>
+              <span>Ends: {format(new Date(raffle.deadline), 'PPP')}</span> {/* Usamos format de date-fns */}
             </div>
           </div>
         </div>
