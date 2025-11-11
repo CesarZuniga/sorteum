@@ -1,9 +1,9 @@
-import { createMiddlewareClient } from '@supabase/ssr/dist/edge/middleware'; // Intentar la ruta específica para Edge
+import * as SupabaseSSR from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  const supabase = createMiddlewareClient({ req: request, res: response });
+  const supabase = SupabaseSSR.createMiddlewareClient({ req: request, res: response });
 
   // Refresh session if expired - required for Server Components
   // and Server Actions to be able to read the latest session data.
