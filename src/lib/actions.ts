@@ -166,11 +166,6 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     const supabase = createSupabaseServerClient(); // Use the server-side client
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
-    // --- START LOGGING FOR DEBUGGING ---
-    console.log('createRaffleAction: userData', userData);
-    console.log('createRaffleAction: userError', userError);
-    // --- END LOGGING FOR DEBUGGING ---
-
     if (userError || !userData?.user) {
         return {
             message: 'Authentication Error: User not logged in.',
