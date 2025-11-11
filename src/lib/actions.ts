@@ -163,10 +163,14 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         };
     }
     
+    // Log para depuración: verificar si las variables de entorno están disponibles en la acción
+    console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Loaded' : 'NOT LOADED');
+    console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Loaded' : 'NOT LOADED');
+
     const supabase = createSupabaseServerClient(); // Use the server-side client
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    console.log('Supabase getUser data:', userData); // Added log
-    console.log('Supabase getUser error:', userError); // Added log
+    console.log('CREATE_RAFFLE_ACTION: Supabase getUser data:', userData); // Added log
+    console.log('CREATE_RAFFLE_ACTION: Supabase getUser error:', userError); // Added log
 
     if (userError || !userData?.user) {
         console.error('Authentication failed in createRaffleAction:', userError); // Added log
