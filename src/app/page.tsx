@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { RaffleCard } from '@/components/raffle-card';
-import type { Raffle } from '@/lib/definitions';
-import { getRaffles } from '@/lib/data';
+import type { Raffle, FAQ } from '@/lib/definitions';
+import { getRaffles, getFaqs } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
@@ -35,24 +34,18 @@ function SecurePayments() {
 }
 
 function FaqSection() {
-    const faqs = [
-        {
-          question: "¿Cómo funciona el sorteo?",
-          answer: "Es muy simple. Eliges la rifa en la que quieres participar, compras la cantidad de boletos que desees y ¡listo! Una vez finalizado el periodo de la rifa, se realiza el sorteo de forma transparente y se anuncian los ganadores."
-        },
-        {
-          question: "¿Son seguros los pagos?",
-          answer: "Absolutamente. Utilizamos pasarelas de pago reconocidas a nivel mundial que garantizan la seguridad de tu información en todo momento."
-        },
-        {
-          question: "¿Cómo sé si gané?",
-          answer: "Los ganadores son notificados directamente por correo electrónico y/o SMS. Además, publicamos los resultados en nuestro sitio web y redes sociales."
-        },
-        {
-            question: "¿Puedo comprar boletos desde cualquier país?",
-            answer: "Nuestras rifas están abiertas a participantes de todo el mundo. Sin embargo, te recomendamos verificar las regulaciones locales sobre juegos de azar en tu país."
+    const [faqs, setFaqs] = useState<FAQ[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadFaqs() {
+            setIsLoading(true);
+            const faqsData = await getFaqs();
+            setFaqs(faqsData);
+            setIsLoading(false);
         }
-    ];
+        loadFaqs();
+    }, []);
 
     return (
         <section className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900/50">
@@ -61,16 +54,20 @@ function FaqSection() {
                     <h2 className="text-3xl font-bold tracking-tight mb-2 font-headline">Preguntas Frecuentes</h2>
                     <p className="text-muted-foreground">¿Tienes dudas? Encuentra here las respuestas a las preguntas más comunes.</p>
                 </div>
-                <Accordion type="single" collapsible className="max-w-3xl mx-auto">
-                    {faqs.map((faq, index) => (
-                        <AccordionItem key={index} value={`item-${index}`}>
-                            <AccordionTrigger className="text-lg font-semibold text-left">{faq.question}</AccordionTrigger>
-                            <AccordionContent className="text-base text-muted-foreground">
-                                {faq.answer}
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
+                {isLoading ? (
+                    <p className="text-center">Cargando preguntas frecuentes...</p>
+                ) : (
+                    <Accordion type="single" collapsible className="max-w-3xl mx-auto">
+                        {faqs.map((faq) => (
+                            <AccordionItem key={faq.id} value={faq.id}>
+                                <AccordionTrigger className="text-lg font-semibold text-left">{faq.question}</AccordionTrigger>
+                                <AccordionContent className="text-base text-muted-foreground">
+                                    {faq.answer}
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
             </div>
         </section>
     );
