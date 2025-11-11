@@ -1,32 +1,22 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { useSession } from '@/components/SessionProvider'; // Import useSession
+import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import server client
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { session, isLoading } = useSession();
-  const router = useRouter();
+  const supabase = createSupabaseServerClient();
+  const { data: { session }, error } = await supabase.auth.getSession();
 
-  useEffect(() => {
-    if (!isLoading && !session) {
-      router.push('/login');
-    }
-  }, [session, isLoading, router]);
-
-  if (isLoading || !session) {
-    // Optionally render a loading spinner or nothing while checking session
-    return <div className="flex items-center justify-center min-h-screen">Loading admin area...</div>;
+  if (error || !session) {
+    redirect('/login');
   }
 
   return (

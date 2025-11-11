@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
-import { SessionProvider } from '@/components/SessionProvider'; // Import SessionProvider
+// import { SessionProvider } from '@/components/SessionProvider'; // Removed SessionProvider
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,9 +26,9 @@ export default function RootLayout({
         {/* Las etiquetas link para las fuentes se eliminan, next/font las inyecta automáticamente */}
       </head>
       <body className={`${inter.variable} font-body antialiased bg-background text-foreground`}>
-        <SessionProvider> {/* Wrap children with SessionProvider */}
+        {/* <SessionProvider> Removed SessionProvider */}
           {children}
-        </SessionProvider>
+        {/* </SessionProvider> */}
         <Toaster />
       </body>
     </html>
