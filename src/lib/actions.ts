@@ -165,6 +165,8 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
     
     const supabase = createSupabaseServerClient(); // Use the server-side client
     const { data, error } = await supabase.auth.getUser();
+    console.log(data);
+    console.log(error);
 
     if (error || !data?.user) {
         return {
