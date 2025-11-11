@@ -1,4 +1,3 @@
-
 'use server';
 
 import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOutput } from '@/ai/flows/choose-lottery-winners-with-gen-ai';
@@ -7,6 +6,7 @@ import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -163,13 +163,21 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         };
     }
     
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData?.user) {
+        return {
+            message: 'Authentication Error: User not logged in.',
+        };
+    }
+
     const raffleData = validatedFields.data;
 
     try {
         await apiCreateRaffle({
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: 'admin-user-id', // Mock adminId
+            adminId: userData.user.id, // Use the actual authenticated user's ID
         });
     } catch (e: any) {
         return {
