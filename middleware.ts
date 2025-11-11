@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/ssr/dist/index.js'; // Explicitly target the main JS file
+import { createMiddlewareClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
