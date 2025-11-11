@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { RaffleCard } from '@/components/raffle-card';
-import type { Raffle, FAQ } from '@/lib/definitions'; // Import FAQ type
-import { getRaffles, getFaqs } from '@/lib/data'; // Import getFaqs
+import type { Raffle } from '@/lib/definitions';
+import { getRaffles } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
@@ -14,7 +15,7 @@ import { SiteHeader } from '@/components/site-header';
 
 function SecurePayments() {
     // Dummy SVGs for payment providers
-    const VisaIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="40" viewBox="0 0 38 24" fill="none"><path d="M37.56 5.372c-.144-.504-.504-.882-.99-.99C34.938 3.83 31.86 3 28.5 3H1c-.552 0-1 .448-1 1v16c0 .552.448 1 1 1h36c.552 0 1-.448 1-1V6.362c0-.44-.288-.828-.708-.954l.268-.036z" fill="#fff" stroke="#d5d5d5" strokeWidth="2"></path><path d="M32.89 4.354L31.15 19.65h-4.062l1.74-15.296h4.062zM21.01 4.354l-2.142 12.33-1.638-12.33h-4.32l-3.33 15.3h4.32l1.242-7.056 1.224 7.056h3.42l3.438-15.3h-4.2zM8.398 4.354l-1.8 8.136- .522-3.888c-.126-.918-.846-1.53-.1.782-1.53-.414 0-.792.162-1.08.432l-.846 4.338L.61 4.354H4.75l1.512 8.784L8.398 4.354h-1.44z" fill="#0157a2"></path><path d="M33.01 4.354h3.6l-2.52 15.3h-3.6z" fill="#fbb040"></path></svg>
+    const VisaIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="40" viewBox="0 0 38 24" fill="none"><path d="M37.56 5.372c-.144-.504-.504-.882-.99-.99C34.938 3.83 31.86 3 28.5 3H1c-.552 0-1 .448-1 1v16c0 .552.448 1 1 1h36c.552 0 1-.448 1-1V6.362c0-.44-.288-.828-.708-.954l.268-.036z" fill="#fff" stroke="#d5d5d5" strokeWidth="2"></path><path d="M32.89 4.354L31.15 19.65h-4.062l1.74-15.296h4.062zM21.01 4.354l-2.142 12.33-1.638-12.33h-4.32l-3.33 15.3h4.32l1.242-7.056 1.224 7.056h3.42l3.438-15.3h-4.2zM8.398 4.354l-1.8 8.136- .522-3.888c-.126-.918-.846-1.53-1.782-1.53-.414 0-.792.162-1.08.432l-.846 4.338L.61 4.354H4.75l1.512 8.784L8.398 4.354h-1.44z" fill="#0157a2"></path><path d="M33.01 4.354h3.6l-2.52 15.3h-3.6z" fill="#fbb040"></path></svg>
     const MasterCardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="40" viewBox="0 0 64 40"><path fill="#FF5F00" d="M26 12c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10z"></path><path fill="#EB001B" d="M40.5 12c-3.487 0-6.543 1.786-8.318 4.505C33.91 14.128 36.57 12 39.5 12c5.25 0 9.5 4.25 9.5 9.5s-4.25 9.5-9.5 9.5c-2.93 0-5.59-1.128-7.5-3.005C33.957 29.786 37.013 31.5 40.5 31.5c5.523 0 10-4.477 10-10s-4.477-10-10-10z"></path><path fill="#F79E1B" d="M35.182 16.505C33.457 13.786 30.49 12 27 12c-5.523 0-10 4.477-10 10s4.477 10 10 10c3.49 0 6.543-1.786 8.318-4.505C29.09 29.872 26.43 32 23.5 32c-5.25 0-9.5-4.25-9.5-9.5S18.25 13 23.5 13c2.93 0 5.59 1.128 7.5 3.005z"></path></svg>
 
     return (
@@ -34,18 +35,24 @@ function SecurePayments() {
 }
 
 function FaqSection() {
-    const [faqs, setFaqs] = useState<FAQ[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        async function loadFaqs() {
-            setIsLoading(true);
-            const data = await getFaqs();
-            setFaqs(data);
-            setIsLoading(false);
+    const faqs = [
+        {
+          question: "¿Cómo funciona el sorteo?",
+          answer: "Es muy simple. Eliges la rifa en la que quieres participar, compras la cantidad de boletos que desees y ¡listo! Una vez finalizado el periodo de la rifa, se realiza el sorteo de forma transparente y se anuncian los ganadores."
+        },
+        {
+          question: "¿Son seguros los pagos?",
+          answer: "Absolutamente. Utilizamos pasarelas de pago reconocidas a nivel mundial que garantizan la seguridad de tu información en todo momento."
+        },
+        {
+          question: "¿Cómo sé si gané?",
+          answer: "Los ganadores son notificados directamente por correo electrónico y/o SMS. Además, publicamos los resultados en nuestro sitio web y redes sociales."
+        },
+        {
+            question: "¿Puedo comprar boletos desde cualquier país?",
+            answer: "Nuestras rifas están abiertas a participantes de todo el mundo. Sin embargo, te recomendamos verificar las regulaciones locales sobre juegos de azar en tu país."
         }
-        loadFaqs();
-    }, []);
+    ];
 
     return (
         <section className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900/50">
@@ -54,20 +61,16 @@ function FaqSection() {
                     <h2 className="text-3xl font-bold tracking-tight mb-2 font-headline">Preguntas Frecuentes</h2>
                     <p className="text-muted-foreground">¿Tienes dudas? Encuentra here las respuestas a las preguntas más comunes.</p>
                 </div>
-                {isLoading ? (
-                    <p className="text-center">Cargando preguntas frecuentes...</p>
-                ) : (
-                    <Accordion type="single" collapsible className="max-w-3xl mx-auto">
-                        {faqs.map((faq) => (
-                            <AccordionItem key={faq.id} value={faq.id}>
-                                <AccordionTrigger className="text-lg font-semibold text-left">{faq.question}</AccordionTrigger>
-                                <AccordionContent className="text-base text-muted-foreground">
-                                    {faq.answer}
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                )}
+                <Accordion type="single" collapsible className="max-w-3xl mx-auto">
+                    {faqs.map((faq, index) => (
+                        <AccordionItem key={index} value={`item-${index}`}>
+                            <AccordionTrigger className="text-lg font-semibold text-left">{faq.question}</AccordionTrigger>
+                            <AccordionContent className="text-base text-muted-foreground">
+                                {faq.answer}
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
             </div>
         </section>
     );

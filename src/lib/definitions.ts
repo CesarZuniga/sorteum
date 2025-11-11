@@ -22,10 +22,3 @@ export type Raffle = {
   deadline: string; // Corresponds to end_date in DB
   active: boolean; // Corresponds to is_active in DB
 };
-
-export type FAQ = {
-  id: string;
-  question: string;
-  answer: string;
-  orderIndex: number; // Corresponds to order_index in DB
-};

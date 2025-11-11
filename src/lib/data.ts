@@ -1,6 +1,6 @@
 'use server';
 
-import type { Raffle, Ticket, FAQ } from './definitions';
+import type { Raffle, Ticket } from './definitions';
 import { supabase } from '@/integrations/supabase/client';
 import { PlaceHolderImages } from './placeholder-images'; // Keep for initial image assignment
 
@@ -43,14 +43,6 @@ const mapSupabaseTicketToAppType = (dbTicket: any): Ticket => ({
   purchaseDate: dbTicket.purchase_date,
   reservationExpiresAt: dbTicket.reservation_expires_at,
   isWinner: dbTicket.is_winner,
-});
-
-// Helper to map Supabase FAQ data to app FAQ type
-const mapSupabaseFaqToAppType = (dbFaq: any): FAQ => ({
-  id: dbFaq.id,
-  question: dbFaq.question,
-  answer: dbFaq.answer,
-  orderIndex: dbFaq.order_index,
 });
 
 // Raffles
@@ -234,18 +226,4 @@ export const updateTicketStatus = async (
     throw new Error(`Failed to update ticket status: ${error.message}`);
   }
   return true;
-};
-
-// FAQs
-export const getFaqs = async (): Promise<FAQ[]> => {
-  const { data, error } = await supabase
-    .from('faqs')
-    .select('*')
-    .order('order_index', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching FAQs:', error);
-    throw new Error('Failed to fetch FAQs.');
-  }
-  return data.map(mapSupabaseFaqToAppType);
 };
