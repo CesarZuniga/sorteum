@@ -1,153 +1,185 @@
-
 'use server';
 
 import type { Raffle, Ticket } from './definitions';
-import { PlaceHolderImages } from './placeholder-images';
-
-// --- Static Data Store ---
-
-let raffles: Raffle[] = [
-  {
-    id: '1',
-    name: 'Rifa de Reloj de Lujo',
-    description: 'Participa para ganar un reloj exclusivo de alta gama. Un símbolo de elegancia y precisión.',
-    image: PlaceHolderImages[0].imageUrl,
-    price: 50,
-    ticketCount: 100,
-    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days from now
-    active: true,
-    adminId: 'admin-user-id',
-  },
-  {
-    id: '2',
-    name: 'Sorteo de Smartphone de Última Generación',
-    description: 'No te pierdas la oportunidad de tener el último smartphone del mercado con tecnología de punta.',
-    image: PlaceHolderImages[1].imageUrl,
-    price: 20,
-    ticketCount: 150,
-    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-    active: true,
-    adminId: 'admin-user-id',
-  },
-   {
-    id: '3',
-    name: 'Vacaciones de Fin de Semana',
-    description: 'Gana un paquete de viaje para dos personas a un destino paradisíaco. ¡Escápate de la rutina!',
-    image: PlaceHolderImages[2].imageUrl,
-    price: 30,
-    ticketCount: 200,
-    deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-    active: false,
-    adminId: 'admin-user-id',
-  },
-];
-
-let tickets: Ticket[] = raffles.flatMap(raffle => 
-    Array.from({ length: raffle.ticketCount }, (_, i) => ({
-        id: `${raffle.id}-${i + 1}`,
-        raffleId: raffle.id,
-        number: i + 1,
-        status: 'available' as 'available' | 'reserved' | 'paid',
-    }))
-);
-
-// Simulate some tickets being sold
-tickets.forEach(ticket => {
-    if (ticket.raffleId === '1' && Math.random() < 0.4) {
-        ticket.status = 'paid';
-        ticket.buyerName = 'Juan Pérez';
-        ticket.buyerEmail = 'juan.perez@example.com';
-        ticket.buyerPhone = '555-1234';
-        ticket.purchaseDate = new Date().toISOString();
-    }
-    if (ticket.raffleId === '2' && Math.random() < 0.6) {
-        ticket.status = 'paid';
-        ticket.buyerName = 'Maria García';
-        ticket.buyerEmail = 'maria.garcia@example.com';
-        ticket.buyerPhone = '555-5678';
-        ticket.purchaseDate = new Date().toISOString();
-    }
-    if (ticket.raffleId === '1' && ticket.number > 40 && ticket.number < 50) {
-        ticket.status = 'reserved';
-        ticket.buyerName = 'Carlos Lopez';
-        ticket.buyerEmail = 'carlos.lopez@example.com';
-        ticket.buyerPhone = '555-8765';
-        ticket.reservationExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    }
-});
-
+import { supabase } from '@/integrations/supabase/client';
+import { PlaceHolderImages } from './placeholder-images'; // Keep for initial image assignment
 
 // --- Data Access Functions ---
 
+// Helper to map Supabase raffle data to app Raffle type
+const mapSupabaseRaffleToAppType = (dbRaffle: any): Raffle => ({
+  id: dbRaffle.id,
+  adminId: dbRaffle.admin_id,
+  name: dbRaffle.name,
+  description: dbRaffle.description,
+  image: dbRaffle.image_url,
+  price: parseFloat(dbRaffle.price), // Ensure price is a number
+  ticketCount: dbRaffle.total_tickets,
+  deadline: dbRaffle.end_date,
+  active: dbRaffle.is_active,
+});
+
+// Helper to map app Raffle type to Supabase raffle data
+const mapAppRaffleToSupabaseType = (appRaffle: Omit<Raffle, 'id' | 'active'>): any => ({
+  admin_id: appRaffle.adminId,
+  name: appRaffle.name,
+  description: appRaffle.description,
+  image_url: appRaffle.image,
+  price: appRaffle.price,
+  total_tickets: appRaffle.ticketCount,
+  end_date: appRaffle.deadline,
+  is_active: new Date(appRaffle.deadline) > new Date(), // Determine active status based on deadline
+});
+
+// Helper to map Supabase ticket data to app Ticket type
+const mapSupabaseTicketToAppType = (dbTicket: any): Ticket => ({
+  id: dbTicket.id,
+  raffleId: dbTicket.raffle_id,
+  number: dbTicket.ticket_number,
+  status: dbTicket.status,
+  buyerName: dbTicket.purchaser_name,
+  buyerEmail: dbTicket.purchaser_email,
+  buyerPhone: dbTicket.purchaser_phone_number,
+  purchaseDate: dbTicket.purchase_date,
+  reservationExpiresAt: dbTicket.reservation_expires_at,
+  isWinner: dbTicket.is_winner,
+});
+
 // Raffles
 export const getRaffles = async (): Promise<Raffle[]> => {
-  console.log("Getting all raffles (static)");
-  return Promise.resolve(JSON.parse(JSON.stringify(raffles)));
+  const { data, error } = await supabase
+    .from('raffles')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching raffles:', error);
+    throw new Error('Failed to fetch raffles.');
+  }
+  return data.map(mapSupabaseRaffleToAppType);
 };
 
 export const getRaffleById = async (id: string): Promise<Raffle | undefined> => {
-  console.log(`Getting raffle by ID: ${id} (static)`);
-  const raffle = raffles.find((r) => r.id === id);
-  return Promise.resolve(raffle ? JSON.parse(JSON.stringify(raffle)) : undefined);
+  const { data, error } = await supabase
+    .from('raffles')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+    console.error(`Error fetching raffle by ID ${id}:`, error);
+    throw new Error(`Failed to fetch raffle with ID ${id}.`);
+  }
+
+  return data ? mapSupabaseRaffleToAppType(data) : undefined;
 };
 
-export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'tickets' | 'active'>): Promise<Raffle> => {
-  const newId = String(Date.now());
-  const newRaffle: Raffle = {
-    ...raffleData,
-    id: newId,
-    active: new Date(raffleData.deadline) > new Date(),
-    tickets: [], // tickets are managed in the global tickets array
-  };
-  
-  raffles.push(newRaffle);
-  
-  const newTickets: Ticket[] = Array.from({ length: raffleData.ticketCount }, (_, i) => ({
-    id: `${newId}-${i + 1}`,
-    raffleId: newId,
-    number: i + 1,
+export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): Promise<Raffle> => {
+  const supabaseData = mapAppRaffleToSupabaseType(raffleData);
+  const { data, error } = await supabase
+    .from('raffles')
+    .insert(supabaseData)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error creating raffle:', error);
+    throw new Error(`Failed to create raffle: ${error.message}`);
+  }
+
+  const newRaffle = mapSupabaseRaffleToAppType(data);
+
+  // Create initial tickets for the new raffle
+  const newTicketsData = Array.from({ length: newRaffle.ticketCount }, (_, i) => ({
+    raffle_id: newRaffle.id,
+    ticket_number: i + 1,
     status: 'available',
   }));
-  tickets.push(...newTickets);
-  
-  console.log(`Created raffle: ${newRaffle.name} (static)`);
-  return Promise.resolve(JSON.parse(JSON.stringify(newRaffle)));
+
+  const { error: ticketsError } = await supabase
+    .from('tickets')
+    .insert(newTicketsData);
+
+  if (ticketsError) {
+    console.error('Error creating tickets for new raffle:', ticketsError);
+    // Optionally, you might want to delete the created raffle here if ticket creation fails
+    throw new Error(`Failed to create tickets for raffle: ${ticketsError.message}`);
+  }
+
+  return newRaffle;
 };
 
 export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 'id' | 'tickets' | 'active' | 'ticketCount'>>): Promise<Raffle | undefined> => {
-    const raffleIndex = raffles.findIndex(r => r.id === id);
-    if (raffleIndex === -1) {
-        return Promise.resolve(undefined);
-    }
-    
-    raffles[raffleIndex] = { ...raffles[raffleIndex], ...raffleData };
-    console.log(`Updated raffle: ${id} (static)`);
-    return Promise.resolve(JSON.parse(JSON.stringify(raffles[raffleIndex])));
+  const updatePayload: Partial<any> = {};
+  if (raffleData.adminId !== undefined) updatePayload.admin_id = raffleData.adminId;
+  if (raffleData.name !== undefined) updatePayload.name = raffleData.name;
+  if (raffleData.description !== undefined) updatePayload.description = raffleData.description;
+  if (raffleData.image !== undefined) updatePayload.image_url = raffleData.image;
+  if (raffleData.price !== undefined) updatePayload.price = raffleData.price;
+  if (raffleData.deadline !== undefined) {
+    updatePayload.end_date = raffleData.deadline;
+    updatePayload.is_active = new Date(raffleData.deadline) > new Date();
+  }
+
+  const { data, error } = await supabase
+    .from('raffles')
+    .update(updatePayload)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error(`Error updating raffle ${id}:`, error);
+    throw new Error(`Failed to update raffle with ID ${id}: ${error.message}`);
+  }
+
+  return data ? mapSupabaseRaffleToAppType(data) : undefined;
 };
 
 export const deleteRaffle = async (id: string): Promise<boolean> => {
-  const raffleIndex = raffles.findIndex(r => r.id === id);
-  if (raffleIndex > -1) {
-    raffles.splice(raffleIndex, 1);
-    tickets = tickets.filter(t => t.raffleId !== id);
-    console.log(`Deleted raffle: ${id} (static)`);
-    return Promise.resolve(true);
+  // RLS on tickets table ensures tickets are deleted via CASCADE
+  const { error } = await supabase
+    .from('raffles')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Error deleting raffle ${id}:`, error);
+    throw new Error(`Failed to delete raffle with ID ${id}: ${error.message}`);
   }
-  return Promise.resolve(false);
+  return true;
 };
 
 // Tickets
 export const getTicketsByRaffleId = async (raffleId: string): Promise<Ticket[]> => {
-    console.log(`Getting tickets for raffle: ${raffleId} (static)`);
-    const raffleTickets = tickets.filter(t => t.raffleId === raffleId);
-    return Promise.resolve(JSON.parse(JSON.stringify(raffleTickets)));
+  const { data, error } = await supabase
+    .from('tickets')
+    .select('*')
+    .eq('raffle_id', raffleId)
+    .order('ticket_number', { ascending: true });
+
+  if (error) {
+    console.error(`Error fetching tickets for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to fetch tickets for raffle with ID ${raffleId}.`);
+  }
+  return data.map(mapSupabaseTicketToAppType);
 };
 
 export const getTicketByNumber = async (raffleId: string, ticketNumber: number): Promise<Ticket | undefined> => {
-    console.log(`Getting ticket #${ticketNumber} for raffle: ${raffleId} (static)`);
-    const ticket = tickets.find(t => t.raffleId === raffleId && t.number === ticketNumber);
-    return Promise.resolve(ticket ? JSON.parse(JSON.stringify(ticket)) : undefined);
-}
+  const { data, error } = await supabase
+    .from('tickets')
+    .select('*')
+    .eq('raffle_id', raffleId)
+    .eq('ticket_number', ticketNumber)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+    console.error(`Error fetching ticket #${ticketNumber} for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to fetch ticket #${ticketNumber} for raffle with ID ${raffleId}.`);
+  }
+
+  return data ? mapSupabaseTicketToAppType(data) : undefined;
+};
 
 export const updateTicketStatus = async (
   raffleId: string,
@@ -155,42 +187,43 @@ export const updateTicketStatus = async (
   status: 'reserved' | 'paid' | 'available' | 'winner',
   buyerInfo?: { name: string; email: string; phone: string }
 ): Promise<boolean> => {
-  const ticketIndex = tickets.findIndex(t => t.raffleId === raffleId && t.number === ticketNumber);
-  if (ticketIndex === -1) {
-    return Promise.resolve(false);
-  }
+  const updatePayload: Partial<any> = { status };
 
-  const ticket = tickets[ticketIndex];
-  
   if (status === 'winner') {
-      ticket.isWinner = true;
+    updatePayload.is_winner = true;
   } else if (status === 'available') {
-      ticket.status = 'available';
-      ticket.buyerName = undefined;
-      ticket.buyerEmail = undefined;
-      ticket.buyerPhone = undefined;
-      ticket.purchaseDate = undefined;
-      ticket.reservationExpiresAt = undefined;
-      ticket.isWinner = false;
+    updatePayload.purchaser_name = null;
+    updatePayload.purchaser_email = null;
+    updatePayload.purchaser_phone_number = null;
+    updatePayload.purchase_date = null;
+    updatePayload.reservation_expires_at = null;
+    updatePayload.is_winner = false;
   } else {
-      ticket.status = status;
-      if (buyerInfo) {
-          ticket.buyerName = buyerInfo.name;
-          ticket.buyerEmail = buyerInfo.email;
-          ticket.buyerPhone = buyerInfo.phone;
-      }
-      if (status === 'paid') {
-          ticket.purchaseDate = new Date().toISOString();
-          ticket.reservationExpiresAt = undefined;
-      }
-      if (status === 'reserved') {
-          const RESERVATION_DURATION_MINUTES = 15;
-          ticket.purchaseDate = undefined;
-          ticket.reservationExpiresAt = new Date(Date.now() + RESERVATION_DURATION_MINUTES * 60 * 1000).toISOString();
-      }
+    if (buyerInfo) {
+      updatePayload.purchaser_name = buyerInfo.name;
+      updatePayload.purchaser_email = buyerInfo.email;
+      updatePayload.purchaser_phone_number = buyerInfo.phone;
+    }
+    if (status === 'paid') {
+      updatePayload.purchase_date = new Date().toISOString();
+      updatePayload.reservation_expires_at = null;
+    }
+    if (status === 'reserved') {
+      const RESERVATION_DURATION_MINUTES = 15;
+      updatePayload.purchase_date = null;
+      updatePayload.reservation_expires_at = new Date(Date.now() + RESERVATION_DURATION_MINUTES * 60 * 1000).toISOString();
+    }
   }
 
-  tickets[ticketIndex] = ticket;
-  console.log(`Updated ticket #${ticketNumber} for raffle ${raffleId} to status: ${status} (static)`);
-  return Promise.resolve(true);
+  const { error } = await supabase
+    .from('tickets')
+    .update(updatePayload)
+    .eq('raffle_id', raffleId)
+    .eq('ticket_number', ticketNumber);
+
+  if (error) {
+    console.error(`Error updating ticket #${ticketNumber} for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to update ticket status: ${error.message}`);
+  }
+  return true;
 };
