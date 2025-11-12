@@ -8,9 +8,9 @@ import createSupabaseServerClient from '@/integrations/supabase/server'; // Impo
 // createSupabaseServerClient is an async function, so it needs to be called inside an async context or useEffect.
 // For a client component, we should use the browser client.
 // Let's correct this to use the browser client for client-side components.
-import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
+// import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
 
-const supabase = getSupabaseFrontendClient(); // Use the frontend client for client components
+// const supabase = getSupabaseFrontendClient(); // Use the frontend client for client components
 
 interface SessionContextType {
   session: Session | null;
@@ -24,6 +24,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true); // Start as loading
 
   useEffect(async () => {
+    const supabase = await createSupabaseServerClient();
     // Listen for auth state changes
     const {
       data: { subscription },
