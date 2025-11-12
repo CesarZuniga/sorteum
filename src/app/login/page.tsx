@@ -21,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signInWithEmailAndPassword({
+    const { data,error } = await signInWithEmailAndPassword({
       email,
       password,
     });
