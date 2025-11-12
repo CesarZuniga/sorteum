@@ -13,29 +13,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '../logo';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button'; // Import Button component
-import { useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js'; // Import createClient directly
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client-utils'; // Import from client-utils
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Initialize Supabase client locally for this client component
-  const supabase = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-    }
-    return null;
-  }, []);
-
   const handleLogout = async () => {
-    if (!supabase) {
-      console.error('Supabase client not initialized for logout.');
-      return;
-    }
     await supabase.auth.signOut();
     router.push('/login'); // Redirect to login page after logout
   };
@@ -72,8 +57,8 @@ export function AdminSidebar() {
                   <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
@@ -83,7 +68,7 @@ export function AdminSidebar() {
               asChild
               tooltip={{ children: 'Log Out', side: 'right' }}
             >
-              <Button variant="ghost" onClick={handleLogout} className="w-full justify-start"> {/* Use Button and onClick */}
+              <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
                 <LogOut />
                 <span>Log Out</span>
               </Button>

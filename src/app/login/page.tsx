@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { createClient } from '@supabase/supabase-js'; // Import createClient directly
+import { supabase } from '@/integrations/supabase/client-utils'; // Import from client-utils
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,29 +17,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize Supabase client locally for this client component
-  const supabase = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-    }
-    return null;
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    if (!supabase) {
-      toast({
-        title: 'Error',
-        description: 'Supabase client not initialized.',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return;
-    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
