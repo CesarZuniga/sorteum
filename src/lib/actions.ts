@@ -66,7 +66,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         const raffleData = validatedFields.data;
         
         const newRaffle = await apiCreateRaffle({
-            ...raffleData,
+            ...entriesObj,
             deadline: new Date(raffleData.deadline).toISOString(),
             adminId: userData.user.id,
         });
