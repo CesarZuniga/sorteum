@@ -1,6 +1,6 @@
 'use server';
 
-import { createSupabaseServerClient } from '@/integrations/supabase/server';
+import createSupabaseServerClient from '@/integrations/supabase/server'; // Import the server-side Supabase client as default
 
 export async function signInWithEmailAndPassword(data: {
     email: string;
