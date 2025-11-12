@@ -4,7 +4,7 @@ import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOu
 import { sendLotteryResults, SendLotteryResultsInput } from '@/ai/flows/automated-lottery-result-notifications';
 import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
-import createSupabaseServerClient from '@/integrations/supabase/server'; // Import the server-side Supabase client as default
+import { createClient } from '@/integrations/supabase/server'; // Import the server-side Supabase client as named export
 
 
 const drawWinnerSchema = z.object({
@@ -165,7 +165,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         };
     }
     
-    const supabase = await createSupabaseServerClient(); // Use server-side client
+    const supabase = await createClient(); // Use server-side client
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
@@ -222,7 +222,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return { message: 'Raffle ID not found.', success: false };
     }
 
-    const supabase = await createSupabaseServerClient(); // Use server-side client
+    const supabase = await createClient(); // Use server-side client
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -257,7 +257,7 @@ export async function deleteRaffleAction(formData: FormData): Promise<DeleteRaff
     return { message: 'Invalid Raffle ID.', success: false };
   }
   
-  const supabase = await createSupabaseServerClient(); // Use server-side client
+  const supabase = await createClient(); // Use server-side client
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {
