@@ -82,26 +82,22 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
 
     } catch (e: any) {
-        let message = 'An unknown error occurred.';
+        let errorMessage: string;
         if (e instanceof Error) {
-            message = e.message;
+            errorMessage = e.message;
         } else if (typeof e === 'string') {
-            message = e;
-        } else if (e && typeof e.message === 'string') {
-            message = e.message;
+            errorMessage = e;
+        } else {
+            // Fallback for any other type of error, ensuring it's a string
+            try {
+                errorMessage = JSON.stringify(e);
+            } catch {
+                errorMessage = String(e);
+            }
         }
-        // FormData is not JSON-serializable directly; convert to a plain object
-        // for safer debugging output.
-        let formObj: Record<string, any> = {};
-        try {
-            formObj = Object.fromEntries(formData ? formData.entries() : []);
-        } catch (_err) {
-            // ignore conversion errors
-        }
-
-        const data = Object.fromEntries(formData.entries());
+        
         return {
-            message: `Database Error: ${message} DATA: ${JSON.stringify(data)}`,
+            message: `Database Error: ${errorMessage}`,
             success: false,
         };
     }
@@ -149,7 +145,19 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
             adminId: userData.user.id,
         });
     } catch (e: any) {
-        return { message: `Database Error: Failed to Update Raffle. ${e.message}`, success: false };
+        let errorMessage: string;
+        if (e instanceof Error) {
+            errorMessage = e.message;
+        } else if (typeof e === 'string') {
+            errorMessage = e;
+        } else {
+            try {
+                errorMessage = JSON.stringify(e);
+            } catch {
+                errorMessage = String(e);
+            }
+        }
+        return { message: `Database Error: Failed to Update Raffle. ${errorMessage}`, success: false };
     }
 
     return { success: true, raffleId: id, message: 'Raffle updated successfully!' };
@@ -177,7 +185,19 @@ export async function deleteRaffleAction(formData: FormData): Promise<DeleteRaff
   try {
     await apiDeleteRaffle(id);
   } catch (e: any) {
-    return { message: `Database Error: Failed to Delete Raffle. ${e.message}`, success: false };
+    let errorMessage: string;
+    if (e instanceof Error) {
+        errorMessage = e.message;
+    } else if (typeof e === 'string') {
+        errorMessage = e;
+    } else {
+        try {
+            errorMessage = JSON.stringify(e);
+        } catch {
+            errorMessage = String(e);
+        }
+    }
+    return { message: `Database Error: Failed to Delete Raffle. ${errorMessage}`, success: false };
   }
 
   return { success: true, message: 'Raffle deleted successfully.' };
