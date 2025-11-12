@@ -1,10 +1,10 @@
-'use client';
+'use server'; // This file now runs on the server
 
 import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOutput } from '@/ai/flows/choose-lottery-winners-with-gen-ai';
 import { sendLotteryResults, SendLotteryResultsInput } from '@/ai/flows/automated-lottery-result-notifications';
 import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
-import { supabase } from '@/integrations/supabase/client'; // Import the client
+import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import the server-side Supabase client
 
 
 const drawWinnerSchema = z.object({
@@ -165,12 +165,9 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         };
     }
     
-    console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Loaded' : 'NOT LOADED');
-    console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Loaded' : 'NOT LOADED');
+    const supabase = await createSupabaseServerClient(); // Use server-side client
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    console.log('CREATE_RAFFLE_ACTION: Supabase getUser data:', userData);
-    console.log('CREATE_RAFFLE_ACTION: Supabase getUser error:', userError);
 
     if (userError || !userData?.user) {
         console.error('Authentication failed in createRaffleAction:', userError);
@@ -225,6 +222,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return { message: 'Raffle ID not found.', success: false };
     }
 
+    const supabase = await createSupabaseServerClient(); // Use server-side client
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -259,6 +257,7 @@ export async function deleteRaffleAction(formData: FormData): Promise<DeleteRaff
     return { message: 'Invalid Raffle ID.', success: false };
   }
   
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {
