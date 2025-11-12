@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { signInWithEmailAndPassword } from '@/lib/auth-actions'; // Import the new server action
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await signInWithEmailAndPassword({
       email,
       password,
     });
