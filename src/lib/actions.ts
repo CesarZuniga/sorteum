@@ -52,18 +52,18 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
             };
         }
 
-        const supabase = await createSupabaseServerClient();
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        // const supabase = await createSupabaseServerClient();
+        // const { data: userData, error: userError } = await supabase.auth.getUser();
 
-        if (userError || !userData?.user) {
-            console.error('Authentication failed in createRaffleAction:', userError);
-            return {
-                message: 'Authentication Error: User not logged in.',
-                success: false,
-            };
-        }
+        // if (userError || !userData?.user) {
+        //     console.error('Authentication failed in createRaffleAction:', userError);
+        //     return {
+        //         message: 'Authentication Error: User not logged in.',
+        //         success: false,
+        //     };
+        // }
 
-        const raffleData = validatedFields.data;
+        // const raffleData = validatedFields.data;
         
         // const newRaffle = await apiCreateRaffle({
         //     ...entriesObj,
