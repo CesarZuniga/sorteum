@@ -65,11 +65,11 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
         const raffleData = validatedFields.data;
         
-        const newRaffle = await apiCreateRaffle({
-            ...raffleData,
-            deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: userData.user.id,
-        });
+        // const newRaffle = await apiCreateRaffle({
+        //     ...raffleData,
+        //     deadline: new Date(raffleData.deadline).toISOString(),
+        //     adminId: userData.user.id,
+        // });
 
         return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
 
