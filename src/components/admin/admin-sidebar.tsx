@@ -3,14 +3,15 @@
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, LogOut, Ticket, Users } from 'lucide-react';
-import Sidebar, { // Importación por defecto
+import {
+  Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-} from '@/components/ui/sidebar';
+} from '@/components/ui'; // Importando desde el index.ts
 import { Logo } from '../logo';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

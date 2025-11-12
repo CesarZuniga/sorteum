@@ -3,11 +3,11 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
-import Sidebar, { // Importación por defecto
+import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
+} from '@/components/ui'; // Importando desde el index.ts
 import { useSession } from '@/components/SessionProvider';
 
 export default function AdminLayout({

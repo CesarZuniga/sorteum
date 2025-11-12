@@ -48,7 +48,7 @@ export function useSidebar() {
 // --- Sidebar Main Component ---
 interface SidebarProps extends React.ComponentProps<"aside"> {}
 
-function Sidebar({ className, children }: SidebarProps) {
+export function Sidebar({ className, children }: SidebarProps) { // Exportación con nombre
   const { isOpen, isMobile } = useSidebar();
 
   return (
@@ -204,5 +204,3 @@ export const SidebarMenuButton = React.forwardRef<
   return button;
 });
 SidebarMenuButton.displayName = "SidebarMenuButton";
-
-export default Sidebar;
