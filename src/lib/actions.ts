@@ -4,7 +4,7 @@ import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOu
 import { sendLotteryResults, SendLotteryResultsInput } from '@/ai/flows/automated-lottery-result-notifications';
 import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
-import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import the server-side Supabase client
+import createSupabaseServerClient from '@/integrations/supabase/server'; // Import the server-side Supabase client as default
 
 
 const drawWinnerSchema = z.object({
