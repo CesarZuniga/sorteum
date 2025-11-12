@@ -1,9 +1,8 @@
 'use server';
 
 import type { Raffle, Ticket, FAQ } from './definitions';
-import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
+import createSupabaseServerClient from '@/integrations/supabase/server'; // Import the server-side Supabase client as default
 import { PlaceHolderImages } from './placeholder-images'; // Keep for initial image assignment
-const supabase = getSupabaseFrontendClient();
 
 // --- Data Access Functions ---
 
@@ -57,6 +56,7 @@ const mapSupabaseFaqToAppType = (dbFaq: any): FAQ => ({
 
 // Raffles
 export const getRaffles = async (): Promise<Raffle[]> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const { data, error } = await supabase
     .from('raffles')
     .select('*')
@@ -70,6 +70,7 @@ export const getRaffles = async (): Promise<Raffle[]> => {
 };
 
 export const getRaffleById = async (id: string): Promise<Raffle | undefined> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const { data, error } = await supabase
     .from('raffles')
     .select('*')
@@ -85,6 +86,7 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
 };
 
 export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): Promise<Raffle> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const supabaseData = mapAppRaffleToSupabaseType(raffleData);
   const { data, error } = await supabase
     .from('raffles')
@@ -120,6 +122,7 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
 };
 
 export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 'id' | 'tickets' | 'active' | 'ticketCount'>>): Promise<Raffle | undefined> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const updatePayload: Partial<any> = {};
   if (raffleData.adminId !== undefined) updatePayload.admin_id = raffleData.adminId;
   if (raffleData.name !== undefined) updatePayload.name = raffleData.name;
@@ -147,6 +150,7 @@ export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 
 };
 
 export const deleteRaffle = async (id: string): Promise<boolean> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   // RLS on tickets table ensures tickets are deleted via CASCADE
   const { error } = await supabase
     .from('raffles')
@@ -162,6 +166,7 @@ export const deleteRaffle = async (id: string): Promise<boolean> => {
 
 // Tickets
 export const getTicketsByRaffleId = async (raffleId: string): Promise<Ticket[]> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const { data, error } = await supabase
     .from('tickets')
     .select('*')
@@ -176,6 +181,7 @@ export const getTicketsByRaffleId = async (raffleId: string): Promise<Ticket[]> 
 };
 
 export const getTicketByNumber = async (raffleId: string, ticketNumber: number): Promise<Ticket | undefined> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const { data, error } = await supabase
     .from('tickets')
     .select('*')
@@ -197,6 +203,7 @@ export const updateTicketStatus = async (
   status: 'reserved' | 'paid' | 'available' | 'winner',
   buyerInfo?: { name: string; email: string; phone: string }
 ): Promise<boolean> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const updatePayload: Partial<any> = { status };
 
   if (status === 'winner') {
@@ -240,6 +247,7 @@ export const updateTicketStatus = async (
 
 // FAQs
 export const getFaqs = async (): Promise<FAQ[]> => {
+  const supabase = await createSupabaseServerClient(); // Use server-side client
   const { data, error } = await supabase
     .from('faqs')
     .select('*')
