@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '../logo';
 import Link from 'next/link';
-import { getSupabaseFrontendClient } from '@/integrations/supabase/client'; // Import Supabase client
+import { createClient } from '@/integrations/supabase/client'; // Import Supabase client
 import { Button } from '@/components/ui/button'; // Import Button component
 
 export function AdminSidebar() {
@@ -21,7 +21,7 @@ export function AdminSidebar() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    const supabase = getSupabaseFrontendClient(); // Initialize Supabase client here
+    const supabase = createClient(); // Initialize Supabase client here
     await supabase.auth.signOut();
     router.push('/login'); // Redirect to login page after logout
   };
