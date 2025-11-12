@@ -52,8 +52,8 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
             };
         }
 
-        const supabase = await createSupabaseServerClient();
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        // const supabase = await createSupabaseServerClient();
+        // const { data: userData, error: userError } = await supabase.auth.getUser();
 
         // if (userError || !userData?.user) {
         //     console.error('Authentication failed in createRaffleAction:', userError);
@@ -63,13 +63,13 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         //     };
         // }
 
-        // const raffleData = validatedFields.data;
+        const raffleData = validatedFields.data;
         
-        // const newRaffle = await apiCreateRaffle({
-        //     ...entriesObj,
-        //     deadline: new Date(raffleData.deadline).toISOString(),
-        //     adminId: userData.user.id,
-        // });
+        const newRaffle = await apiCreateRaffle({
+            ...entriesObj,
+            deadline: new Date(raffleData.deadline).toISOString(),
+            adminId: userData.user.id,
+        });
 
         return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
 
