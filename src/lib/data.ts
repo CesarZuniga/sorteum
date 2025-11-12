@@ -15,7 +15,8 @@ const mapSupabaseRaffleToAppType = (dbRaffle: any): Raffle => ({
   image: dbRaffle.image_url,
   price: parseFloat(dbRaffle.price), // Ensure price is a number
   ticketCount: dbRaffle.total_tickets,
-  deadline: dbRaffle.end_date,
+  // Aseguramos que deadline siempre sea un string ISO
+  deadline: dbRaffle.end_date ? new Date(dbRaffle.end_date).toISOString() : new Date().toISOString(),
   active: dbRaffle.is_active,
 });
 
@@ -40,8 +41,9 @@ const mapSupabaseTicketToAppType = (dbTicket: any): Ticket => ({
   buyerName: dbTicket.purchaser_name,
   buyerEmail: dbTicket.purchaser_email,
   buyerPhone: dbTicket.purchaser_phone_number,
-  purchaseDate: dbTicket.purchase_date,
-  reservationExpiresAt: dbTicket.reservation_expires_at,
+  // Aseguramos que purchaseDate y reservationExpiresAt siempre sean strings ISO o undefined
+  purchaseDate: dbTicket.purchase_date ? new Date(dbTicket.purchase_date).toISOString() : undefined,
+  reservationExpiresAt: dbTicket.reservation_expires_at ? new Date(dbTicket.reservation_expires_at).toISOString() : undefined,
   isWinner: dbTicket.is_winner,
 });
 
@@ -90,7 +92,7 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
   const supabaseData = mapAppRaffleToSupabaseType(raffleData);
   const { data, error } = await supabase
     .from('raffles')
-    .insert(supabaseData)
+    .insert(supabaseData) // Pasamos el objeto directamente, no como string JSON
     .select('*')
     .single();
 

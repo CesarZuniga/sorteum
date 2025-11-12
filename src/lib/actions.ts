@@ -36,52 +36,75 @@ type CreateRaffleState = {
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
-     const validatedFields = CreateRaffle.safeParse({
-        name: formData.get('name'),
-        description: formData.get('description'),
-        price: formData.get('price'),
-        ticketCount: formData.get('ticketCount'),
-        deadline: formData.get('deadline'),
-        image: formData.get('image'),
-    });
-
-    if (!validatedFields.success) {
-        return {
-            errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Failed to create raffle. Please check the fields.',
-            success: false,
-        };
-    }
-    
-    const supabase = await createSupabaseServerClient(); // Use server client
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !userData?.user) {
-        console.error('Authentication failed in createRaffleAction:', userError);
-        return {
-            message: 'Authentication Error: User not logged in.',
-            success: false,
-        };
-    }
-
-    const raffleData = validatedFields.data;
-    let newRaffleId: string | undefined;
-
     try {
+        // Guard: ensure formData is provided and not empty. When called from forms,
+        // `formData` should be a FormData instance with entries. If it's missing
+        // or empty, return a clear error instead of throwing later.
+        if (!formData) {
+            return { message: 'Form data is missing.', success: false };
+        }
+
+        const entriesObj = Object.fromEntries(formData.entries());
+        if (Object.keys(entriesObj).length === 0) {
+            return { message: 'Form data is empty. Please fill out the form.', success: false };
+        }
+        const validatedFields = CreateRaffle.safeParse(entriesObj);
+
+        if (!validatedFields.success) {
+            return {
+                errors: validatedFields.error.flatten().fieldErrors,
+                message: 'Failed to create raffle. Please check the fields.',
+                success: false,
+            };
+        }
+
+        const supabase = await createSupabaseServerClient(); // Use server client
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !userData?.user) {
+            console.error('Authentication failed in createRaffleAction:', userError);
+            return {
+                message: 'Authentication Error: User not logged in.',
+                success: false,
+            };
+        }
+
+        const raffleData = validatedFields.data;
+        console.log('Raffle Data:', raffleData);
+        console.log('User Data:', userData);
+        
         const newRaffle = await apiCreateRaffle({
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
             adminId: userData.user.id,
         });
-        newRaffleId = newRaffle.id;
+
+        return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
+
     } catch (e: any) {
+        let message = 'An unknown error occurred.';
+        if (e instanceof Error) {
+            message = e.message;
+        } else if (typeof e === 'string') {
+            message = e;
+        } else if (e && typeof e.message === 'string') {
+            message = e.message;
+        }
+        // FormData is not JSON-serializable directly; convert to a plain object
+        // for safer debugging output.
+        let formObj: Record<string, any> = {};
+        try {
+            formObj = Object.fromEntries(formData ? formData.entries() : []);
+        } catch (_err) {
+            // ignore conversion errors
+        }
+
+        const data = Object.fromEntries(formData.entries());
         return {
-            message: `Database Error: Failed to Create Raffle. ${e.message}`,
+            message: `Database Error: ${message} DATA: ${JSON.stringify(data)}`,
             success: false,
         };
     }
-
-    return { success: true, raffleId: newRaffleId, message: 'Raffle created successfully!' };
 }
 
 

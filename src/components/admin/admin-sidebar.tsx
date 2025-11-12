@@ -58,8 +58,8 @@ export function AdminSidebar() {
                   <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          </SidebarMenuItem>)
+          )}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
