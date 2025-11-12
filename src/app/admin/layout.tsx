@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
-import {
+import Sidebar, { // Importación por defecto
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,

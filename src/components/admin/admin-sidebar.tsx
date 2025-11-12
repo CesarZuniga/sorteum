@@ -3,8 +3,7 @@
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, LogOut, Ticket, Users } from 'lucide-react';
-import {
-  Sidebar,
+import Sidebar, { // Importación por defecto
   SidebarContent,
   SidebarHeader,
   SidebarMenu,
