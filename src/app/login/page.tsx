@@ -9,10 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from '@/lib/auth-actions'; // Import the new server action
+import { useSession } from '@/components/SessionProvider'; // Import useSession
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { setSession } = useSession(); // Get setSession from useSession
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +36,10 @@ export default function LoginPage() {
       });
       setIsLoading(false);
     } else {
+      // Update the session in the context
+      if (data.session) {
+        setSession(data.session); 
+      }
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
