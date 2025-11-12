@@ -17,6 +17,7 @@ export default function AdminLayout({
 }) {
   const { session, isLoading } = useSession();
   const router = useRouter();
+  console.log('Session en Layout', session);
 
   useEffect(() => {
     if (!isLoading && !session) {
