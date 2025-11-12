@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
+import { createSupabaseServerClient } from '@/integrations/supabase/server';
 // import { useRouter } from 'next/navigation'; // Removed unused import
-const supabase = getSupabaseFrontendClient();
+const supabase = createSupabaseServerClient();
 interface SessionContextType {
   session: Session | null;
   isLoading: boolean;
