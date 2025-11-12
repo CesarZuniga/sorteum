@@ -1,8 +1,9 @@
 'use server';
 
 import type { Raffle, Ticket, FAQ } from './definitions';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
 import { PlaceHolderImages } from './placeholder-images'; // Keep for initial image assignment
+const supabase = getSupabaseFrontendClient();
 
 // --- Data Access Functions ---
 
