@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react'; // Explicitly import React
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import {
@@ -8,7 +8,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { useSession } from '@/components/SessionProvider'; // Import useSession
+import { useSession } from '@/components/SessionProvider';
 
 export default function AdminLayout({
   children,
@@ -25,7 +25,6 @@ export default function AdminLayout({
   }, [session, isLoading, router]);
 
   if (isLoading || !session) {
-    // Optionally render a loading spinner or nothing while checking session
     return <div className="flex items-center justify-center min-h-screen">Loading admin area...</div>;
   }
 

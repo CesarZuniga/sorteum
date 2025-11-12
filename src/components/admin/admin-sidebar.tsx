@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react'; // Explicitly import React
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, LogOut, Ticket, Users } from 'lucide-react';
 import {
@@ -14,7 +15,7 @@ import {
 import { Logo } from '../logo';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client-utils'; // Import from client-utils
+import { supabase } from '@/integrations/supabase/client-utils';
 
 export function AdminSidebar() {
   const pathname = usePathname();
