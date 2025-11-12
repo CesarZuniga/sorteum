@@ -92,7 +92,7 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
   const supabaseData = mapAppRaffleToSupabaseType(raffleData);
   const { data, error } = await supabase
     .from('raffles')
-    .insert(supabaseData) // Pasamos el objeto directamente, no como string JSON
+    .insert([supabaseData]) // Pasamos el objeto directamente, no como string JSON
     .select('*')
     .single();
 
