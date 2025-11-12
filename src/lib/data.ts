@@ -49,7 +49,7 @@ const mapSupabaseTicketToAppType = (dbTicket: any): Ticket => ({
 const mapSupabaseFaqToAppType = (dbFaq: any): FAQ => ({
   id: dbFaq.id,
   question: dbFaq.question,
-  answer: dbFaq.answer, // Corrected typo here
+  answer: dbFaq.answer,
   orderIndex: dbFaq.order_index,
 });
 
@@ -63,8 +63,8 @@ export const getRaffles = async (): Promise<Raffle[]> => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching raffles:', error);
-    throw new Error('Failed to fetch raffles.');
+    console.error('Supabase Error fetching raffles:', error);
+    throw new Error(`Failed to fetch raffles: ${error.message || 'Unknown Supabase error'}`);
   }
   return data.map(mapSupabaseRaffleToAppType);
 };
@@ -78,8 +78,8 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
     .single();
 
   if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-    console.error(`Error fetching raffle by ID ${id}:`, error);
-    throw new Error(`Failed to fetch raffle with ID ${id}.`);
+    console.error(`Supabase Error fetching raffle by ID ${id}:`, error);
+    throw new Error(`Failed to fetch raffle with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
   }
 
   return data ? mapSupabaseRaffleToAppType(data) : undefined;
@@ -95,8 +95,8 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
     .single();
 
   if (error) {
-    console.error('Error creating raffle:', error);
-    throw new Error(`Failed to create raffle: ${error.message}`);
+    console.error('Supabase Error creating raffle:', error);
+    throw new Error(`Failed to create raffle: ${error.message || 'Unknown Supabase error'}`);
   }
 
   const newRaffle = mapSupabaseRaffleToAppType(data);
@@ -113,9 +113,9 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
     .insert(newTicketsData);
 
   if (ticketsError) {
-    console.error('Error creating tickets for new raffle:', ticketsError);
+    console.error('Supabase Error creating tickets for new raffle:', ticketsError);
     // Optionally, you might want to delete the created raffle here if ticket creation fails
-    throw new Error(`Failed to create tickets for raffle: ${ticketsError.message}`);
+    throw new Error(`Failed to create tickets for raffle: ${ticketsError.message || 'Unknown Supabase error'}`);
   }
 
   return newRaffle;
@@ -142,8 +142,8 @@ export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 
     .single();
 
   if (error) {
-    console.error(`Error updating raffle ${id}:`, error);
-    throw new Error(`Failed to update raffle with ID ${id}: ${error.message}`);
+    console.error(`Supabase Error updating raffle ${id}:`, error);
+    throw new Error(`Failed to update raffle with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
   }
 
   return data ? mapSupabaseRaffleToAppType(data) : undefined;
@@ -158,8 +158,8 @@ export const deleteRaffle = async (id: string): Promise<boolean> => {
     .eq('id', id);
 
   if (error) {
-    console.error(`Error deleting raffle ${id}:`, error);
-    throw new Error(`Failed to delete raffle with ID ${id}: ${error.message}`);
+    console.error(`Supabase Error deleting raffle ${id}:`, error);
+    throw new Error(`Failed to delete raffle with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
   }
   return true;
 };
@@ -174,8 +174,8 @@ export const getTicketsByRaffleId = async (raffleId: string): Promise<Ticket[]> 
     .order('ticket_number', { ascending: true });
 
   if (error) {
-    console.error(`Error fetching tickets for raffle ${raffleId}:`, error);
-    throw new Error(`Failed to fetch tickets for raffle with ID ${raffleId}.`);
+    console.error(`Supabase Error fetching tickets for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to fetch tickets for raffle with ID ${raffleId}: ${error.message || 'Unknown Supabase error'}`);
   }
   return data.map(mapSupabaseTicketToAppType);
 };
@@ -190,8 +190,8 @@ export const getTicketByNumber = async (raffleId: string, ticketNumber: number):
     .single();
 
   if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-    console.error(`Error fetching ticket #${ticketNumber} for raffle ${raffleId}:`, error);
-    throw new Error(`Failed to fetch ticket #${ticketNumber} for raffle with ID ${raffleId}.`);
+    console.error(`Supabase Error fetching ticket #${ticketNumber} for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to fetch ticket #${ticketNumber} for raffle with ID ${raffleId}: ${error.message || 'Unknown Supabase error'}`);
   }
 
   return data ? mapSupabaseTicketToAppType(data) : undefined;
@@ -239,8 +239,8 @@ export const updateTicketStatus = async (
     .eq('ticket_number', ticketNumber);
 
   if (error) {
-    console.error(`Error updating ticket #${ticketNumber} for raffle ${raffleId}:`, error);
-    throw new Error(`Failed to update ticket status: ${error.message}`);
+    console.error(`Supabase Error updating ticket #${ticketNumber} for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to update ticket status: ${error.message || 'Unknown Supabase error'}`);
   }
   return true;
 };
@@ -254,8 +254,8 @@ export const getFaqs = async (): Promise<FAQ[]> => {
     .order('order_index', { ascending: true });
 
   if (error) {
-    console.error('Error fetching FAQs:', error);
-    throw new Error('Failed to fetch FAQs.');
+    console.error('Supabase Error fetching FAQs:', error);
+    throw new Error(`Failed to fetch FAQs: ${error.message || 'Unknown Supabase error'}`);
   }
   return data.map(mapSupabaseFaqToAppType);
 };
