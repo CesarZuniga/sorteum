@@ -1,12 +1,12 @@
 'use server';
 
-import createSupabaseServerClient from '@/integrations/supabase/server'; // Import the server-side Supabase client as default
+import { createClient } from '@/integrations/supabase/server'; // Import the server-side Supabase client as named export
 
 export async function signInWithEmailAndPassword(data: {
     email: string;
     password: string;
 }) {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createClient();
     const result = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
     return result;
 }
@@ -15,7 +15,7 @@ export async function signUpWithEmailAndPassword(data: {
     email: string;
     password: string;
 }) {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createClient();
     const result = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
