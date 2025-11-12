@@ -89,7 +89,7 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
 
 export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): Promise<Raffle> => {
   const supabase = await createSupabaseServerClient();
-  const supabaseData = raffleData;//mapAppRaffleToSupabaseType(raffleData);
+  const supabaseData = mapAppRaffleToSupabaseType(raffleData);
   const { data, error } = await supabase
     .from('raffles')
     .insert([supabaseData]) // Pasamos el objeto directamente, no como string JSON
