@@ -2,15 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session } from '@supabase/supabase-js';
-import createSupabaseServerClient from '@/integrations/supabase/server'; // Import the server-side Supabase client as default
-// import { useRouter } from 'next/navigation'; // Removed unused import
-
-// createSupabaseServerClient is an async function, so it needs to be called inside an async context or useEffect.
-// For a client component, we should use the browser client.
-// Let's correct this to use the browser client for client-side components.
-// import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
-
-// const supabase = getSupabaseFrontendClient(); // Use the frontend client for client components
+import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
 
 interface SessionContextType {
   session: Session | null;
@@ -23,8 +15,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start as loading
 
-  useEffect(async () => {
-    const supabase = await createSupabaseServerClient();
+  useEffect(() => {
+    const supabase = getSupabaseFrontendClient(); // Initialize Supabase client here
+
     // Listen for auth state changes
     const {
       data: { subscription },
