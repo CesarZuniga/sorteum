@@ -68,7 +68,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         const newRaffle = await apiCreateRaffle({
             ...entriesObj,
             deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: userData.user.id,
+            adminId: 'a24c7d63-ad56-4f73-a529-40095a81c4a4',
         });
 
         return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
