@@ -45,7 +45,7 @@ export default function NewRafflePage() {
           </Link>
       </Button>
 
-      <form action={()=>dispatch()}>
+      <form action={(f)=>dispatch(f)}>
         <Card>
           <CardHeader>
             <CardTitle>Create New Raffle</CardTitle>
