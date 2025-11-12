@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react'; // Explicitly import React
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import {

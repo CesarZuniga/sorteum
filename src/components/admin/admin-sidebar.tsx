@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react'; // Explicitly import React
+import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, LogOut, Ticket, Users } from 'lucide-react';
 import {
