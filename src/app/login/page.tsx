@@ -8,14 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithEmailAndPassword } from '@/lib/auth-actions'; // Import the new server action
-import { useSession } from '@/components/SessionProvider'; // Import useSession
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  // No necesitamos setSession aquí, el SessionProvider lo maneja automáticamente.
-  // const { setSession } = useSession(); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { data,error } = await signInWithEmailAndPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -37,8 +34,6 @@ export default function LoginPage() {
       });
       setIsLoading(false);
     } else {
-      // El SessionProvider ya escuchará el cambio de estado de autenticación de Supabase
-      // y actualizará la sesión automáticamente. No es necesario llamar a setSession aquí.
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
