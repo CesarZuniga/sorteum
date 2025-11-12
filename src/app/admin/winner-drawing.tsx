@@ -1,14 +1,14 @@
 'use client';
 
-import { useActionState, useFormStatus } from 'react';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
 import type { Raffle } from '@/lib/definitions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Sparkles, Send, Trophy, AlertCircle, CheckCircle } from 'lucide-react';
+import { Sparkles, Trophy, AlertCircle } from 'lucide-react';
 import React from 'react';
 
 function SubmitButton({ text, loadingText }: { text: string; loadingText: string }) {
@@ -56,7 +56,6 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount }: WinnerDra
             This section is for manually drawing winners. AI functionality has been removed.
           </CardDescription>
         </CardHeader>
-        {/* Removed form for AI-powered winner drawing */}
         <CardContent className="space-y-4">
             <div>
               <Label htmlFor="winnerCount">Number of Winners</Label>
@@ -72,15 +71,12 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount }: WinnerDra
             </Alert>
           </CardContent>
           <CardFooter>
-            {/* Removed submit button for AI drawing */}
             <Button disabled className="w-full">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Draw Winners (Disabled)
             </Button>
           </CardFooter>
       </Card>
-      
-      {/* Removed display for AI results and notification form */}
     </div>
   );
 }

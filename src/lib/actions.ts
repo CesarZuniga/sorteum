@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
 import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import the server client
+import { toast } from '@/hooks/use-toast'; // Import toast for client-side notifications
 
 
 // Removed drawWinnerAction and notifyWinnersAction as they depend on Genkit AI.
@@ -169,21 +170,24 @@ type DeleteRaffleState = {
     success?: boolean;
 };
 
-export async function deleteRaffleAction(formData: FormData): Promise<DeleteRaffleState> {
+export async function deleteRaffleAction(formData: FormData): Promise<void> { // Changed return type to Promise<void>
   const id = formData.get('id');
   if (typeof id !== 'string') {
-    return { message: 'Invalid Raffle ID.', success: false };
+    toast({ title: 'Error', description: 'Invalid Raffle ID.', variant: 'destructive' });
+    return;
   }
   
   const supabase = await createSupabaseServerClient(); // Use server client
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {
-      return { message: 'Authentication Error: User not logged in.', success: false };
+      toast({ title: 'Error', description: 'Authentication Error: User not logged in.', variant: 'destructive' });
+      return;
   }
 
   try {
     await apiDeleteRaffle(id);
+    toast({ title: 'Success', description: 'Raffle deleted successfully.' });
   } catch (e: any) {
     let errorMessage: string;
     if (e instanceof Error) {
@@ -197,8 +201,6 @@ export async function deleteRaffleAction(formData: FormData): Promise<DeleteRaff
             errorMessage = String(e);
         }
     }
-    return { message: `Database Error: Failed to Delete Raffle. ${errorMessage}`, success: false };
+    toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
   }
-
-  return { success: true, message: 'Raffle deleted successfully.' };
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,6 +26,7 @@ const statusConfig = {
   paid: { label: 'Paid', variant: 'default', icon: CheckCircle },
   reserved: { label: 'Reserved', variant: 'secondary', icon: Clock },
   available: { label: 'Available', variant: 'outline', icon: XCircle },
+  winner: { label: 'Winner', variant: 'destructive', icon: Trophy }, // Added winner status
 };
 
 interface TicketsTableProps {
