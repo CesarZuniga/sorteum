@@ -49,7 +49,7 @@ const mapSupabaseTicketToAppType = (dbTicket: any): Ticket => ({
 const mapSupabaseFaqToAppType = (dbFaq: any): FAQ => ({
   id: dbFaq.id,
   question: dbFaq.question,
-  answer: dbFFaq.answer,
+  answer: dbFaq.answer, // Corrected typo here
   orderIndex: dbFaq.order_index,
 });
 
