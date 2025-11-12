@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { getSupabaseFrontendClient } from '@/integrations/supabase/client';
+import { createClient } from '@/integrations/supabase/client'; // Import the client-side Supabase client as named export
 
 interface SessionContextType {
   session: Session | null;
@@ -16,7 +16,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true); // Start as loading
 
   useEffect(() => {
-    const supabase = getSupabaseFrontendClient(); // Initialize Supabase client here
+    const supabase = createClient(); // Initialize Supabase client here
 
     // Listen for auth state changes
     const {
