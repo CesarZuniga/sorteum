@@ -1,12 +1,9 @@
 'use client';
 
 import { z } from 'zod';
-import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
-import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import the server client
-import { toast } from '@/hooks/use-toast'; // Import toast for client-side notifications
-
-
-// Removed drawWinnerAction and notifyWinnersAction as they depend on Genkit AI.
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
+import { createSupabaseServerClient } from '@/integrations/supabase/server';
+import { toast } from '@/hooks/use-toast';
 
 const FormSchema = z.object({
     id: z.string().optional(),
@@ -20,7 +17,6 @@ const FormSchema = z.object({
 
 const CreateRaffle = FormSchema.omit({ id: true });
 const UpdateRaffle = FormSchema.omit({ ticketCount: true });
-
 
 type CreateRaffleState = {
     errors?: {
@@ -38,9 +34,6 @@ type CreateRaffleState = {
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
     try {
-        // Guard: ensure formData is provided and not empty. When called from forms,
-        // `formData` should be a FormData instance with entries. If it's missing
-        // or empty, return a clear error instead of throwing later.
         if (!formData) {
             return { message: 'Form data is missing.', success: false };
         }
@@ -59,7 +52,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
             };
         }
 
-        const supabase = await createSupabaseServerClient(); // Use server client
+        const supabase = await createSupabaseServerClient();
         const { data: userData, error: userError } = await supabase.auth.getUser();
 
         if (userError || !userData?.user) {
@@ -71,8 +64,6 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         }
 
         const raffleData = validatedFields.data;
-        console.log('Raffle Data:', raffleData);
-        console.log('User Data:', userData);
         
         const newRaffle = await apiCreateRaffle({
             ...raffleData,
@@ -82,24 +73,14 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
         return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
 
-    } catch (e: any) {
-        let errorMessage: string;
-        if (e instanceof Error) {
-            errorMessage = e.message;
-        } else if (typeof e === 'string') {
-            errorMessage = e;
-        } else {
-            // Fallback for any other type of error, ensuring it's a string
-            try {
-                errorMessage = JSON.stringify(e);
-            } catch {
-                errorMessage = String(e);
-            }
-        }
+    } catch (e: unknown) { // Changed to unknown
+        const errorMessage = e instanceof Error ? e.message : String(e); // Simplified error message extraction
         
         return {
             message: `Database Error: ${errorMessage}`,
             success: false,
+            errors: undefined, // Explicitly set optional properties to undefined
+            raffleId: undefined,
         };
     }
 }
@@ -129,7 +110,7 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return { message: 'Raffle ID not found.', success: false };
     }
 
-    const supabase = await createSupabaseServerClient(); // Use server client
+    const supabase = await createSupabaseServerClient();
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -145,39 +126,28 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
             deadline: new Date(dataToUpdate.deadline).toISOString(),
             adminId: userData.user.id,
         });
-    } catch (e: any) {
-        let errorMessage: string;
-        if (e instanceof Error) {
-            errorMessage = e.message;
-        } else if (typeof e === 'string') {
-            errorMessage = e;
-        } else {
-            try {
-                errorMessage = JSON.stringify(e);
-            } catch {
-                errorMessage = String(e);
-            }
-        }
-        return { message: `Database Error: Failed to Update Raffle. ${errorMessage}`, success: false };
+    } catch (e: unknown) { // Changed to unknown
+        const errorMessage = e instanceof Error ? e.message : String(e); // Simplified error message extraction
+        return { 
+            message: `Database Error: Failed to Update Raffle. ${errorMessage}`, 
+            success: false,
+            errors: undefined,
+            raffleId: undefined,
+        };
     }
 
     return { success: true, raffleId: id, message: 'Raffle updated successfully!' };
 }
 
 
-type DeleteRaffleState = {
-    message?: string;
-    success?: boolean;
-};
-
-export async function deleteRaffleAction(formData: FormData): Promise<void> { // Changed return type to Promise<void>
+export async function deleteRaffleAction(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') {
     toast({ title: 'Error', description: 'Invalid Raffle ID.', variant: 'destructive' });
     return;
   }
   
-  const supabase = await createSupabaseServerClient(); // Use server client
+  const supabase = await createSupabaseServerClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {
@@ -188,19 +158,8 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> { //
   try {
     await apiDeleteRaffle(id);
     toast({ title: 'Success', description: 'Raffle deleted successfully.' });
-  } catch (e: any) {
-    let errorMessage: string;
-    if (e instanceof Error) {
-        errorMessage = e.message;
-    } else if (typeof e === 'string') {
-        errorMessage = e;
-    } else {
-        try {
-            errorMessage = JSON.stringify(e);
-        } catch {
-            errorMessage = String(e);
-        }
-    }
+  } catch (e: unknown) { // Changed to unknown
+    const errorMessage = e instanceof Error ? e.message : String(e); // Simplified error message extraction
     toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
   }
 }
