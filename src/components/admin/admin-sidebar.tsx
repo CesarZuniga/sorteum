@@ -13,9 +13,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '../logo';
 import Link from 'next/link';
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { getSupabaseFrontendClient } from '@/integrations/supabase/client'; // Import Supabase client
 import { Button } from '@/components/ui/button'; // Import Button component
-
+const supabase = getSupabaseFrontendClient();
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
