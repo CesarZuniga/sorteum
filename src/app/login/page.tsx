@@ -14,7 +14,8 @@ import { useSession } from '@/components/SessionProvider'; // Import useSession
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setSession } = useSession(); // Get setSession from useSession
+  // No necesitamos setSession aquí, el SessionProvider lo maneja automáticamente.
+  // const { setSession } = useSession(); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,10 +37,8 @@ export default function LoginPage() {
       });
       setIsLoading(false);
     } else {
-      // Update the session in the context
-      if (data.session) {
-        setSession(data.session); 
-      }
+      // El SessionProvider ya escuchará el cambio de estado de autenticación de Supabase
+      // y actualizará la sesión automáticamente. No es necesario llamar a setSession aquí.
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
