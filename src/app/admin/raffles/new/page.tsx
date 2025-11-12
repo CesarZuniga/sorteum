@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createRaffleAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useRouter } from 'next/navigation';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,8 +26,15 @@ function SubmitButton() {
 }
 
 export default function NewRafflePage() {
-  const initialState = { message: undefined, errors: {} };
+  const router = useRouter();
+  const initialState = { message: undefined, errors: {}, success: false, raffleId: undefined };
   const [state, dispatch] = useActionState(createRaffleAction, initialState);
+
+  useEffect(() => {
+    if (state.success && state.raffleId) {
+      router.push(`/admin/raffles/${state.raffleId}`);
+    }
+  }, [state.success, state.raffleId, router]);
 
   return (
     <div className="space-y-6">

@@ -1,12 +1,11 @@
-'use server';
+'use client';
 
 import { chooseLotteryWinners, ChooseLotteryWinnersInput, ChooseLotteryWinnersOutput } from '@/ai/flows/choose-lottery-winners-with-gen-ai';
 import { sendLotteryResults, SendLotteryResultsInput } from '@/ai/flows/automated-lottery-result-notifications';
 import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, getRaffleById, getTicketsByRaffleId } from './data';
-import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
-import { createSupabaseServerClient } from '@/integrations/supabase/server'; // Import the server client
+import { supabase } from '@/integrations/supabase/client'; // Import the client
+
 
 const drawWinnerSchema = z.object({
   raffleId: z.string(),
@@ -144,6 +143,8 @@ type CreateRaffleState = {
         image?: string[];
     };
     message?: string;
+    success?: boolean;
+    raffleId?: string;
 };
 
 export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
@@ -160,41 +161,43 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
         return {
             errors: validatedFields.error.flatten().fieldErrors,
             message: 'Failed to create raffle. Please check the fields.',
+            success: false,
         };
     }
     
-    // Log para depuración: verificar si las variables de entorno están disponibles en la acción
     console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Loaded' : 'NOT LOADED');
     console.log('CREATE_RAFFLE_ACTION: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Loaded' : 'NOT LOADED');
 
-    const supabase = await createSupabaseServerClient(); // AWAIT this call
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    console.log('CREATE_RAFFLE_ACTION: Supabase getUser data:', userData); // Added log
-    console.log('CREATE_RAFFLE_ACTION: Supabase getUser error:', userError); // Added log
+    console.log('CREATE_RAFFLE_ACTION: Supabase getUser data:', userData);
+    console.log('CREATE_RAFFLE_ACTION: Supabase getUser error:', userError);
 
     if (userError || !userData?.user) {
-        console.error('Authentication failed in createRaffleAction:', userError); // Added log
+        console.error('Authentication failed in createRaffleAction:', userError);
         return {
             message: 'Authentication Error: User not logged in.',
+            success: false,
         };
     }
 
     const raffleData = validatedFields.data;
+    let newRaffleId: string | undefined;
 
     try {
-        await apiCreateRaffle({
+        const newRaffle = await apiCreateRaffle({
             ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: userData.user.id, // Use the actual authenticated user's ID
+            adminId: userData.user.id,
         });
+        newRaffleId = newRaffle.id;
     } catch (e: any) {
         return {
             message: `Database Error: Failed to Create Raffle. ${e.message}`,
+            success: false,
         };
     }
 
-    revalidatePath('/admin/raffles');
-    redirect('/admin/raffles');
+    return { success: true, raffleId: newRaffleId, message: 'Raffle created successfully!' };
 }
 
 
@@ -212,21 +215,22 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return {
             errors: validatedFields.error.flatten().fieldErrors,
             message: 'Failed to update raffle. Please check the fields.',
+            success: false,
         };
     }
 
     const { id, ...dataToUpdate } = validatedFields.data;
 
     if (!id) {
-        return { message: 'Raffle ID not found.' };
+        return { message: 'Raffle ID not found.', success: false };
     }
 
-    const supabase = await createSupabaseServerClient(); // AWAIT this call
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
         return {
             message: 'Authentication Error: User not logged in.',
+            success: false,
         };
     }
 
@@ -234,41 +238,38 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         await apiUpdateRaffle(id, {
             ...dataToUpdate,
             deadline: new Date(dataToUpdate.deadline).toISOString(),
-            adminId: userData.user.id, // Ensure adminId is passed for RLS if needed
+            adminId: userData.user.id,
         });
     } catch (e: any) {
-        return { message: `Database Error: Failed to Update Raffle. ${e.message}` };
+        return { message: `Database Error: Failed to Update Raffle. ${e.message}`, success: false };
     }
 
-    revalidatePath(`/admin/raffles`);
-    revalidatePath(`/admin/raffles/${id}`);
-    revalidatePath(`/raffles/${id}`);
-    redirect(`/admin/raffles/${id}`);
+    return { success: true, raffleId: id, message: 'Raffle updated successfully!' };
 }
 
 
-export async function deleteRaffleAction(formData: FormData) {
+type DeleteRaffleState = {
+    message?: string;
+    success?: boolean;
+};
+
+export async function deleteRaffleAction(formData: FormData): Promise<DeleteRaffleState> {
   const id = formData.get('id');
   if (typeof id !== 'string') {
-    // Handle error: ID is not a string
-    return;
+    return { message: 'Invalid Raffle ID.', success: false };
   }
   
-  const supabase = await createSupabaseServerClient(); // AWAIT this call
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {
-      // This should ideally be handled by RLS, but as a fallback
-      return { message: 'Authentication Error: User not logged in.' };
+      return { message: 'Authentication Error: User not logged in.', success: false };
   }
 
   try {
     await apiDeleteRaffle(id);
-  } catch (e) {
-    // Handle database error
-    return { message: `Database Error: Failed to Delete Raffle. ${e.message}` };
+  } catch (e: any) {
+    return { message: `Database Error: Failed to Delete Raffle. ${e.message}`, success: false };
   }
 
-  revalidatePath('/admin/raffles');
-  revalidatePath('/');
+  return { success: true, message: 'Raffle deleted successfully.' };
 }

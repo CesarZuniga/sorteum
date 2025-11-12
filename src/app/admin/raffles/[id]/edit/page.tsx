@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useActionState } from 'react';
@@ -18,6 +17,7 @@ import { notFound } from 'next/navigation';
 import {format} from 'date-fns/format'
 import type { Raffle } from '@/lib/definitions';
 import { getRaffleById } from '@/lib/data';
+import { useRouter } from 'next/navigation';
 
 
 function SubmitButton() {
@@ -31,9 +31,10 @@ function SubmitButton() {
 }
 
 export default function EditRafflePage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   
-  const initialState = { message: undefined, errors: {} };
+  const initialState = { message: undefined, errors: {}, success: false, raffleId: undefined };
   const [state, dispatch] = useActionState(updateRaffleAction, initialState);
 
   useEffect(() => {
@@ -44,6 +45,11 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
     loadRaffle();
   }, [params.id]);
 
+  useEffect(() => {
+    if (state.success && state.raffleId) {
+      router.push(`/admin/raffles/${state.raffleId}`);
+    }
+  }, [state.success, state.raffleId, router]);
 
   if (raffle === undefined) {
     return <div>Loading...</div>;
