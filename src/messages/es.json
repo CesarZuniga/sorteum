@@ -198,7 +198,8 @@
     "ticketTableWinnerLimitReachedTitle": "Límite de Ganadores Alcanzado",
     "ticketTableWinnerLimitReachedDescription": "Solo puedes seleccionar {maxWinners} ganador(es) para esta rifa.",
     "ticketTableTicketUpdated": "Boleto Actualizado",
-    "ticketTableTicketUpdatedDescription": "El estado del boleto #{ticketNumber} ha cambiado a {status}."
+    "ticketTableTicketUpdatedDescription": "El estado del boleto #{ticketNumber} ha cambiado a {status}.",
+    "logout": "Cerrar Sesión"
   },
   "Logo": {
     "name": "Sorteum"

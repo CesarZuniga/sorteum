@@ -198,7 +198,8 @@
     "ticketTableWinnerLimitReachedTitle": "Winner Limit Reached",
     "ticketTableWinnerLimitReachedDescription": "You can only select {maxWinners} winner(s) for this raffle.",
     "ticketTableTicketUpdated": "Ticket Updated",
-    "ticketTableTicketUpdatedDescription": "Ticket #{ticketNumber} status changed to {status}."
+    "ticketTableTicketUpdatedDescription": "Ticket #{ticketNumber} status changed to {status}.",
+    "logout": "Log Out"
   },
   "Logo": {
     "name": "Sorteum"

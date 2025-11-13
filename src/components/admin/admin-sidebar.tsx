@@ -11,13 +11,15 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-} from '@/components/ui'; // Importando desde el index.ts
+} from '@/components/ui';
 import { Logo } from '../logo';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client-utils';
+import { useTranslations } from 'next-intl'; // Import useTranslations
 
 export function AdminSidebar() {
+  const t = useTranslations('Admin'); // Initialize translations
   const pathname = usePathname();
   const router = useRouter();
 
@@ -29,12 +31,12 @@ export function AdminSidebar() {
   const menuItems = [
     {
       href: '/admin',
-      label: 'Dashboard',
+      label: t('dashboardTitle'), // Use translation
       icon: LayoutDashboard,
     },
     {
       href: '/admin/raffles',
-      label: 'Raffles',
+      label: t('rafflesTitle'), // Use translation
       icon: Ticket,
     },
   ];
@@ -69,13 +71,12 @@ export function AdminSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              tooltip={{ children: 'Log Out', side: 'right' }}
+              tooltip={{ children: t('logout'), side: 'right' }} // Use translation for tooltip
             >
               <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
-                {/* Envuelto en un div para que el Button tenga un único hijo */}
                 <div className="flex items-center gap-2"> 
                   <LogOut />
-                  <span>Log Out</span>
+                  <span>{t('logout')}</span> {/* Use translation for text */}
                 </div>
               </Button>
             </SidebarMenuButton>
