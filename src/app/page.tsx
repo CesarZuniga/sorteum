@@ -11,6 +11,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
 import { useTranslations } from 'next-intl';
+import { Logo } from '@/components/logo'; // Importar el componente Logo
 
 
 function SecurePayments() {
@@ -83,7 +84,7 @@ function SiteFooter() {
             <div className="container mx-auto px-4 py-8">
                 <div className="grid md:grid-cols-3 gap-8 text-center md:text-left">
                      <div>
-                        <span className="text-lg font-bold">{t('Logo.name')}</span>
+                        <Logo className="text-white" /> {/* Usar el componente Logo aquí */}
                         <p className="text-sm text-gray-400 mt-2">{t('footerTagline')}</p>
                     </div>
                     <div>
