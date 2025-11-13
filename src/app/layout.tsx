@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
-import '../globals.css';
+import './globals.css'; // Ruta corregida
 import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
-import { SessionProvider } from '@/components/SessionProvider'; // Import SessionProvider
+import { SessionProvider } from '@/components/SessionProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { cookies } from 'next/headers'; // Importar cookies para leer en el servidor
 
 const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '900'],
-  variable: '--font-inter', // Define una variable CSS para Tailwind
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -19,15 +20,11 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params
 }: Readonly<{
   children: React.ReactNode;
-  params: { locale: string };
 }>) {
-  // Explicitly await params before accessing its properties, as suggested by the error.
-  // This is unusual for Next.js params, but the error message is very specific.
-  const awaitedParams = await Promise.resolve(params); // Ensure it's a promise to await
-  const { locale } = awaitedParams;
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en'; // Leer el locale de la cookie
 
   const messages = await getMessages();
 
@@ -37,8 +34,8 @@ export default async function RootLayout({
         {/* Las etiquetas link para las fuentes se eliminan, next/font las inyecta automáticamente */}
       </head>
       <body className={`${inter.variable} font-body antialiased bg-background text-foreground`}>
-        <NextIntlClientProvider messages={messages}>
-          <SessionProvider> {/* Wrap children with SessionProvider */}
+        <NextIntlClientProvider messages={messages} locale={locale}> {/* Pasar el locale a NextIntlClientProvider */}
+          <SessionProvider>
             {children}
           </SessionProvider>
         </NextIntlClientProvider>

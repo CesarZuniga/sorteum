@@ -6,17 +6,11 @@ import { Logo } from '@/components/logo';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLocale } from 'next-intl';
+import { LocaleSwitcher } from './locale-switcher'; // Importar el nuevo componente
 
 
 export function SiteHeader() {
   const t = useTranslations('Index');
-  const pathname = usePathname();
-  const router = useRouter();
-  const locale = useLocale();
-
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -27,11 +21,6 @@ export function SiteHeader() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const onSelectChange = (nextLocale: string) => {
-    const newPath = pathname.replace(`/${locale}`, `/${nextLocale}`);
-    router.replace(newPath);
-  };
 
   const NavLinks = () => (
     <>
@@ -60,26 +49,10 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden md:flex items-center gap-2">
           <NavLinks />
-          <Select onValueChange={onSelectChange} defaultValue={locale}>
-            <SelectTrigger className="w-[100px] bg-transparent text-white border-white/50 hover:border-white">
-              <SelectValue placeholder="Language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-            </SelectContent>
-          </Select>
+          <LocaleSwitcher /> {/* Usar el LocaleSwitcher */}
         </nav>
         <div className="md:hidden flex items-center gap-2">
-            <Select onValueChange={onSelectChange} defaultValue={locale}>
-                <SelectTrigger className="w-[100px] bg-transparent text-white border-white/50 hover:border-white">
-                <SelectValue placeholder="Language" />
-                </SelectTrigger>
-                <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-                </SelectContent>
-            </Select>
+            <LocaleSwitcher /> {/* Usar el LocaleSwitcher */}
             <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X/> : <Menu />}
                 <span className="sr-only">Toggle Menu</span>
