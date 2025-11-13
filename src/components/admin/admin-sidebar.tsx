@@ -54,7 +54,7 @@ export function AdminSidebar() {
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
-                  <div className="flex items-center gap-2"> {/* Envuelto en un div */}
+                  <div className="flex items-center gap-2">
                     <item.icon />
                     <span>{item.label}</span>
                   </div>
@@ -72,8 +72,11 @@ export function AdminSidebar() {
               tooltip={{ children: 'Log Out', side: 'right' }}
             >
               <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
-                <LogOut />
-                <span>Log Out</span>
+                {/* Envuelto en un div para que el Button tenga un único hijo */}
+                <div className="flex items-center gap-2"> 
+                  <LogOut />
+                  <span>Log Out</span>
+                </div>
               </Button>
             </SidebarMenuButton>
           </SidebarMenuItem>
