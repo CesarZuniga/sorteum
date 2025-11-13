@@ -2,8 +2,8 @@
 
 import { z } from 'zod';
 import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
-import { createSupabaseServerClient } from '@/integrations/supabase/server';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client-utils'; // Import client-side supabase
 
 const FormSchema = z.object({
     id: z.string().optional(),
@@ -52,34 +52,33 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
             };
         }
 
-        // const supabase = await createSupabaseServerClient();
-        // const { data: userData, error: userError } = await supabase.auth.getUser();
+        const { data: userData, error: userError } = await supabase.auth.getUser();
 
-        // if (userError || !userData?.user) {
-        //     console.error('Authentication failed in createRaffleAction:', userError);
-        //     return {
-        //         message: 'Authentication Error: User not logged in.',
-        //         success: false,
-        //     };
-        // }
+        if (userError || !userData?.user) {
+            console.error('Authentication failed in createRaffleAction:', userError);
+            return {
+                message: 'Authentication Error: User not logged in.',
+                success: false,
+            };
+        }
 
         const raffleData = validatedFields.data;
         
         const newRaffle = await apiCreateRaffle({
             ...entriesObj,
             deadline: new Date(raffleData.deadline).toISOString(),
-            adminId: 'a24c7d63-ad56-4f73-a529-40095a81c4a4',
+            adminId: userData.user.id, // Use the authenticated user's ID
         });
 
         return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
 
-    } catch (e: unknown) { // Changed to unknown
-        const errorMessage = e instanceof Error ? e.message : String(e); // Simplified error message extraction
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
         
         return {
             message: `Database Error: ${errorMessage}`,
             success: false,
-            errors: undefined, // Explicitly set optional properties to undefined
+            errors: undefined,
             raffleId: undefined,
         };
     }
@@ -110,7 +109,6 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
         return { message: 'Raffle ID not found.', success: false };
     }
 
-    const supabase = await createSupabaseServerClient();
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -126,8 +124,8 @@ export async function updateRaffleAction(prevState: CreateRaffleState, formData:
             deadline: new Date(dataToUpdate.deadline).toISOString(),
             adminId: userData.user.id,
         });
-    } catch (e: unknown) { // Changed to unknown
-        const errorMessage = e instanceof Error ? e.message : String(e); // Simplified error message extraction
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
         return { 
             message: `Database Error: Failed to Update Raffle. ${errorMessage}`, 
             success: false,
@@ -147,7 +145,6 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> {
     return;
   }
   
-  const supabase = await createSupabaseServerClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData?.user) {
@@ -158,8 +155,8 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> {
   try {
     await apiDeleteRaffle(id);
     toast({ title: 'Success', description: 'Raffle deleted successfully.' });
-  } catch (e: unknown) { // Changed to unknown
-    const errorMessage = e instanceof Error ? e.message : String(e); // Simplified error message extraction
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : String(e);
     toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
   }
 }
