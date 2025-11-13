@@ -19,11 +19,16 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params
 }: Readonly<{
   children: React.ReactNode;
   params: { locale: string };
 }>) {
+  // Explicitly await params before accessing its properties, as suggested by the error.
+  // This is unusual for Next.js params, but the error message is very specific.
+  const awaitedParams = await Promise.resolve(params); // Ensure it's a promise to await
+  const { locale } = awaitedParams;
+
   const messages = await getMessages();
 
   return (
