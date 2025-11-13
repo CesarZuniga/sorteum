@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, React } from 'react'; // Importar React
+import React, { useState, useEffect } from 'react'; // Importación corregida de React
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
