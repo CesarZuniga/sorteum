@@ -11,6 +11,8 @@ import { LocaleSwitcher } from './locale-switcher'; // Importar el nuevo compone
 
 export function SiteHeader() {
   const t = useTranslations('Index');
+  const tCheckStatus = useTranslations('CheckStatus'); // Nuevo hook para CheckStatus
+  const tAdmin = useTranslations('Admin'); // Nuevo hook para Admin
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -28,13 +30,13 @@ export function SiteHeader() {
         <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>{t('activeRafflesLink')}</Link>
       </Button>
        <Button asChild variant="ghost">
-        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>{t('CheckStatus.title')}</Link>
+        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>{tCheckStatus('title')}</Link> {/* Usar tCheckStatus */}
       </Button>
        <Button asChild variant="ghost">
         <Link href="/contact" onClick={() => setIsMenuOpen(false)}>{t('contactLink')}</Link>
       </Button>
       <Button asChild variant="ghost">
-        <Link href="/login">{t('Admin.loginTitle')}</Link>
+        <Link href="/login">{tAdmin('loginTitle')}</Link> {/* Usar tAdmin */}
       </Button>
     </>
   );
