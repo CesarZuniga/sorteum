@@ -27,16 +27,24 @@ export function SiteHeader() {
   const NavLinks = () => (
     <>
       <Button asChild variant="ghost">
-        <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>{t('activeRafflesLink')}</Link>
+        <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>
+          <span>{t('activeRafflesLink')}</span>
+        </Link>
       </Button>
        <Button asChild variant="ghost">
-        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>{tCheckStatus('title')}</Link> {/* Usar tCheckStatus */}
+        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>
+          <span>{tCheckStatus('title')}</span>
+        </Link>
       </Button>
        <Button asChild variant="ghost">
-        <Link href="/contact" onClick={() => setIsMenuOpen(false)}>{t('contactLink')}</Link>
+        <Link href="/contact" onClick={() => setIsMenuOpen(false)}>
+          <span>{t('contactLink')}</span>
+        </Link>
       </Button>
       <Button asChild variant="ghost">
-        <Link href="/login">{tAdmin('loginTitle')}</Link> {/* Usar tAdmin */}
+        <Link href="/login">
+          <span>{tAdmin('loginTitle')}</span>
+        </Link>
       </Button>
     </>
   );
