@@ -32,14 +32,15 @@ const statusConfig = {
 interface TicketsTableProps {
     raffle: Raffle;
     maxWinners: number;
+    refreshTickets: () => void; // Add refreshTickets prop
 }
 
-export function TicketsTable({ raffle, maxWinners }: TicketsTableProps) {
+export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTableProps) {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshTickets = async () => {
+  const loadTickets = async () => {
     setIsLoading(true);
     const ticketsData = await getTicketsByRaffleId(raffle.id);
     setTickets(ticketsData.sort((a,b) => a.number - b.number));
@@ -47,14 +48,14 @@ export function TicketsTable({ raffle, maxWinners }: TicketsTableProps) {
   }
 
   useEffect(() => {
-    refreshTickets();
-  }, [raffle.id]);
+    loadTickets();
+  }, [raffle.id, refreshTickets]); // Depend on refreshTickets to re-load when parent triggers
 
   const currentWinnerCount = tickets?.filter(t => t.isWinner).length || 0;
   const canMarkMoreWinners = currentWinnerCount < maxWinners;
 
   const handleUpdateStatus = async (ticketNumber: number, status: 'paid' | 'available' | 'winner') => {
-    if (status === 'winner' && !canMarkMoreWinners) {
+    if (status === 'winner' && !canMarkMoreWinners && !tickets.find(t => t.number === ticketNumber && t.isWinner)) {
         toast({
             title: 'Winner Limit Reached',
             description: `You can only select ${maxWinners} winner(s) for this raffle.`,
@@ -66,7 +67,7 @@ export function TicketsTable({ raffle, maxWinners }: TicketsTableProps) {
     const success = await updateTicketStatus(raffle.id, ticketNumber, status);
     if (success) {
         toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
-        await refreshTickets(); // Refresh data after update
+        refreshTickets(); // Call the parent's refresh function
     } else {
         toast({ title: 'Error', description: 'Could not update ticket status.', variant: 'destructive' });
     }
@@ -152,6 +153,30 @@ export function TicketsTable({ raffle, maxWinners }: TicketsTableProps) {
                             <Trophy className="mr-2 h-4 w-4" />
                             Mark as Winner
                         </Button>
+                    )}
+                    {ticket.isWinner && (
+                        <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline" className="text-destructive">
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Remove Winner
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action will remove ticket #{ticket.number} as a winner. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
+                              Continue
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </TableCell>
                 </TableRow>

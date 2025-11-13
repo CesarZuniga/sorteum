@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { notFound } from 'next/navigation';
 import type { Raffle } from '@/lib/definitions';
 import { TicketsTable } from '@/components/admin/tickets-table';
@@ -11,19 +10,29 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
-import { getRaffleById } from '@/lib/data';
+import { getRaffleById, getTicketsByRaffleId } from '@/lib/data'; // Import getTicketsByRaffleId
 
 export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [winnerCount, setWinnerCount] = useState(1);
+  const [tickets, setTickets] = useState<any[]>([]); // State to hold tickets
+
+  const loadRaffleAndTickets = useCallback(async () => {
+    const raffleData = await getRaffleById(params.id);
+    setRaffle(raffleData);
+    if (raffleData) {
+      const ticketsData = await getTicketsByRaffleId(raffleData.id);
+      setTickets(ticketsData);
+    }
+  }, [params.id]);
 
   useEffect(() => {
-    async function loadRaffle() {
-      const raffleData = await getRaffleById(params.id);
-      setRaffle(raffleData);
-    }
-    loadRaffle();
-  }, [params.id]);
+    loadRaffleAndTickets();
+  }, [loadRaffleAndTickets]);
+
+  const refreshTickets = useCallback(() => {
+    loadRaffleAndTickets();
+  }, [loadRaffleAndTickets]);
 
 
   if (raffle === undefined) {
@@ -55,10 +64,10 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
             <TabsTrigger value="draw">Draw Winners</TabsTrigger>
         </TabsList>
         <TabsContent value="tickets">
-            <TicketsTable raffle={raffle} maxWinners={winnerCount} />
+            <TicketsTable raffle={raffle} maxWinners={winnerCount} refreshTickets={refreshTickets} />
         </TabsContent>
         <TabsContent value="draw">
-            <WinnerDrawing raffle={raffle} winnerCount={winnerCount} setWinnerCount={setWinnerCount} />
+            <WinnerDrawing raffle={raffle} winnerCount={winnerCount} setWinnerCount={setWinnerCount} tickets={tickets} refreshTickets={refreshTickets} />
         </TabsContent>
       </Tabs>
     </div>
