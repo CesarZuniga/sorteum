@@ -1,11 +1,7 @@
 import type {NextConfig} from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
-const withNextIntl = createNextIntlPlugin({
-  localePrefix: 'never', // No incluir el locale en la URL
-  defaultLocale: 'en',
-  locales: ['en', 'es'],
-});
+const withNextIntl = createNextIntlPlugin('./src/i18n.ts'); // Ruta actualizada
 
 const nextConfig: NextConfig = {
   /* config options here */
