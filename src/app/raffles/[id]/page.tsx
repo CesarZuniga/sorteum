@@ -255,7 +255,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
             <Card>
               <CardContent className="p-6">
                  <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
-                <form onSubmit={handleReserve} className="space-y-4}>
+                <form onSubmit={handleReserve} className="space-y-4"> {/* Corregido: se añadió la comilla de cierre */}
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <Label htmlFor="name">{t('fullName')}</Label>
