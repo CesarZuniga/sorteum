@@ -1,6 +1,5 @@
 'use client';
 
-import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
 import type { Raffle } from '@/lib/definitions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,21 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sparkles, Trophy, AlertCircle } from 'lucide-react';
 import React from 'react';
 
-function SubmitButton({ text, loadingText }: { text: string; loadingText: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? (
-        <>
-          <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-          {loadingText}
-        </>
-      ) : (
-        text
-      )}
-    </Button>
-  );
-}
 
 interface WinnerDrawingProps {
     raffle: Raffle;
@@ -33,8 +17,6 @@ interface WinnerDrawingProps {
 }
 
 export function WinnerDrawing({ raffle, winnerCount, setWinnerCount }: WinnerDrawingProps) {
-  // Removed useActionState for drawWinnerAction and notifyWinnersAction
-  // as they depend on Genkit AI.
   
   const handleWinnerCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const count = parseInt(e.target.value, 10);
