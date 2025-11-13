@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, React } from 'react'; // Importar React
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
@@ -46,6 +46,9 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
   const t = useTranslations('RaffleDetail');
+  const unwrappedParams = React.use(Promise.resolve(params)); // Desenvolver params
+  const raffleId = unwrappedParams.id; // Acceder a id desde el objeto desenvuelto
+
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   
@@ -58,14 +61,14 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     async function loadData() {
         const [raffleData, ticketsData] = await Promise.all([
-            getRaffleById(params.id),
-            getTicketsByRaffleId(params.id)
+            getRaffleById(raffleId), // Usar raffleId desenvuelto
+            getTicketsByRaffleId(raffleId) // Usar raffleId desenvuelto
         ]);
         setRaffle(raffleData);
         setTickets(ticketsData.sort((a,b) => a.number - b.number));
     }
     loadData();
-  }, [params.id]);
+  }, [raffleId]); // Dependencia de raffleId
 
 
   if (raffle === undefined || tickets === null) {
@@ -77,7 +80,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   }
   
   const refreshTickets = async () => {
-    const ticketsData = await getTicketsByRaffleId(params.id);
+    const ticketsData = await getTicketsByRaffleId(raffleId); // Usar raffleId desenvuelto
     setTickets(ticketsData.sort((a,b) => a.number - b.number));
   }
 
@@ -137,7 +140,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     }
 
     const promises = selectedTickets.map(ticket => {
-      return updateTicketStatus(raffle.id, ticket.number, 'reserved', buyerInfo);
+      return updateTicketStatus(raffleId, ticket.number, 'reserved', buyerInfo); // Usar raffleId desenvuelto
     });
     
     await Promise.all(promises);
