@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react'; // Importación corregida de React
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { format } from 'date-fns'; // Importamos format de date-fns
+import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
@@ -44,10 +44,9 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
   );
 };
 
-export default function RaffleDetailPage({ params }: { params: { id: string } }) {
+export default function RaffleDetailPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const t = useTranslations('RaffleDetail');
-  const unwrappedParams = React.use(Promise.resolve(params)); // Desenvolver params
-  const raffleId = unwrappedParams.id; // Acceder a id desde el objeto desenvuelto
+  const [resolvedRaffleId, setResolvedRaffleId] = useState<string | null>(null); // Estado para el raffleId resuelto
 
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
@@ -58,20 +57,31 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   const [randomCount, setRandomCount] = useState<number>(1);
   const { toast } = useToast();
 
+  // Efecto para resolver params.id
   useEffect(() => {
-    async function loadData() {
-        const [raffleData, ticketsData] = await Promise.all([
-            getRaffleById(raffleId), // Usar raffleId desenvuelto
-            getTicketsByRaffleId(raffleId) // Usar raffleId desenvuelto
-        ]);
-        setRaffle(raffleData);
-        setTickets(ticketsData.sort((a,b) => a.number - b.number));
+    async function resolveParams() {
+      const resolved = await Promise.resolve(params);
+      setResolvedRaffleId(resolved.id);
     }
-    loadData();
-  }, [raffleId]); // Dependencia de raffleId
+    resolveParams();
+  }, [params]);
 
+  // Efecto para cargar la rifa y los boletos una vez que resolvedRaffleId esté disponible
+  useEffect(() => {
+    if (resolvedRaffleId) {
+      async function loadData() {
+          const [raffleData, ticketsData] = await Promise.all([
+              getRaffleById(resolvedRaffleId),
+              getTicketsByRaffleId(resolvedRaffleId)
+          ]);
+          setRaffle(raffleData);
+          setTickets(ticketsData.sort((a,b) => a.number - b.number));
+      }
+      loadData();
+    }
+  }, [resolvedRaffleId]); // Depende de resolvedRaffleId
 
-  if (raffle === undefined || tickets === null) {
+  if (resolvedRaffleId === null || raffle === undefined || tickets === null) {
     return <div>{t('loading')}</div>;
   }
 
@@ -80,10 +90,11 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   }
   
   const refreshTickets = async () => {
-    const ticketsData = await getTicketsByRaffleId(raffleId); // Usar raffleId desenvuelto
-    setTickets(ticketsData.sort((a,b) => a.number - b.number));
+    if (resolvedRaffleId) {
+      const ticketsData = await getTicketsByRaffleId(resolvedRaffleId);
+      setTickets(ticketsData.sort((a,b) => a.number - b.number));
+    }
   }
-
 
   const handleSelectTicket = (ticket: Ticket) => {
     if (suggestedTickets.find(st => st.id === ticket.id)) {
@@ -140,7 +151,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     }
 
     const promises = selectedTickets.map(ticket => {
-      return updateTicketStatus(raffleId, ticket.number, 'reserved', buyerInfo); // Usar raffleId desenvuelto
+      return updateTicketStatus(resolvedRaffleId!, ticket.number, 'reserved', buyerInfo);
     });
     
     await Promise.all(promises);
@@ -190,7 +201,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              <span>{t('ends')} {format(new Date(raffle.deadline), 'PPP')}</span> {/* Usamos format de date-fns */}
+              <span>{t('ends')} {format(new Date(raffle.deadline), 'PPP')}</span>
             </div>
           </div>
         </div>
@@ -244,7 +255,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
             <Card>
               <CardContent className="p-6">
                  <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
-                <form onSubmit={handleReserve} className="space-y-4">
+                <form onSubmit={handleReserve} className="space-y-4}>
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <Label htmlFor="name">{t('fullName')}</Label>
