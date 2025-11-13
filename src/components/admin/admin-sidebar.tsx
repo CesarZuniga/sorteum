@@ -54,8 +54,10 @@ export function AdminSidebar() {
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-2"> {/* Envuelto en un div */}
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </div>
                 </Link>
               </SidebarMenuButton>
           </SidebarMenuItem>)
