@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 const locales = ['en', 'es'];
 
 export default getRequestConfig(async () => {
-  const locale = (await headers()).get('x-next-intl-locale') || 'en'; // Fix 1: Await headers()
+  const locale = (await headers()).get('x-next-intl-locale') || 'es'; // Cambiado a 'es'
 
   if (!locales.includes(locale as any)) notFound();
 

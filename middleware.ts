@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const locales = ['en', 'es'];
-const defaultLocale = 'en';
+const defaultLocale = 'es'; // Cambiado a 'es'
 const COOKIE_NAME = 'NEXT_LOCALE';
 
 export function middleware(request: NextRequest) {
