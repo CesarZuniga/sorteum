@@ -9,12 +9,14 @@ import {
   SidebarTrigger,
 } from '@/components/ui'; // Importando desde el index.ts
 import { useSession } from '@/components/SessionProvider';
+import { useTranslations } from 'next-intl';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations('Admin');
   const { session, isLoading } = useSession();
   const router = useRouter();
 
@@ -25,7 +27,7 @@ export default function AdminLayout({
   }, [session, isLoading, router]);
 
   if (isLoading || !session) {
-    return <div className="flex items-center justify-center min-h-screen">Loading admin area...</div>;
+    return <div className="flex items-center justify-center min-h-screen">{t('loadingAdminArea')}</div>;
   }
 
   return (

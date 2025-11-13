@@ -11,8 +11,10 @@ import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
 import { getRaffleById, getTicketsByRaffleId } from '@/lib/data'; // Import getTicketsByRaffleId
+import { useTranslations } from 'next-intl';
 
 export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
+  const t = useTranslations('Admin');
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [winnerCount, setWinnerCount] = useState(1);
   const [tickets, setTickets] = useState<any[]>([]); // State to hold tickets
@@ -36,7 +38,7 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
 
 
   if (raffle === undefined) {
-    return <div>Loading...</div>;
+    return <div>{t('loading')}</div>;
   }
 
   if (!raffle) {
@@ -49,7 +51,7 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
         <Button variant="outline" size="sm" asChild className="mb-4">
             <Link href="/admin/raffles">
                 <ChevronLeft className="h-4 w-4 mr-2" />
-                Back to Raffles
+                {t('backToRaffle')}
             </Link>
         </Button>
         <h1 className="text-3xl font-bold tracking-tight font-headline">{raffle.name}</h1>
@@ -60,8 +62,8 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
 
       <Tabs defaultValue="tickets">
         <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="tickets">Ticket Management</TabsTrigger>
-            <TabsTrigger value="draw">Draw Winners</TabsTrigger>
+            <TabsTrigger value="tickets">{t('ticketManagement')}</TabsTrigger>
+            <TabsTrigger value="draw">{t('drawWinners')}</TabsTrigger>
         </TabsList>
         <TabsContent value="tickets">
             <TicketsTable raffle={raffle} maxWinners={winnerCount} refreshTickets={refreshTickets} />

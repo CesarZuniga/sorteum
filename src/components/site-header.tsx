@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -6,9 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLocale } from 'next-intl';
 
 
 export function SiteHeader() {
+  const t = useTranslations('Index');
+  const pathname = usePathname();
+  const router = useRouter();
+  const locale = useLocale();
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -20,20 +28,24 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const onSelectChange = (nextLocale: string) => {
+    const newPath = pathname.replace(`/${locale}`, `/${nextLocale}`);
+    router.replace(newPath);
+  };
 
   const NavLinks = () => (
     <>
       <Button asChild variant="ghost">
-        <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>Rifas</Link>
+        <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>{t('activeRafflesLink')}</Link>
       </Button>
        <Button asChild variant="ghost">
-        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>Consultar Boleto</Link>
+        <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>{t('CheckStatus.title')}</Link>
       </Button>
        <Button asChild variant="ghost">
-        <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Contacto</Link>
+        <Link href="/contact" onClick={() => setIsMenuOpen(false)}>{t('contactLink')}</Link>
       </Button>
       <Button asChild variant="ghost">
-        <Link href="/login">Admin Login</Link>
+        <Link href="/login">{t('Admin.loginTitle')}</Link>
       </Button>
     </>
   );
@@ -48,8 +60,26 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden md:flex items-center gap-2">
           <NavLinks />
+          <Select onValueChange={onSelectChange} defaultValue={locale}>
+            <SelectTrigger className="w-[100px] bg-transparent text-white border-white/50 hover:border-white">
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="es">Español</SelectItem>
+            </SelectContent>
+          </Select>
         </nav>
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center gap-2">
+            <Select onValueChange={onSelectChange} defaultValue={locale}>
+                <SelectTrigger className="w-[100px] bg-transparent text-white border-white/50 hover:border-white">
+                <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+                </SelectContent>
+            </Select>
             <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X/> : <Menu />}
                 <span className="sr-only">Toggle Menu</span>

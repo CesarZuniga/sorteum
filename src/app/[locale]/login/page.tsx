@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import from client-utils
+import { useTranslations } from 'next-intl';
 
 export default function LoginPage() {
+  const t = useTranslations('Admin');
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -28,15 +30,15 @@ export default function LoginPage() {
 
     if (error) {
       toast({
-        title: 'Login Failed',
+        title: t('loginFailedTitle'),
         description: error.message,
         variant: 'destructive',
       });
       setIsLoading(false);
     } else {
       toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
+        title: t('loginSuccessfulTitle'),
+        description: t('loginSuccessfulDescription'),
       });
       router.push('/admin');
     }
@@ -49,13 +51,13 @@ export default function LoginPage() {
           <div className="mx-auto mb-4">
              <Logo />
           </div>
-          <CardTitle className="text-2xl font-headline">Admin Login</CardTitle>
-          <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
+          <CardTitle className="2xl font-headline">{t('loginTitle')}</CardTitle>
+          <CardDescription>{t('loginDescription')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -67,7 +69,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -80,7 +82,7 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? t('signingIn') : t('signIn')}
             </Button>
           </CardFooter>
         </form>

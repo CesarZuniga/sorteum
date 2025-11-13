@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { format } from 'date-fns'; // Importamos format de date-fns
+import { useTranslations } from 'next-intl';
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -44,6 +45,7 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 };
 
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
+  const t = useTranslations('RaffleDetail');
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   
@@ -67,7 +69,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
 
 
   if (raffle === undefined || tickets === null) {
-    return <div>Loading...</div>;
+    return <div>{t('loading')}</div>;
   }
 
   if (!raffle) {
@@ -100,8 +102,10 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
 
     if (randomCount > availableTickets.length) {
       toast({
-        title: 'Boletos insuficientes',
-        description: `Solo hay ${availableTickets.length} boletos disponibles para seleccionar.`,
+        title: t('insufficientTicketsTitle'),
+        description: t.rich('insufficientTicketsDescription', {
+          availableCount: availableTickets.length,
+        }),
         variant: 'destructive',
       });
       setSuggestedTickets([]);
@@ -124,11 +128,11 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTickets.length === 0) {
-      toast({ title: 'No tickets selected', description: 'Please select one or more tickets.', variant: 'destructive' });
+      toast({ title: t('noTicketsSelectedTitle'), description: t('noTicketsSelectedDescription'), variant: 'destructive' });
       return;
     }
     if (!buyerInfo.name || !buyerInfo.email || !buyerInfo.phone) {
-      toast({ title: 'Missing information', description: 'Please fill out all your details.', variant: 'destructive' });
+      toast({ title: t('missingInfoTitle'), description: t('missingInfoDescription'), variant: 'destructive' });
       return;
     }
 
@@ -145,9 +149,11 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
     setBuyerInfo({ name: '', email: '', phone: '' });
 
     toast({
-      title: '¡Boletos Reservados!',
-      description: `Tus boletos han sido reservados por 15 minutos. Total: ${formatCurrency(totalPrice)}`,
-      action: (<div className="flex items-center"><Clock className="mr-2"/> Completa tu pago.</div>)
+      title: t('ticketsReservedTitle'),
+      description: t.rich('ticketsReservedDescription', {
+        totalPrice: formatCurrency(totalPrice),
+      }),
+      action: (<div className="flex items-center"><Clock className="mr-2"/> {t('completePayment')}</div>)
     });
   };
 
@@ -173,15 +179,15 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
           <div className="flex flex-wrap gap-4 text-lg">
             <div className="flex items-center gap-2 font-semibold text-primary">
               <DollarSign className="h-5 w-5" />
-              <span>{formatCurrency(raffle.price)} per ticket</span>
+              <span>{formatCurrency(raffle.price)} {t('perTicket')}</span>
             </div>
             <div className="flex items-center gap-2">
               <TicketIcon className="h-5 w-5" />
-              <span>{raffle.ticketCount} tickets total</span>
+              <span>{raffle.ticketCount} {t('ticketsTotal')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              <span>Ends: {format(new Date(raffle.deadline), 'PPP')}</span> {/* Usamos format de date-fns */}
+              <span>{t('ends')} {format(new Date(raffle.deadline), 'PPP')}</span> {/* Usamos format de date-fns */}
             </div>
           </div>
         </div>
@@ -189,7 +195,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold mb-4 font-headline">Select Your Tickets</h2>
+              <h2 className="text-2xl font-bold mb-4 font-headline">{t('selectYourTickets')}</h2>
               <div className="flex flex-wrap items-center gap-2 mb-4">
                   <Input 
                     type="number" 
@@ -201,12 +207,12 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                   />
                   <Button variant="outline" onClick={handleRandomSelect}>
                     <Shuffle className="h-4 w-4 mr-2" />
-                    Selección Rápida
+                    {t('quickSelect')}
                   </Button>
                   {suggestedTickets.length > 0 && (
                     <Button onClick={acceptSuggestion}>
                         <Check className="h-4 w-4 mr-2" />
-                        Aceptar Sugerencia
+                        {t('acceptSuggestion')}
                     </Button>
                   )}
               </div>
@@ -223,10 +229,10 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
                 ))}
               </div>
                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-400"></span>Available</div>
-                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-300"></span>Suggested</div>
-                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500"></span>Reserved</div>
-                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500"></span>Paid</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-400"></span>{t('available')}</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-300"></span>{t('suggested')}</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500"></span>{t('reserved')}</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500"></span>{t('paid')}</div>
               </div>
             </CardContent>
           </Card>
@@ -234,28 +240,30 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
           {selectedTickets.length > 0 && (
             <Card>
               <CardContent className="p-6">
-                 <h2 className="text-2xl font-bold mb-4 font-headline">Confirm Purchase</h2>
+                 <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
                 <form onSubmit={handleReserve} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name">{t('fullName')}</Label>
                         <Input id="name" value={buyerInfo.name} onChange={e => setBuyerInfo({...buyerInfo, name: e.target.value})} placeholder="John Doe" required />
                       </div>
                       <div>
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phone">{t('phoneNumber')}</Label>
                         <Input id="phone" type="tel" value={buyerInfo.phone} onChange={e => setBuyerInfo({...buyerInfo, phone: e.target.value})} placeholder="555-555-5555" required />
                       </div>
                   </div>
                    <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('email')}</Label>
                     <Input id="email" type="email" value={buyerInfo.email} onChange={e => setBuyerInfo({...buyerInfo, email: e.target.value})} placeholder="you@example.com" required />
                   </div>
                   <div className="text-xl font-bold">
-                    Total: {formatCurrency(totalPrice)}
+                    {t('total')} {formatCurrency(totalPrice)}
                   </div>
-                  <Button type="submit" className="w-full" size="lg">Reservar Boletos</Button>
+                  <Button type="submit" className="w-full" size="lg">
+                    {t('reserveTickets')}
+                  </Button>
                    <p className="text-xs text-center text-muted-foreground pt-2">
-                    Tienes 15 minutos para completar tu pago o los boletos serán liberados.
+                    {t('reservationNotice')}
                   </p>
                 </form>
               </CardContent>

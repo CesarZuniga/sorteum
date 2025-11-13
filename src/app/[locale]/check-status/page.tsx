@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 
 export default function CheckStatusPage() {
+  const t = useTranslations('CheckStatus');
   const router = useRouter();
   const { toast } = useToast();
   const [raffleId, setRaffleId] = useState('');
@@ -21,8 +22,8 @@ export default function CheckStatusPage() {
     e.preventDefault();
     if (!raffleId.trim() || !ticketNumber.trim()) {
         toast({
-            title: 'Información Incompleta',
-            description: 'Por favor, ingresa el ID de la rifa y el número del boleto.',
+            title: t('incompleteInfoTitle'),
+            description: t('incompleteInfoDescription'),
             variant: 'destructive',
         });
         return;
@@ -39,17 +40,17 @@ export default function CheckStatusPage() {
           <div className="mx-auto flex items-center justify-center h-16 w-16 bg-primary/10 rounded-full mb-4">
              <Search className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-headline">Consultar Estado de Boleto</CardTitle>
-          <CardDescription>Ingresa los detalles para ver el estado de tu boleto.</CardDescription>
+          <CardTitle className="text-2xl font-headline">{t('headline')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleStatusCheck}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="raffleId">ID de la Rifa</Label>
+              <Label htmlFor="raffleId">{t('raffleId')}</Label>
               <Input
                 id="raffleId"
                 type="text"
-                placeholder="Pega el ID de la rifa aquí"
+                placeholder={t('pasteRaffleId')}
                 value={raffleId}
                 onChange={(e) => setRaffleId(e.target.value)}
                 required
@@ -57,11 +58,11 @@ export default function CheckStatusPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ticketNumber">Número de Boleto</Label>
+              <Label htmlFor="ticketNumber">{t('ticketNumber')}</Label>
               <Input
                 id="ticketNumber"
                 type="number"
-                placeholder="Ej. 7"
+                placeholder={t('exampleTicket')}
                 value={ticketNumber}
                 onChange={(e) => setTicketNumber(e.target.value)}
                 required
@@ -71,7 +72,7 @@ export default function CheckStatusPage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Consultando...' : 'Consultar Estado'}
+              {isLoading ? t('checking') : t('checkStatus')}
             </Button>
           </CardFooter>
         </form>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -11,6 +10,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Ticket as TicketIcon } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { getTicketsByRaffleId } from '@/lib/data';
+import { useTranslations } from 'next-intl';
 
 
 type RaffleCardProps = {
@@ -18,6 +18,7 @@ type RaffleCardProps = {
 };
 
 export function RaffleCard({ raffle }: RaffleCardProps) {
+  const t = useTranslations('Index');
   const [soldTicketsCount, setSoldTicketsCount] = useState(0);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
             </div>
           </div>
           <Button asChild className="w-full">
-            <Link href={`/raffles/${raffle.id}`}>Comprar Boletos</Link>
+            <Link href={`/raffles/${raffle.id}`}>{t('buyTickets')}</Link>
           </Button>
         </div>
       </CardContent>

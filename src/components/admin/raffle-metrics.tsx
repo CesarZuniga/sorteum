@@ -1,4 +1,3 @@
-
 'use client';
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,9 +6,11 @@ import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useState, useMemo, useEffect } from 'react';
 import { getTicketsByRaffleId } from '@/lib/data';
+import { useTranslations } from 'next-intl';
 
 
 export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
+  const t = useTranslations('Admin');
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,23 +34,28 @@ export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
   const salesProgress = soldTickets > 0 ? (soldTickets / raffle.ticketCount) * 100 : 0;
 
   const metrics = [
-    { title: 'Ingresos (Pagado)', value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },
-    { title: 'Boletos Pagados', value: paidTickets, icon: CheckCircle, loading: isLoading },
-    { title: 'Boletos Reservados', value: reservedTickets, icon: Clock, loading: isLoading },
-    { title: 'Boletos Disponibles', value: availableTickets, icon: Ticket, loading: isLoading },
+    { title: t('raffleMetricsRevenuePaid'), value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },
+    { title: t('raffleMetricsPaidTickets'), value: paidTickets, icon: CheckCircle, loading: isLoading },
+    { title: t('raffleMetricsReservedTickets'), value: reservedTickets, icon: Clock, loading: isLoading },
+    { title: t('raffleMetricsAvailableTickets'), value: availableTickets, icon: Ticket, loading: isLoading },
   ];
 
   return (
     <div className='space-y-4'>
         <Card>
             <CardHeader>
-                <CardTitle>Progreso de Venta</CardTitle>
+                <CardTitle>{t('raffleMetricsSalesProgress')}</CardTitle>
             </CardHeader>
             <CardContent>
-                {isLoading ? <p>Loading progress...</p> :
+                {isLoading ? <p>{t('raffleMetricsLoadingProgress')}</p> :
                 (<>
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-muted-foreground text-sm">{soldTickets} de {raffle.ticketCount} boletos vendidos</span>
+                        <span className="text-muted-foreground text-sm">
+                          {t.rich('raffleMetricsSoldTickets', {
+                            soldTickets: soldTickets,
+                            totalTickets: raffle.ticketCount,
+                          })}
+                        </span>
                         <span className="font-bold text-lg">{salesProgress.toFixed(0)}%</span>
                     </div>
                     <Progress value={salesProgress} />

@@ -22,9 +22,11 @@ import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { deleteRaffleAction } from '@/lib/actions';
 import { ButtonWithConfirmation } from '@/components/ui/button-with-confirmation';
 import { getRaffles, getTicketsByRaffleId } from '@/lib/data';
+import { useTranslations } from 'next-intl';
 
 
 function RaffleRow({raffle}: {raffle: Raffle}) {
+  const t = useTranslations('Admin');
   const [soldTicketsCount, setSoldTicketsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,34 +49,35 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
         </TableCell>
         <TableCell>
           <Badge variant={raffle.active ? 'default' : 'secondary'}>
-            {raffle.active ? 'Active' : 'Ended'}
+            {raffle.active ? t('active') : t('ended')}
           </Badge>
         </TableCell>
         <TableCell>{formatCurrency(raffle.price)}</TableCell>
-        <TableCell>{isLoading ? '...' : soldTicketsCount} / {raffle.ticketCount}</TableCell>
+        <TableCell>{isLoading ? t('loading') : soldTicketsCount} / {raffle.ticketCount}</TableCell>
         <TableCell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-haspopup="true" size="icon" variant="ghost">
                 <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Toggle menu</span>
+                <span className="sr-only">{t('actions')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}`}>View</Link></DropdownMenuItem>
-              <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}/edit`}>Edit</Link></DropdownMenuItem>
+              <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}`}>{t('view')}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href={`/admin/raffles/${raffle.id}/edit`}>{t('edit')}</Link></DropdownMenuItem>
               <DropdownMenuSeparator />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">{t('delete')}</DropdownMenuItem>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('deleteRaffleConfirmationTitle')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the
-                        "{raffle.name}" raffle and all associated data.
+                        {t.rich('deleteRaffleConfirmationDescription', {
+                          raffleName: raffle.name,
+                        })}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -82,8 +85,8 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
                             <input type="hidden" name="id" value={raffle.id} />
                             <ButtonWithConfirmation
                                 variant="destructive"
-                                confirmationText="Delete"
-                                cancelText="Cancel"
+                                confirmationText={t('delete')}
+                                cancelText={t('cancel')}
                             />
                         </form>
                     </AlertDialogFooter>
@@ -97,6 +100,7 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
 }
 
 export default function RafflesPage() {
+  const t = useTranslations('Admin');
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -114,13 +118,13 @@ export default function RafflesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">Raffles</h1>
-          <p className="text-muted-foreground">Manage all your raffles here.</p>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">{t('rafflesTitle')}</h1>
+          <p className="text-muted-foreground">{t('rafflesDescription')}</p>
         </div>
         <Button asChild>
           <Link href="/admin/raffles/new">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Create Raffle
+            {t('createRaffle')}
           </Link>
         </Button>
       </div>
@@ -130,17 +134,17 @@ export default function RafflesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Tickets Sold</TableHead>
+                <TableHead>{t('name')}</TableHead>
+                <TableHead>{t('status')}</TableHead>
+                <TableHead>{t('price')}</TableHead>
+                <TableHead>{t('ticketsSoldColumn')}</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t('actions')}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={5}>{t('loading')}</TableCell></TableRow>}
               {raffles?.map((raffle) => (
                 <RaffleRow key={raffle.id} raffle={raffle} />
               ))}

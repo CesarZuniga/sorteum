@@ -18,19 +18,22 @@ import {format} from 'date-fns/format'
 import type { Raffle } from '@/lib/definitions';
 import { getRaffleById } from '@/lib/data';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 
 function SubmitButton() {
+  const t = useTranslations('Admin');
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Save Changes
+      {t('saveChanges')}
     </Button>
   );
 }
 
 export default function EditRafflePage({ params }: { params: { id: string } }) {
+  const t = useTranslations('Admin');
   const router = useRouter();
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   
@@ -52,7 +55,7 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
   }, [state.success, state.raffleId, router]);
 
   if (raffle === undefined) {
-    return <div>Loading...</div>;
+    return <div>{t('loading')}</div>;
   }
   
   if (!raffle) {
@@ -66,7 +69,7 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
        <Button variant="outline" size="sm" asChild>
           <Link href={`/admin/raffles/${raffle.id}`}>
               <ChevronLeft className="h-4 w-4 mr-2" />
-              Back to Raffle
+              {t('backToRaffle')}
           </Link>
       </Button>
 
@@ -74,39 +77,43 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
         <input type="hidden" name="id" value={raffle.id} />
         <Card>
           <CardHeader>
-            <CardTitle>Edit Raffle</CardTitle>
-            <CardDescription>Update the details for the "{raffle.name}" raffle.</CardDescription>
+            <CardTitle>{t('editRaffleTitle')}</CardTitle>
+            <CardDescription>
+              {t.rich('editRaffleDescription', {
+                raffleName: raffle.name,
+              })}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Raffle Name</Label>
+              <Label htmlFor="name">{t('raffleName')}</Label>
               <Input id="name" name="name" defaultValue={raffle.name} />
               {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('description')}</Label>
               <Textarea id="description" name="description" defaultValue={raffle.description} />
               {state.errors?.description && <p className="text-sm text-destructive">{state.errors.description[0]}</p>}
             </div>
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="price">Ticket Price ($)</Label>
+                    <Label htmlFor="price">{t('ticketPrice')}</Label>
                     <Input id="price" name="price" type="number" step="0.01" defaultValue={raffle.price} />
                     {state.errors?.price && <p className="text-sm text-destructive">{state.errors.price[0]}</p>}
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="ticketCount">Total Number of Tickets</Label>
+                    <Label htmlFor="ticketCount">{t('totalTickets')}</Label>
                     <Input id="ticketCount" name="ticketCount" type="number" defaultValue={raffle.ticketCount} disabled />
-                     <p className="text-xs text-muted-foreground">Ticket count cannot be changed after creation.</p>
+                     <p className="text-xs text-muted-foreground">{t('ticketCountCannotChange')}</p>
                 </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deadline">Deadline</Label>
+              <Label htmlFor="deadline">{t('deadline')}</Label>
               <Input id="deadline" name="deadline" type="date" defaultValue={deadlineForInput} />
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
+              <Label htmlFor="image">{t('imageURL')}</Label>
                <div className="flex items-center gap-4">
                     <Image src={raffle.image} alt={raffle.name} width={80} height={80} className="rounded-md object-cover" />
                     <Input id="image" name="image" type="url" defaultValue={raffle.image} />
@@ -117,14 +124,14 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
             {state.message && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
+                    <AlertTitle>{t('errorTitle')}</AlertTitle>
                     <AlertDescription>{state.message}</AlertDescription>
                 </Alert>
             )}
 
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button variant="ghost" asChild><Link href={`/admin/raffles/${raffle.id}`}>Cancel</Link></Button>
+            <Button variant="ghost" asChild><Link href={`/admin/raffles/${raffle.id}`}>{t('cancel')}</Link></Button>
             <SubmitButton />
           </CardFooter>
         </Card>

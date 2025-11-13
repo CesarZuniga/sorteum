@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sparkles, Trophy, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateTicketStatus } from '@/lib/data'; // Import updateTicketStatus
+import { useTranslations } from 'next-intl';
 
 interface WinnerDrawingProps {
     raffle: Raffle;
@@ -20,6 +21,7 @@ interface WinnerDrawingProps {
 }
 
 export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, refreshTickets }: WinnerDrawingProps) {
+  const t = useTranslations('Admin');
   const { toast } = useToast();
   const [drawnWinners, setDrawnWinners] = useState<Ticket[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -41,8 +43,8 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
 
     if (paidTickets.length === 0) {
       toast({
-        title: 'No hay boletos pagados',
-        description: 'No hay boletos pagados disponibles para el sorteo.',
+        title: t('errorTitle'),
+        description: t('noPaidTickets'),
         variant: 'destructive',
       });
       setIsDrawing(false);
@@ -51,8 +53,8 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
 
     if (winnerCount === 0) {
         toast({
-            title: 'Número de ganadores no válido',
-            description: 'Por favor, introduce un número de ganadores mayor que cero.',
+            title: t('errorTitle'),
+            description: t('invalidWinnerCount'),
             variant: 'destructive',
         });
         setIsDrawing(false);
@@ -61,8 +63,11 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
 
     if (winnerCount > paidTickets.length) {
       toast({
-        title: 'Boletos insuficientes',
-        description: `Solo hay ${paidTickets.length} boletos pagados disponibles. No se pueden sortear ${winnerCount} ganadores.`,
+        title: t('errorTitle'),
+        description: t.rich('insufficientPaidTickets', {
+          paidTicketsCount: paidTickets.length,
+          winnerCount: winnerCount,
+        }),
         variant: 'destructive',
       });
       setIsDrawing(false);
@@ -82,15 +87,15 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
       await Promise.all(updatePromises);
       setDrawnWinners(selectedWinners);
       toast({
-        title: 'Sorteo Realizado',
+        title: t('drawingSuccess', { winnerCount: winnerCount }),
         description: `Se han seleccionado ${winnerCount} ganadores.`,
       });
       refreshTickets(); // Refresh tickets in parent to update tables
     } catch (error) {
       console.error('Error drawing winners:', error);
       toast({
-        title: 'Error en el sorteo',
-        description: 'Hubo un problema al seleccionar los ganadores. Inténtalo de nuevo.',
+        title: t('errorTitle'),
+        description: t('drawingError'),
         variant: 'destructive',
       });
     } finally {
@@ -104,15 +109,15 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="text-primary" />
-            Realizar Sorteo Manual
+            {t('drawWinnersManualTitle')}
           </CardTitle>
           <CardDescription>
-            Configura el número de ganadores y realiza el sorteo de forma aleatoria entre los boletos pagados.
+            {t('drawWinnersManualDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="winnerCount">Número de Ganadores</Label>
+              <Label htmlFor="winnerCount">{t('numberOfWinners')}</Label>
               <Input 
                 id="winnerCount" 
                 name="winnerCount" 
@@ -126,11 +131,15 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
             </div>
             {drawnWinners.length > 0 && (
                 <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">Ganadores Sorteados:</h3>
+                    <h3 className="text-lg font-semibold">{t('drawnWinners')}</h3>
                     <ul className="list-disc pl-5">
                         {drawnWinners.map((winner, index) => (
                             <li key={winner.id}>
-                                {index + 1}º Ganador: Boleto #{String(winner.number).padStart(3, '0')} ({winner.buyerName || 'N/A'})
+                                {t.rich('winnerNumber', {
+                                  index: index + 1,
+                                  ticketNumber: String(winner.number).padStart(3, '0'),
+                                  buyerName: winner.buyerName || 'N/A',
+                                })}
                             </li>
                         ))}
                     </ul>
@@ -142,12 +151,12 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
                 {isDrawing ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Realizando Sorteo...
+                        {t('drawingWinners')}
                     </>
                 ) : (
                     <>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Realizar Sorteo
+                        {t('drawWinnersButton')}
                     </>
                 )}
             </Button>

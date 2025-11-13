@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,8 +6,10 @@ import { DollarSign, Ticket, Activity } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { getRaffles, getTicketsByRaffleId } from '@/lib/data';
+import { useTranslations } from 'next-intl';
 
 export function DashboardMetrics() {
+  const t = useTranslations('Admin');
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [allTickets, setAllTickets] = useState<TicketType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,9 +49,9 @@ export function DashboardMetrics() {
   }, [raffles]);
 
   const metrics = [
-    { title: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },
-    { title: 'Active Raffles', value: activeRaffles, icon: Activity, loading: isLoading },
-    { title: 'Tickets Sold (Paid)', value: totalTicketsSold, icon: Ticket, loading: isLoading },
+    { title: t('totalRevenue'), value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },
+    { title: t('activeRaffles'), value: activeRaffles, icon: Activity, loading: isLoading },
+    { title: t('ticketsSold'), value: totalTicketsSold, icon: Ticket, loading: isLoading },
   ];
 
   return (

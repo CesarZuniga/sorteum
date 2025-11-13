@@ -20,13 +20,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useTranslations } from 'next-intl';
 
 
 const statusConfig = {
-  paid: { label: 'Paid', variant: 'default', icon: CheckCircle },
-  reserved: { label: 'Reserved', variant: 'secondary', icon: Clock },
-  available: { label: 'Available', variant: 'outline', icon: XCircle },
-  winner: { label: 'Winner', variant: 'destructive', icon: Trophy }, // Added winner status
+  paid: { label: 'Admin.ticketTablePaid', variant: 'default', icon: CheckCircle },
+  reserved: { label: 'Admin.ticketTableReserved', variant: 'secondary', icon: Clock },
+  available: { label: 'Admin.ticketTableAvailable', variant: 'outline', icon: XCircle },
+  winner: { label: 'Admin.ticketTableWinner', variant: 'destructive', icon: Trophy }, // Added winner status
 };
 
 interface TicketsTableProps {
@@ -36,6 +37,7 @@ interface TicketsTableProps {
 }
 
 export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTableProps) {
+  const t = useTranslations('Admin');
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,8 +59,10 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
   const handleUpdateStatus = async (ticketNumber: number, status: 'paid' | 'available' | 'winner') => {
     if (status === 'winner' && !canMarkMoreWinners && !tickets.find(t => t.number === ticketNumber && t.isWinner)) {
         toast({
-            title: 'Winner Limit Reached',
-            description: `You can only select ${maxWinners} winner(s) for this raffle.`,
+            title: t('ticketTableWinnerLimitReachedTitle'),
+            description: t.rich('ticketTableWinnerLimitReachedDescription', {
+              maxWinners: maxWinners,
+            }),
             variant: 'destructive',
         });
         return;
@@ -66,32 +70,43 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
     
     const success = await updateTicketStatus(raffle.id, ticketNumber, status);
     if (success) {
-        toast({ title: 'Ticket Updated', description: `Ticket #${ticketNumber} status changed to ${status}.` });
+        toast({ 
+          title: t('ticketTableTicketUpdated'), 
+          description: t.rich('ticketTableTicketUpdatedDescription', {
+            ticketNumber: ticketNumber,
+            status: status,
+          })
+        });
         refreshTickets(); // Call the parent's refresh function
     } else {
-        toast({ title: 'Error', description: 'Could not update ticket status.', variant: 'destructive' });
+        toast({ title: t('errorTitle'), description: t('drawingError'), variant: 'destructive' });
     }
   };
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ticket Management</CardTitle>
-        <CardDescription>View and confirm payments for all tickets. You can manually mark up to {maxWinners} winner(s). ({currentWinnerCount}/{maxWinners} selected).</CardDescription>
+        <CardTitle>{t('ticketManagement')}</CardTitle>
+        <CardDescription>
+          {t.rich('ticketTableDescription', {
+            maxWinners: maxWinners,
+            currentWinners: currentWinnerCount,
+          })}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Ticket #</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Buyer Name</TableHead>
-              <TableHead>Buyer Phone</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t('ticketTableTicketHash')}</TableHead>
+              <TableHead>{t('ticketTableStatus')}</TableHead>
+              <TableHead>{t('ticketTableBuyerName')}</TableHead>
+              <TableHead>{t('ticketTableBuyerPhone')}</TableHead>
+              <TableHead>{t('ticketTableActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={5}>Loading tickets...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={5}>{t('ticketTableLoadingTickets')}</TableCell></TableRow>}
             {tickets?.map((ticket) => {
               const { label, variant, icon: Icon } = statusConfig[ticket.status];
               return (
@@ -101,12 +116,12 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
                      {ticket.isWinner ? (
                         <Badge variant="destructive" className="bg-yellow-500 text-yellow-950">
                           <Trophy className="mr-2 h-4 w-4" />
-                          Winner
+                          {t('ticketTableWinner')}
                         </Badge>
                       ) : (
                         <Badge variant={variant as any}>
                           <Icon className="mr-2 h-4 w-4" />
-                          {label}
+                          {t(label)}
                         </Badge>
                      )}
                   </TableCell>
@@ -116,26 +131,28 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
                     {ticket.status === 'reserved' && (
                         <>
                         <Button size="sm" onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
-                            Confirm Payment
+                            {t('ticketTableConfirmPayment')}
                         </Button>
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="outline">
                             <RotateCcw className="mr-2 h-4 w-4" />
-                            Liberar
+                            {t('ticketTableRelease')}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('ticketTableReleaseConfirmationTitle')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action will mark ticket #{ticket.number} as available and remove any buyer information. This cannot be undone.
+                              {t.rich('ticketTableReleaseConfirmationDescription', {
+                                ticketNumber: ticket.number,
+                              })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => handleUpdateStatus(ticket.number, 'available')}>
-                              Continue
+                              {t('continue')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -148,10 +165,10 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
                             variant="outline" 
                             onClick={() => handleUpdateStatus(ticket.number, 'winner')}
                             disabled={!canMarkMoreWinners}
-                            title={!canMarkMoreWinners ? `Winner limit of ${maxWinners} reached.` : 'Mark as Winner'}
+                            title={!canMarkMoreWinners ? t.rich('ticketTableWinnerLimitReachedDescription', { maxWinners: maxWinners }) : t('ticketTableMarkAsWinner')}
                         >
                             <Trophy className="mr-2 h-4 w-4" />
-                            Mark as Winner
+                            {t('ticketTableMarkAsWinner')}
                         </Button>
                     )}
                     {ticket.isWinner && (
@@ -159,20 +176,22 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="outline" className="text-destructive">
                             <XCircle className="mr-2 h-4 w-4" />
-                            Remove Winner
+                            {t('ticketTableRemoveWinner')}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('ticketTableRemoveWinnerConfirmationTitle')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action will remove ticket #{ticket.number} as a winner. This cannot be undone.
+                              {t.rich('ticketTableRemoveWinnerConfirmationDescription', {
+                                ticketNumber: ticket.number,
+                              })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
-                              Continue
+                              {t('continue')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
