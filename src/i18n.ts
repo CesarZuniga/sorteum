@@ -5,12 +5,12 @@ import { notFound } from 'next/navigation';
 const locales = ['en', 'es'];
 
 export default getRequestConfig(async () => {
-  const locale = headers().get('x-next-intl-locale') || 'en'; // Fallback to 'en' if header is missing
+  const locale = (await headers()).get('x-next-intl-locale') || 'en'; // Fix 1: Await headers()
 
   if (!locales.includes(locale as any)) notFound();
 
   return {
     locale,
-    messages: (await import(`./messages/${locale}.json`)).default // Ruta corregida
+    messages: (await import(`./messages/${locale}.json`)).default
   };
 });

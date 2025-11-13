@@ -64,8 +64,8 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 
         const raffleData = validatedFields.data;
         
-        const newRaffle = await apiCreateRaffle({
-            ...entriesObj,
+        const newRaffle = await apiCreateRaffle({ // Fix 2: Pass validated data directly
+            ...raffleData,
             deadline: new Date(raffleData.deadline).toISOString(),
             adminId: userData.user.id, // Use the authenticated user's ID
         });

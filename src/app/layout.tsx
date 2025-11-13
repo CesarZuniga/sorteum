@@ -23,7 +23,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies(); // Fix 3: Await cookies()
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en'; // Leer el locale de la cookie
 
   const messages = await getMessages();

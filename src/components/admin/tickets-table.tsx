@@ -165,7 +165,7 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
                             variant="outline" 
                             onClick={() => handleUpdateStatus(ticket.number, 'winner')}
                             disabled={!canMarkMoreWinners}
-                            title={!canMarkMoreWinners ? t.rich('ticketTableWinnerLimitReachedDescription', { maxWinners: maxWinners }) : t('ticketTableMarkAsWinner')}
+                            title={String(!canMarkMoreWinners ? t.rich('ticketTableWinnerLimitReachedDescription', { maxWinners: maxWinners }) : t('ticketTableMarkAsWinner'))} // Fix 4: Convert ReactNode to string
                         >
                             <Trophy className="mr-2 h-4 w-4" />
                             {t('ticketTableMarkAsWinner')}

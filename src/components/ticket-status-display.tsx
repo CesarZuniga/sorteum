@@ -48,7 +48,7 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
         <Hourglass className="h-8 w-8" />
         <div>
           <h3 className="font-bold">{t('reservedStatus')}</h3>
-          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: t.rich('reservedBy', { buyerName: result.ticket.buyerName }) }} /> : null}
+          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: String(t.rich('reservedBy', { buyerName: result.ticket.buyerName })) }} /> : null} {/* Fix 5: Convert ReactNode to string */}
           <p>{t.rich('reservedDescription', { raffleName: result.raffle?.name || t('unknownRaffle') })}</p>
         </div>
       </div>
@@ -61,7 +61,7 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
         <CheckCircle2 className="h-8 w-8" />
         <div>
           <h3 className="font-bold">{t('paidStatus')}</h3>
-          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: t.rich('purchasedBy', { buyerName: result.ticket.buyerName }) }} /> : null}
+          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: String(t.rich('purchasedBy', { buyerName: result.ticket.buyerName })) }} /> : null} {/* Fix 6: Convert ReactNode to string */}
           <p>{t.rich('paidDescription', { raffleName: result.raffle?.name || t('unknownRaffle') })}</p>
         </div>
       </div>
@@ -74,7 +74,7 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
         <Trophy className="h-8 w-8" />
         <div>
           <h3 className="font-bold">{t('winnerStatus')}</h3>
-          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: t.rich('purchasedBy', { buyerName: result.ticket.buyerName }) }} /> : null}
+          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: String(t.rich('purchasedBy', { buyerName: result.ticket.buyerName })) }} /> : null} {/* Fix 7: Convert ReactNode to string */}
           <p>{t.rich('winnerDescription', { raffleName: result.raffle?.name || t('unknownRaffle') })}</p>
         </div>
       </div>
