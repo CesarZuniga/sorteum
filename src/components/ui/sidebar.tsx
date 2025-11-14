@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet'; // Importamos SheetContent
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'; // Importamos SheetTitle y SheetDescription
 import { Menu } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -65,6 +65,9 @@ export function Sidebar({ className, children, ...props }: SidebarProps) {
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent side="left" className="p-0 w-64 bg-sidebar text-sidebar-foreground border-r-sidebar-border">
+          {/* Añadimos SheetTitle y SheetDescription para accesibilidad */}
+          <SheetTitle className="sr-only">Menú de Administración</SheetTitle>
+          <SheetDescription className="sr-only">Navegación principal del panel de administración.</SheetDescription>
           <div className={cn("flex h-full flex-col", className)} {...props}>
             {children}
           </div>
