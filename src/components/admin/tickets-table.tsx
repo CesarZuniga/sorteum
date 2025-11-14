@@ -24,10 +24,10 @@ import { useTranslations } from 'next-intl';
 
 
 const statusConfig = {
-  paid: { label: 'Admin.ticketTablePaid', variant: 'default', icon: CheckCircle },
-  reserved: { label: 'Admin.ticketTableReserved', variant: 'secondary', icon: Clock },
-  available: { label: 'Admin.ticketTableAvailable', variant: 'outline', icon: XCircle },
-  winner: { label: 'Admin.ticketTableWinner', variant: 'destructive', icon: Trophy }, // Added winner status
+  paid: { label: 'ticketTablePaid', variant: 'default', icon: CheckCircle },
+  reserved: { label: 'ticketTableReserved', variant: 'secondary', icon: Clock },
+  available: { label: 'ticketTableAvailable', variant: 'outline', icon: XCircle },
+  winner: { label: 'ticketTableWinner', variant: 'destructive', icon: Trophy }, // Added winner status
 };
 
 interface TicketsTableProps {
@@ -165,7 +165,7 @@ export function TicketsTable({ raffle, maxWinners, refreshTickets }: TicketsTabl
                             variant="outline" 
                             onClick={() => handleUpdateStatus(ticket.number, 'winner')}
                             disabled={!canMarkMoreWinners}
-                            title={String(!canMarkMoreWinners ? t.rich('ticketTableWinnerLimitReachedDescription', { maxWinners: maxWinners }) : t('ticketTableMarkAsWinner'))} // Fix 4: Convert ReactNode to string
+                            title={String(!canMarkMoreWinners ? t.rich('ticketTableWinnerLimitReachedDescription', { maxWinners: maxWinners }) : t('ticketTableMarkAsWinner'))}
                         >
                             <Trophy className="mr-2 h-4 w-4" />
                             {t('ticketTableMarkAsWinner')}
