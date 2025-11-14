@@ -252,3 +252,69 @@ export const getFaqs = async (): Promise<FAQ[]> => {
   }
   return data.map(mapSupabaseFaqToAppType);
 };
+
+export const getFaqById = async (id: string): Promise<FAQ | undefined> => {
+  const { data, error } = await supabase
+    .from('faqs')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+    console.error(`Supabase Error fetching FAQ by ID ${id}:`, error);
+    throw new Error(`Failed to fetch FAQ with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
+  }
+
+  return data ? mapSupabaseFaqToAppType(data) : undefined;
+};
+
+export const createFaq = async (faqData: Omit<FAQ, 'id'>): Promise<FAQ> => {
+  const { data, error } = await supabase
+    .from('faqs')
+    .insert([{
+      question: faqData.question,
+      answer: faqData.answer,
+      order_index: faqData.orderIndex,
+    }])
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Supabase Error creating FAQ:', error);
+    throw new Error(`Failed to create FAQ: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return mapSupabaseFaqToAppType(data);
+};
+
+export const updateFaq = async (id: string, faqData: Partial<Omit<FAQ, 'id'>>): Promise<FAQ | undefined> => {
+  const updatePayload: Partial<any> = {};
+  if (faqData.question !== undefined) updatePayload.question = faqData.question;
+  if (faqData.answer !== undefined) updatePayload.answer = faqData.answer;
+  if (faqData.orderIndex !== undefined) updatePayload.order_index = faqData.orderIndex;
+
+  const { data, error } = await supabase
+    .from('faqs')
+    .update(updatePayload)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error(`Supabase Error updating FAQ ${id}:`, error);
+    throw new Error(`Failed to update FAQ with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return data ? mapSupabaseFaqToAppType(data) : undefined;
+};
+
+export const deleteFaq = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('faqs')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Supabase Error deleting FAQ ${id}:`, error);
+    throw new Error(`Failed to delete FAQ with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return true;
+};

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, LogOut, Ticket, Users } from 'lucide-react';
+import { LayoutDashboard, LogOut, Ticket, HelpCircle } from 'lucide-react'; // Importar HelpCircle
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-} from '@/components/ui';
+} from '@/components/ui/sidebar';
 import { Logo } from '../logo';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,11 @@ export function AdminSidebar() {
       href: '/admin/raffles',
       label: t('rafflesTitle'), // Use translation
       icon: Ticket,
+    },
+    {
+      href: '/admin/faqs', // Nueva ruta para FAQs
+      label: t('faqsTitle'), // Nueva traducción
+      icon: HelpCircle, // Nuevo icono
     },
   ];
 

@@ -199,7 +199,25 @@
     "ticketTableWinnerLimitReachedDescription": "Solo puedes seleccionar {maxWinners} ganador(es) para esta rifa.",
     "ticketTableTicketUpdated": "Boleto Actualizado",
     "ticketTableTicketUpdatedDescription": "El estado del boleto #{ticketNumber} ha cambiado a {status}.",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "faqsTitle": "Preguntas Frecuentes",
+    "faqsDescription": "Gestiona tus preguntas frecuentes aquí.",
+    "createFaq": "Crear Pregunta Frecuente",
+    "faqQuestionColumn": "Pregunta",
+    "faqOrderIndexColumn": "Orden",
+    "deleteFaqConfirmationTitle": "¿Estás absolutamente seguro?",
+    "deleteFaqConfirmationDescription": "Esta acción no se puede deshacer. Esto eliminará permanentemente la pregunta frecuente: \"{faqQuestion}\".",
+    "newFaqTitle": "Crear Nueva Pregunta Frecuente",
+    "newFaqDescription": "Completa los detalles a continuación para añadir una nueva pregunta frecuente.",
+    "faqQuestion": "Pregunta",
+    "exampleFaqQuestion": "Ej., ¿Cómo participo en una rifa?",
+    "faqAnswer": "Respuesta",
+    "exampleFaqAnswer": "Proporciona una respuesta detallada a la pregunta.",
+    "faqOrderIndex": "Índice de Orden",
+    "createFaqButton": "Crear Pregunta Frecuente",
+    "editFaqTitle": "Editar Pregunta Frecuente",
+    "editFaqDescription": "Actualiza los detalles de la pregunta frecuente: \"{faqQuestion}\".",
+    "backToFaqs": "Volver a Preguntas Frecuentes"
   },
   "Logo": {
     "name": "Sorteum"

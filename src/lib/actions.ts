@@ -1,11 +1,11 @@
 'use client';
 
 import { z } from 'zod';
-import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle } from './data';
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq } from './data';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import client-side supabase
 
-const FormSchema = z.object({
+const RaffleFormSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, 'Name is required'),
     description: z.string().min(1, 'Description is required'),
@@ -15,10 +15,10 @@ const FormSchema = z.object({
     image: z.string().url('Must be a valid image URL'),
 });
 
-const CreateRaffle = FormSchema.omit({ id: true });
-const UpdateRaffle = FormSchema.omit({ ticketCount: true });
+const CreateRaffle = RaffleFormSchema.omit({ id: true });
+const UpdateRaffle = RaffleFormSchema.omit({ ticketCount: true });
 
-type CreateRaffleState = {
+type RaffleActionState = {
     errors?: {
         name?: string[];
         description?: string[];
@@ -32,7 +32,7 @@ type CreateRaffleState = {
     raffleId?: string;
 };
 
-export async function createRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
+export async function createRaffleAction(prevState: RaffleActionState, formData: FormData): Promise<RaffleActionState> {
     try {
         if (!formData) {
             return { message: 'Form data is missing.', success: false };
@@ -85,7 +85,7 @@ export async function createRaffleAction(prevState: CreateRaffleState, formData:
 }
 
 
-export async function updateRaffleAction(prevState: CreateRaffleState, formData: FormData): Promise<CreateRaffleState> {
+export async function updateRaffleAction(prevState: RaffleActionState, formData: FormData): Promise<RaffleActionState> {
     const validatedFields = UpdateRaffle.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
@@ -158,5 +158,103 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> {
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
+  }
+}
+
+// --- FAQ Actions ---
+
+const FaqFormSchema = z.object({
+    id: z.string().optional(),
+    question: z.string().min(1, 'Question is required'),
+    answer: z.string().min(1, 'Answer is required'),
+    orderIndex: z.coerce.number().min(0, 'Order index must be a non-negative number'),
+});
+
+const CreateFaq = FaqFormSchema.omit({ id: true });
+const UpdateFaq = FaqFormSchema;
+
+type FaqActionState = {
+    errors?: {
+        question?: string[];
+        answer?: string[];
+        orderIndex?: string[];
+    };
+    message?: string;
+    success?: boolean;
+    faqId?: string;
+};
+
+export async function createFaqAction(prevState: FaqActionState, formData: FormData): Promise<FaqActionState> {
+    try {
+        const validatedFields = CreateFaq.safeParse(Object.fromEntries(formData.entries()));
+
+        if (!validatedFields.success) {
+            return {
+                errors: validatedFields.error.flatten().fieldErrors,
+                message: 'Failed to create FAQ. Please check the fields.',
+                success: false,
+            };
+        }
+
+        const newFaq = await apiCreateFaq(validatedFields.data);
+
+        return { success: true, faqId: newFaq.id, message: 'FAQ created successfully!' };
+
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        return {
+            message: `Database Error: ${errorMessage}`,
+            success: false,
+            errors: undefined,
+            faqId: undefined,
+        };
+    }
+}
+
+export async function updateFaqAction(prevState: FaqActionState, formData: FormData): Promise<FaqActionState> {
+    const validatedFields = UpdateFaq.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Failed to update FAQ. Please check the fields.',
+            success: false,
+        };
+    }
+
+    const { id, ...dataToUpdate } = validatedFields.data;
+
+    if (!id) {
+        return { message: 'FAQ ID not found.', success: false };
+    }
+
+    try {
+        await apiUpdateFaq(id, dataToUpdate);
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        return {
+            message: `Database Error: Failed to Update FAQ. ${errorMessage}`,
+            success: false,
+            errors: undefined,
+            faqId: undefined,
+        };
+    }
+
+    return { success: true, faqId: id, message: 'FAQ updated successfully!' };
+}
+
+export async function deleteFaqAction(formData: FormData): Promise<void> {
+  const id = formData.get('id');
+  if (typeof id !== 'string') {
+    toast({ title: 'Error', description: 'Invalid FAQ ID.', variant: 'destructive' });
+    return;
+  }
+
+  try {
+    await apiDeleteFaq(id);
+    toast({ title: 'Success', description: 'FAQ deleted successfully.' });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    toast({ title: 'Error', description: `Database Error: Failed to Delete FAQ. ${errorMessage}`, variant: 'destructive' });
   }
 }

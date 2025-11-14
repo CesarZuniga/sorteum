@@ -199,7 +199,25 @@
     "ticketTableWinnerLimitReachedDescription": "You can only select {maxWinners} winner(s) for this raffle.",
     "ticketTableTicketUpdated": "Ticket Updated",
     "ticketTableTicketUpdatedDescription": "Ticket #{ticketNumber} status changed to {status}.",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "faqsTitle": "FAQs",
+    "faqsDescription": "Manage your frequently asked questions here.",
+    "createFaq": "Create FAQ",
+    "faqQuestionColumn": "Question",
+    "faqOrderIndexColumn": "Order",
+    "deleteFaqConfirmationTitle": "Are you absolutely sure?",
+    "deleteFaqConfirmationDescription": "This action cannot be undone. This will permanently delete the FAQ: \"{faqQuestion}\".",
+    "newFaqTitle": "Create New FAQ",
+    "newFaqDescription": "Fill out the details below to add a new frequently asked question.",
+    "faqQuestion": "Question",
+    "exampleFaqQuestion": "e.g., How do I participate in a raffle?",
+    "faqAnswer": "Answer",
+    "exampleFaqAnswer": "Provide a detailed answer to the question.",
+    "faqOrderIndex": "Order Index",
+    "createFaqButton": "Create FAQ",
+    "editFaqTitle": "Edit FAQ",
+    "editFaqDescription": "Update the details for the FAQ: \"{faqQuestion}\".",
+    "backToFaqs": "Back to FAQs"
   },
   "Logo": {
     "name": "Sorteum"
