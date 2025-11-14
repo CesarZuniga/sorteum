@@ -7,7 +7,8 @@ import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
-} from '@/components/ui'; // Importando desde el index.ts
+  Sidebar, // Importamos el componente Sidebar principal
+} from '@/components/ui/sidebar'; // Importando desde el archivo sidebar.tsx
 import { useSession } from '@/components/SessionProvider';
 import { useTranslations } from 'next-intl';
 
@@ -33,7 +34,9 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <div className="md:flex">
-        <AdminSidebar />
+        <Sidebar> {/* Envolvemos AdminSidebar con el nuevo componente Sidebar */}
+          <AdminSidebar />
+        </Sidebar>
         <SidebarInset>
           <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:py-4">
              <SidebarTrigger className="md:hidden"/>
