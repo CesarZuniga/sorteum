@@ -8,22 +8,27 @@ import type { FAQ } from '@/lib/definitions';
 import { getFaqById } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import React from 'react'; // Importar React para usar React.use
 
-export default function EditFaqPage({ params }: { params: { id: string } }) {
+export default function EditFaqPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('Admin');
   const router = useRouter();
   const [faq, setFaq] = useState<FAQ | null | undefined>(undefined);
+
+  // Desenvolver la promesa de params
+  const resolvedParams = React.use(params);
+  const faqId = resolvedParams.id;
 
   const initialState = { message: undefined, errors: {}, success: false, faqId: undefined };
   const [state, dispatch] = useActionState(updateFaqAction, initialState);
 
   useEffect(() => {
     async function loadFaq() {
-      const faqData = await getFaqById(params.id);
+      const faqData = await getFaqById(faqId);
       setFaq(faqData);
     }
     loadFaq();
-  }, [params.id]);
+  }, [faqId]); // Depende del faqId resuelto
 
   useEffect(() => {
     if (state.success && state.faqId) {
