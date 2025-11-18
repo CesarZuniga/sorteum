@@ -82,7 +82,9 @@
     "ticketsReservedDescription": "Tus boletos han sido reservados por 15 minutos. Total: {totalPrice}",
     "completePayment": "Completa tu pago.",
     "loading": "Cargando...",
-    "backToRaffle": "Volver a la Rifa"
+    "backToRaffle": "Volver a la Rifa",
+    "searchTickets": "Buscar Boletos",
+    "enterTicketNumber": "Ingresa número de boleto"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Estado: Boleto no encontrado",

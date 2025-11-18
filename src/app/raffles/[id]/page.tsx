@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
 import type { Ticket, Raffle } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
-import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock } from 'lucide-react';
+import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link'; // Importar Link para el botón de regreso
-import { ChevronLeft } from 'lucide-react'; // Importar ChevronLeft para el icono
+import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'; // Importar ScrollArea y ScrollBar
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -48,8 +49,8 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 
 export default function RaffleDetailPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const t = useTranslations('RaffleDetail');
-  const tIndex = useTranslations('Index'); // Usar traducciones de Index para el botón de regreso
-  const [resolvedRaffleId, setResolvedRaffleId] = useState<string | null>(null); // Estado para el raffleId resuelto
+  const tIndex = useTranslations('Index');
+  const [resolvedRaffleId, setResolvedRaffleId] = useState<string | null>(null);
 
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
@@ -58,9 +59,9 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
   const { toast } = useToast();
 
-  // Efecto para resolver params.id
   useEffect(() => {
     async function resolveParams() {
       const resolved = await Promise.resolve(params);
@@ -69,7 +70,6 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
     resolveParams();
   }, [params]);
 
-  // Efecto para cargar la rifa y los boletos una vez que resolvedRaffleId esté disponible
   useEffect(() => {
     if (resolvedRaffleId) {
       async function loadData() {
@@ -82,7 +82,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       }
       loadData();
     }
-  }, [resolvedRaffleId]); // Depende de resolvedRaffleId
+  }, [resolvedRaffleId]);
 
   if (resolvedRaffleId === null || raffle === undefined || tickets === null) {
     return <div>{tIndex('loading')}</div>;
@@ -177,6 +177,11 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   const totalPrice = selectedTickets.length * raffle.price;
   const placeholder = PlaceHolderImages.find(p => p.imageUrl === raffle.image);
 
+  // Filtrar boletos basados en el término de búsqueda
+  const filteredTickets = tickets?.filter(ticket => 
+    String(ticket.number).padStart(3, '0').includes(searchTerm)
+  ) || [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Button variant="outline" size="sm" asChild className="mb-4">
@@ -219,6 +224,20 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
           <Card>
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-4 font-headline">{t('selectYourTickets')}</h2>
+              
+              {/* Campo de búsqueda */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder={t('enterTicketNumber')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                  aria-label={t('searchTickets')}
+                />
+              </div>
+
               <div className="flex flex-wrap items-center gap-2 mb-4">
                   <Input 
                     type="number" 
@@ -240,17 +259,22 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
                   )}
               </div>
 
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
-                {tickets?.map((ticket) => (
-                  <TicketItem
-                    key={ticket.id}
-                    ticket={ticket}
-                    onSelect={handleSelectTicket}
-                    isSelected={!!selectedTickets.find((t) => t.id === ticket.id)}
-                    isSuggested={!!suggestedTickets.find((t) => t.id === ticket.id)}
-                  />
-                ))}
-              </div>
+              {/* Sección de boletos con scroll */}
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                  {filteredTickets.map((ticket) => (
+                    <TicketItem
+                      key={ticket.id}
+                      ticket={ticket}
+                      onSelect={handleSelectTicket}
+                      isSelected={!!selectedTickets.find((t) => t.id === ticket.id)}
+                      isSuggested={!!suggestedTickets.find((t) => t.id === ticket.id)}
+                    />
+                  ))}
+                </div>
+                <ScrollBar orientation="vertical" />
+              </ScrollArea>
+
                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-400"></span>{t('available')}</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-300"></span>{t('suggested')}</div>
@@ -264,7 +288,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
             <Card>
               <CardContent className="p-6">
                  <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
-                <form onSubmit={handleReserve} className="space-y-4"> {/* Corregido: se añadió la comilla de cierre */}
+                <form onSubmit={handleReserve} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <Label htmlFor="name">{t('fullName')}</Label>

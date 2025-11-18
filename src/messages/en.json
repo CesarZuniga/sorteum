@@ -82,7 +82,9 @@
     "ticketsReservedDescription": "Your tickets have been reserved for 15 minutes. Total: {totalPrice}",
     "completePayment": "Complete your payment.",
     "loading": "Loading...",
-    "backToRaffle": "Back to Raffle"
+    "backToRaffle": "Back to Raffle",
+    "searchTickets": "Search Tickets",
+    "enterTicketNumber": "Enter ticket number"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Status: Ticket Not Found",
