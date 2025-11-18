@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -9,6 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from 'next-intl';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Raffle } from '@/lib/definitions';
+import { getRaffles } from '@/lib/data';
 
 export default function CheckStatusPage() {
   const t = useTranslations('CheckStatus');
@@ -17,6 +26,22 @@ export default function CheckStatusPage() {
   const [raffleId, setRaffleId] = useState('');
   const [ticketNumber, setTicketNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [loadingRaffles, setLoadingRaffles] = useState(true);
+
+  useEffect(() => {
+    async function loadRaffles() {
+      setLoadingRaffles(true);
+      const allRaffles = await getRaffles();
+      const activeRaffles = allRaffles.filter(r => r.active);
+      setRaffles(activeRaffles);
+      if (activeRaffles.length > 0) {
+        setRaffleId(activeRaffles[0].id); // Set default to the first active raffle
+      }
+      setLoadingRaffles(false);
+    }
+    loadRaffles();
+  }, []);
 
   const handleStatusCheck = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,15 +72,26 @@ export default function CheckStatusPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="raffleId">{t('raffleId')}</Label>
-              <Input
-                id="raffleId"
-                type="text"
-                placeholder={t('pasteRaffleId')}
-                value={raffleId}
-                onChange={(e) => setRaffleId(e.target.value)}
-                required
-                disabled={isLoading}
-              />
+              {loadingRaffles ? (
+                <Input value={t('loadingRaffles')} disabled />
+              ) : (
+                <Select onValueChange={setRaffleId} value={raffleId} disabled={isLoading || raffles.length === 0}>
+                  <SelectTrigger id="raffleId">
+                    <SelectValue placeholder={t('selectRaffle')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {raffles.length === 0 ? (
+                      <SelectItem value="no-raffles" disabled>{t('noActiveRaffles')}</SelectItem>
+                    ) : (
+                      raffles.map((raffle) => (
+                        <SelectItem key={raffle.id} value={raffle.id}>
+                          {raffle.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="ticketNumber">{t('ticketNumber')}</Label>
@@ -71,7 +107,7 @@ export default function CheckStatusPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || raffles.length === 0}>
               {isLoading ? t('checking') : t('checkStatus')}
             </Button>
           </CardFooter>

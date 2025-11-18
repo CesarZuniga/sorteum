@@ -41,14 +41,16 @@
     "title": "Consultar Estado de Boleto",
     "headline": "Consultar Estado de Boleto",
     "description": "Ingresa los detalles para ver el estado de tu boleto.",
-    "raffleId": "ID de la Rifa",
+    "raffleId": "Rifa",
     "pasteRaffleId": "Pega el ID de la rifa aquí",
+    "selectRaffle": "Selecciona una rifa",
+    "noActiveRaffles": "No hay rifas activas disponibles",
     "ticketNumber": "Número de Boleto",
     "exampleTicket": "Ej. 7",
     "checkStatus": "Consultar Estado",
     "checking": "Consultando...",
     "incompleteInfoTitle": "Información Incompleta",
-    "incompleteInfoDescription": "Por favor, ingresa el ID de la rifa y el número del boleto."
+    "incompleteInfoDescription": "Por favor, selecciona una rifa e ingresa el número del boleto."
   },
   "RaffleDetail": {
     "perTicket": "por boleto",
