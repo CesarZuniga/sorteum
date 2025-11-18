@@ -288,6 +288,10 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
             <Card>
               <CardContent className="p-6">
                  <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
+                 {/* Nueva etiqueta para mostrar los boletos seleccionados */}
+                 <p className="text-sm text-muted-foreground mb-4">
+                   <strong>{t('selectedTicketsLabel')}:</strong> {selectedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
+                 </p>
                 <form onSubmit={handleReserve} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>

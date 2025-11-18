@@ -84,7 +84,8 @@
     "loading": "Loading...",
     "backToRaffle": "Back to Raffle",
     "searchTickets": "Search Tickets",
-    "enterTicketNumber": "Enter ticket number"
+    "enterTicketNumber": "Enter ticket number",
+    "selectedTicketsLabel": "Selected Tickets"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Status: Ticket Not Found",

@@ -84,7 +84,8 @@
     "loading": "Cargando...",
     "backToRaffle": "Volver a la Rifa",
     "searchTickets": "Buscar Boletos",
-    "enterTicketNumber": "Ingresa número de boleto"
+    "enterTicketNumber": "Ingresa número de boleto",
+    "selectedTicketsLabel": "Boletos Seleccionados"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Estado: Boleto no encontrado",
