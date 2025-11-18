@@ -50,7 +50,8 @@
     "checkStatus": "Consultar Estado",
     "checking": "Consultando...",
     "incompleteInfoTitle": "Información Incompleta",
-    "incompleteInfoDescription": "Por favor, selecciona una rifa e ingresa el número del boleto."
+    "incompleteInfoDescription": "Por favor, selecciona una rifa e ingresa el número del boleto.",
+    "loadingRaffles": "Cargando rifas..."
   },
   "RaffleDetail": {
     "perTicket": "por boleto",

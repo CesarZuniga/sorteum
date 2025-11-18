@@ -50,7 +50,8 @@
     "checkStatus": "Check Status",
     "checking": "Checking...",
     "incompleteInfoTitle": "Incomplete Information",
-    "incompleteInfoDescription": "Please select a raffle and enter the ticket number."
+    "incompleteInfoDescription": "Please select a raffle and enter the ticket number.",
+    "loadingRaffles": "Loading raffles..."
   },
   "RaffleDetail": {
     "perTicket": "per ticket",
