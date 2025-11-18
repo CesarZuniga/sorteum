@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link'; // Importar Link para el botón de regreso
+import { ChevronLeft } from 'lucide-react'; // Importar ChevronLeft para el icono
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -46,6 +48,7 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
 
 export default function RaffleDetailPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const t = useTranslations('RaffleDetail');
+  const tIndex = useTranslations('Index'); // Usar traducciones de Index para el botón de regreso
   const [resolvedRaffleId, setResolvedRaffleId] = useState<string | null>(null); // Estado para el raffleId resuelto
 
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
@@ -82,7 +85,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   }, [resolvedRaffleId]); // Depende de resolvedRaffleId
 
   if (resolvedRaffleId === null || raffle === undefined || tickets === null) {
-    return <div>{t('loading')}</div>;
+    return <div>{tIndex('loading')}</div>;
   }
 
   if (!raffle) {
@@ -176,6 +179,12 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Button variant="outline" size="sm" asChild className="mb-4">
+        <Link href="/">
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          {tIndex('backToRaffle')}
+        </Link>
+      </Button>
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div>
           <div className="aspect-[3/2] w-full relative mb-4 rounded-lg overflow-hidden shadow-lg">

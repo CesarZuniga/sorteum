@@ -13,7 +13,7 @@ import { useTranslations } from 'next-intl';
 
 export default function TicketStatusPage({ params }: { params: { id: string, ticketNumber: string } }) {
   const t = useTranslations('TicketStatusDisplay');
-  const tRaffleDetail = useTranslations('RaffleDetail');
+  const tIndex = useTranslations('Index'); // Usar traducciones de Index para el botón de regreso
   const [result, setResult] = useState<TicketStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -45,7 +45,7 @@ export default function TicketStatusPage({ params }: { params: { id: string, tic
       return (
         <div className="container mx-auto px-4 py-12 flex justify-center">
             <div className="w-full max-w-md text-center">
-                <p>{tRaffleDetail('loading')}</p>
+                <p>{tIndex('loading')}</p>
             </div>
         </div>
       );
@@ -57,7 +57,7 @@ export default function TicketStatusPage({ params }: { params: { id: string, tic
          <Button variant="outline" size="sm" asChild className="mb-4">
             <Link href={`/raffles/${params.id}`}>
                 <ChevronLeft className="h-4 w-4 mr-2" />
-                {tRaffleDetail('backToRaffle')}
+                {tIndex('backToRaffle')}
             </Link>
         </Button>
         <div className="flex flex-col items-center text-center">
