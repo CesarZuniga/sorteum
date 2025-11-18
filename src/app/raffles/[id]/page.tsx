@@ -259,6 +259,13 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
                   )}
               </div>
 
+              {/* Nueva etiqueta para mostrar los boletos sugeridos */}
+              {suggestedTickets.length > 0 && (
+                 <p className="text-sm text-blue-600 dark:text-blue-300 mb-4">
+                   <strong>{t('suggestedTicketsLabel')}:</strong> {suggestedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
+                 </p>
+              )}
+
               {/* Sección de boletos con scroll */}
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
@@ -288,7 +295,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
             <Card>
               <CardContent className="p-6">
                  <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
-                 {/* Nueva etiqueta para mostrar los boletos seleccionados */}
+                 {/* Etiqueta para mostrar los boletos seleccionados */}
                  <p className="text-sm text-muted-foreground mb-4">
                    <strong>{t('selectedTicketsLabel')}:</strong> {selectedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
                  </p>

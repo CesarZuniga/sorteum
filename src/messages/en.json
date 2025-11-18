@@ -85,7 +85,8 @@
     "backToRaffle": "Back to Raffle",
     "searchTickets": "Search Tickets",
     "enterTicketNumber": "Enter ticket number",
-    "selectedTicketsLabel": "Selected Tickets"
+    "selectedTicketsLabel": "Selected Tickets",
+    "suggestedTicketsLabel": "Suggested Tickets"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Status: Ticket Not Found",
