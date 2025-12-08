@@ -16,7 +16,7 @@ export type Raffle = {
   adminId: string; // Corresponds to admin_id in DB
   name: string;
   description: string;
-  image: string; // Corresponds to image_url in DB
+  images: string[]; // Corresponds to image_url (TEXT[]) in DB
   price: number;
   ticketCount: number; // Corresponds to total_tickets in DB
   deadline: string; // Corresponds to end_date in DB

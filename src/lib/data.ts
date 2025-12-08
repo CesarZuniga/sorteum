@@ -12,7 +12,7 @@ const mapSupabaseRaffleToAppType = (dbRaffle: any): Raffle => ({
   adminId: dbRaffle.admin_id,
   name: dbRaffle.name,
   description: dbRaffle.description,
-  image: dbRaffle.image_url,
+  images: dbRaffle.image_url || [], // Now expects an array
   price: parseFloat(dbRaffle.price), // Ensure price is a number
   ticketCount: dbRaffle.total_tickets,
   // Aseguramos que deadline siempre sea un string ISO
@@ -25,7 +25,7 @@ const mapAppRaffleToSupabaseType = (appRaffle: Omit<Raffle, 'id' | 'active'>): a
   admin_id: appRaffle.adminId,
   name: appRaffle.name,
   description: appRaffle.description,
-  image_url: appRaffle.image,
+  image_url: appRaffle.images, // Now expects an array
   price: appRaffle.price,
   total_tickets: appRaffle.ticketCount,
   end_date: appRaffle.deadline,
@@ -125,7 +125,7 @@ export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 
   if (raffleData.adminId !== undefined) updatePayload.admin_id = raffleData.adminId;
   if (raffleData.name !== undefined) updatePayload.name = raffleData.name;
   if (raffleData.description !== undefined) updatePayload.description = raffleData.description;
-  if (raffleData.image !== undefined) updatePayload.image_url = raffleData.image;
+  if (raffleData.images !== undefined) updatePayload.image_url = raffleData.images; // Now expects an array
   if (raffleData.price !== undefined) updatePayload.price = raffleData.price;
   if (raffleData.deadline !== undefined) {
     updatePayload.end_date = raffleData.deadline;

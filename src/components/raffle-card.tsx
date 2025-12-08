@@ -30,14 +30,15 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
   }, [raffle.id]);
   
   const progress = soldTicketsCount > 0 ? (soldTicketsCount / raffle.ticketCount) * 100 : 0;
-  const placeholder = PlaceHolderImages.find(p => p.imageUrl === raffle.image);
+  // Use the first image from the array for the card display
+  const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]);
 
   return (
     <Card className="flex flex-col overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl dark:bg-gray-800/80">
         <Link href={`/raffles/${raffle.id}`} className="block">
           <div className="aspect-[16/9] w-full relative">
             <Image
-              src={raffle.image}
+              src={raffle.images[0]} // Use the first image
               alt={raffle.name}
               fill
               className="object-cover"

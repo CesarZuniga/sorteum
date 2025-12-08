@@ -3,26 +3,25 @@
     {
       "id": "raffle-watch",
       "description": "A luxury watch.",
-      "imageUrl": "https://images.unsplash.com/photo-1600003014608-c2ccc1570a65?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxsdXh1cnklMjB3YXRjaHxlbnwwfHx8fDE3NjI3NzQ4NzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrls": ["https://images.unsplash.com/photo-1600003014608-c2ccc1570a65?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxsdXh1cnklMjB3YXRjaHxlbnwwfHx8fDE3NjI3NzQ4NzZ8MA&ixlib=rb-4.1.0&q=80&w=1080", "https://images.unsplash.com/photo-1523275372159-61f1789e94f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bHV4dXJ5JTIwd2F0Y2h8ZW58MHx8fHwxNzYyNzc0ODc2fDA&ixlib=rb-4.1.0&q=80&w=1080"],
       "imageHint": "luxury watch"
     },
     {
       "id": "raffle-phone",
       "description": "A high-end smartphone.",
-      "imageUrl": "https://images.unsplash.com/photo-1676173646307-d050e097d181?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzbWFydHBob25lJTIwdGVjaG5vbG9neXxlbnwwfHx8fDE3NjI3ODE3MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrls": ["https://images.unsplash.com/photo-1676173646307-d050e097d181?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzbWFydHBob25lJTIwdGVjaG5vbG9neXxlbnwwfHx8fDE3NjI3ODE3MDh8MA&ixlib=rb-4.1.0&q=80&w=1080", "https://images.unsplash.com/photo-1580910051074-3fa611fc3872?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzYXJ0cGhvbmUlMjB0ZWNobm9sb2d5fGVufDB8fHx8MTc2Mjc4MTcwOHww&ixlib=rb-4.1.0&q=80&w=1080"],
       "imageHint": "smartphone technology"
     },
     {
       "id": "raffle-vacation",
       "description": "A weekend getaway package.",
-      "imageUrl": "https://images.unsplash.com/photo-1746138788263-c6f9847e20b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0cmF2ZWwlMjB2YWNhdGlvbnxlbnwwfHx8fDE3NjI3OTgzOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrls": ["https://images.unsplash.com/photo-1746138788263-c6f9847e20b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0cmF2ZWwlMjB2YWNhdGlvbnxlbnwwfHx8fDE3NjI3OTgzOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080", "https://images.unsplash.com/photo-1501785888041-af3ba6f6064f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMXx8dHJhdmVsJTIwdmFjYXRpb258ZW58MHx8fHwxNzYyNzk4Mzk2fDA&ixlib=rb-4.1.0&q=80&w=1080"],
       "imageHint": "travel vacation"
     },
     {
       "id": "raffle-console",
       "description": "A next-gen gaming console.",
-      "imageUrl": "https://images.unsplash.com/photo-1486401899868-0e435ed85128?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxnYW1pbmclMjBjb25zb2xlfGVufDB8fHx8MTc2Mjc3NzI5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "gaming console"
+      "imageUrls": ["https://images.unsplash.com/photo-1486401899868-0e435ed85128?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxnYW1pbmclMjBjb25zb2xlfGVufDB8fHx8MTc2Mjc3NzI5N3ww&ixlib=rb-4.1.0&q=80&w=1080", "https://images.unsplash.com/photo-1542751371-adc38148e7fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMnx8Z2FtaW5nJTIwY29uc29sZXxlbnwwfHx8fDE3NjI3NzcyOTd8MA&ixlib=rb-4.1.0&q=80&w=1080"]
     }
   ]
 }

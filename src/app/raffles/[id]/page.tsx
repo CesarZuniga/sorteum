@@ -17,7 +17,8 @@ import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'; // Importar ScrollArea y ScrollBar
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'; // Import Carousel components
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -175,7 +176,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   };
 
   const totalPrice = selectedTickets.length * raffle.price;
-  const placeholder = PlaceHolderImages.find(p => p.imageUrl === raffle.image);
+  const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]); // Use first image for placeholder hint
 
   // Filtrar boletos basados en el término de búsqueda
   const filteredTickets = tickets?.filter(ticket => 
@@ -192,16 +193,26 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       </Button>
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div>
-          <div className="aspect-[3/2] w-full relative mb-4 rounded-lg overflow-hidden shadow-lg">
-            <Image
-              src={raffle.image}
-              alt={raffle.name}
-              fill
-              className="object-cover"
-              data-ai-hint={placeholder?.imageHint}
-              priority
-            />
-          </div>
+          <Carousel className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
+            <CarouselContent>
+              {raffle.images.map((imageUrl, index) => (
+                <CarouselItem key={index}>
+                  <div className="aspect-[3/2] w-full relative">
+                    <Image
+                      src={imageUrl}
+                      alt={`${raffle.name} image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      data-ai-hint={placeholder?.imageHint}
+                      priority={index === 0} // Prioritize loading the first image
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline mb-2">{raffle.name}</h1>
           <p className="text-lg text-muted-foreground mb-6">{raffle.description}</p>
           <div className="flex flex-wrap gap-4 text-lg">

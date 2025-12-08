@@ -83,9 +83,16 @@ export default function NewRafflePage() {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">{t('imageURL')}</Label>
-              <Input id="image" name="image" type="url" placeholder={t('exampleImageURL')} defaultValue={PlaceHolderImages[0].imageUrl} />
-              {state.errors?.image && <p className="text-sm text-destructive">{state.errors.image[0]}</p>}
+              <Label htmlFor="imageUrls">{t('imageURL')}</Label> {/* Updated label */}
+              <Input 
+                id="imageUrls" 
+                name="imageUrls" 
+                type="url" 
+                placeholder={t('exampleImageURL')} 
+                defaultValue={PlaceHolderImages[0].imageUrls[0]} // Use first image from array
+              />
+              <p className="text-xs text-muted-foreground">{t('multipleImagesHint')}</p> {/* New hint */}
+              {state.errors?.imageUrls && <p className="text-sm text-destructive">{state.errors.imageUrls[0]}</p>} {/* Updated error field */}
             </div>
 
             {state.message && (

@@ -12,11 +12,16 @@ const RaffleFormSchema = z.object({
     price: z.coerce.number().min(0, 'Price must be a positive number'),
     ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1'),
     deadline: z.string().min(1, 'Deadline is required'),
-    image: z.string().url('Must be a valid image URL'),
+    // Change 'image' to 'imageUrls' and expect a string, then transform to array
+    imageUrls: z.string().min(1, 'Image URL(s) are required').transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
 });
 
-const CreateRaffle = RaffleFormSchema.omit({ id: true });
-const UpdateRaffle = RaffleFormSchema.omit({ ticketCount: true });
+const CreateRaffle = RaffleFormSchema.omit({ id: true }).extend({
+    imageUrls: z.string().min(1, 'Image URL(s) are required'), // Keep as string for input validation
+});
+const UpdateRaffle = RaffleFormSchema.omit({ ticketCount: true }).extend({
+    imageUrls: z.string().min(1, 'Image URL(s) are required'), // Keep as string for input validation
+});
 
 type RaffleActionState = {
     errors?: {
@@ -25,7 +30,7 @@ type RaffleActionState = {
         price?: string[];
         ticketCount?: string[];
         deadline?: string[];
-        image?: string[];
+        imageUrls?: string[]; // Updated to imageUrls
     };
     message?: string;
     success?: boolean;
@@ -62,11 +67,13 @@ export async function createRaffleAction(prevState: RaffleActionState, formData:
             };
         }
 
-        const raffleData = validatedFields.data;
+        const { imageUrls: imageUrlsString, ...restRaffleData } = validatedFields.data;
+        const imageUrlsArray = imageUrlsString.split(',').map(s => s.trim()).filter(Boolean);
         
-        const newRaffle = await apiCreateRaffle({ // Fix 2: Pass validated data directly
-            ...raffleData,
-            deadline: new Date(raffleData.deadline).toISOString(),
+        const newRaffle = await apiCreateRaffle({
+            ...restRaffleData,
+            images: imageUrlsArray, // Pass as images array
+            deadline: new Date(restRaffleData.deadline).toISOString(),
             adminId: userData.user.id, // Use the authenticated user's ID
         });
 
@@ -92,7 +99,7 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
         description: formData.get('description'),
         price: formData.get('price'),
         deadline: formData.get('deadline'),
-        image: formData.get('image'),
+        imageUrls: formData.get('imageUrls'), // Updated to imageUrls
     });
 
     if (!validatedFields.success) {
@@ -103,7 +110,8 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
         };
     }
 
-    const { id, ...dataToUpdate } = validatedFields.data;
+    const { id, imageUrls: imageUrlsString, ...restDataToUpdate } = validatedFields.data;
+    const imageUrlsArray = imageUrlsString.split(',').map(s => s.trim()).filter(Boolean);
 
     if (!id) {
         return { message: 'Raffle ID not found.', success: false };
@@ -120,8 +128,9 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
 
     try {
         await apiUpdateRaffle(id, {
-            ...dataToUpdate,
-            deadline: new Date(dataToUpdate.deadline).toISOString(),
+            ...restDataToUpdate,
+            images: imageUrlsArray, // Pass as images array
+            deadline: new Date(restDataToUpdate.deadline).toISOString(),
             adminId: userData.user.id,
         });
     } catch (e: unknown) {
