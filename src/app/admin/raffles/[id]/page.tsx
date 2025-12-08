@@ -12,21 +12,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
 import { getRaffleById, getTicketsByRaffleId } from '@/lib/data'; // Import getTicketsByRaffleId
 import { useTranslations } from 'next-intl';
+import React from 'react'; // Importar React para usar React.use
 
-export default function SingleRaffleAdminPage({ params }: { params: { id: string } }) {
+export default function SingleRaffleAdminPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const t = useTranslations('Admin');
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [winnerCount, setWinnerCount] = useState(1);
   const [tickets, setTickets] = useState<any[]>([]); // State to hold tickets
 
+  // Desenvolver la promesa de params
+  const resolvedParams = React.use(params);
+  const raffleId = resolvedParams.id;
+
   const loadRaffleAndTickets = useCallback(async () => {
-    const raffleData = await getRaffleById(params.id);
+    const raffleData = await getRaffleById(raffleId);
     setRaffle(raffleData);
     if (raffleData) {
       const ticketsData = await getTicketsByRaffleId(raffleData.id);
       setTickets(ticketsData);
     }
-  }, [params.id]);
+  }, [raffleId]); // Depende del raffleId resuelto
 
   useEffect(() => {
     loadRaffleAndTickets();
