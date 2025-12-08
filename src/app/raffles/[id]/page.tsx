@@ -193,26 +193,38 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       </Button>
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div>
-          <Carousel className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
-            <CarouselContent>
-              {raffle.images.map((imageUrl, index) => (
-                <CarouselItem key={index}>
-                  <div className="aspect-[3/2] w-full relative">
-                    <Image
-                      src={imageUrl}
-                      alt={`${raffle.name} image ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      data-ai-hint={placeholder?.imageHint}
-                      priority={index === 0} // Prioritize loading the first image
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
+          {raffle.images.length > 0 ? (
+            <Carousel className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
+              <CarouselContent>
+                {raffle.images.map((imageUrl, index) => (
+                  <CarouselItem key={index}>
+                    <div className="aspect-[3/2] w-full relative">
+                      <Image
+                        src={imageUrl}
+                        alt={`${raffle.name} image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        data-ai-hint={placeholder?.imageHint || 'raffle image'}
+                        priority={index === 0} // Prioritize loading the first image
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          ) : (
+            <div className="aspect-[3/2] w-full relative mb-4 rounded-lg overflow-hidden shadow-lg">
+              <Image
+                src="https://placehold.co/600x400"
+                alt="No image available"
+                fill
+                className="object-cover"
+                data-ai-hint="placeholder image"
+              />
+            </div>
+          )}
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline mb-2">{raffle.name}</h1>
           <p className="text-lg text-muted-foreground mb-6">{raffle.description}</p>
           <div className="flex flex-wrap gap-4 text-lg">

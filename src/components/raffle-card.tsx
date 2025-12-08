@@ -30,7 +30,9 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
   }, [raffle.id]);
   
   const progress = soldTicketsCount > 0 ? (soldTicketsCount / raffle.ticketCount) * 100 : 0;
-  // Use the first image from the array for the card display
+  
+  // Determinar la URL de la imagen, usando un marcador de posición si no hay imágenes
+  const imageUrl = raffle.images.length > 0 ? raffle.images[0] : 'https://placehold.co/600x400';
   const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]);
 
   return (
@@ -38,12 +40,12 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
         <Link href={`/raffles/${raffle.id}`} className="block">
           <div className="aspect-[16/9] w-full relative">
             <Image
-              src={raffle.images[0]} // Use the first image
+              src={imageUrl} // Usar la URL de imagen resuelta
               alt={raffle.name}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              data-ai-hint={placeholder?.imageHint}
+              data-ai-hint={placeholder?.imageHint || 'placeholder image'}
             />
           </div>
         </Link>
