@@ -195,20 +195,19 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div>
           {raffle.images.length > 0 ? (
-            <Carousel className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
+            <Carousel className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg aspect-[3/2]"> {/* Añadido aspect-[3/2] aquí */}
               <CarouselContent>
                 {raffle.images.map((imageUrl, index) => (
                   <CarouselItem key={index}>
-                    <div className="aspect-[3/2] w-full relative">
-                      <Image
-                        src={imageUrl}
-                        alt={`${raffle.name} image ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        data-ai-hint={placeholder?.imageHint || 'raffle image'}
-                        priority={index === 0} // Prioritize loading the first image
-                      />
-                    </div>
+                    {/* Eliminado el div interno con aspect-[3/2] */}
+                    <Image
+                      src={imageUrl}
+                      alt={`${raffle.name} image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      data-ai-hint={placeholder?.imageHint || 'raffle image'}
+                      priority={index === 0} // Prioritize loading the first image
+                    />
                   </CarouselItem>
                 ))}
               </CarouselContent>
