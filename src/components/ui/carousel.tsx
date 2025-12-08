@@ -195,9 +195,9 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 z-10", // Added z-10 for layering
         orientation === "horizontal"
-          ? "-left-12 top-1/2 -translate-y-1/2"
+          ? "left-4 bottom-4" // Adjusted position
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
@@ -224,9 +224,9 @@ const CarouselNext = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 z-10", // Added z-10 for layering
         orientation === "horizontal"
-          ? "-right-12 top-1/2 -translate-y-1/2"
+          ? "right-4 bottom-4" // Adjusted position
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
@@ -247,5 +247,5 @@ export {
   CarouselItem,
   CarouselPrevious,
   CarouselNext,
-  useCarousel, // Exportamos useCarousel aquí
+  useCarousel,
 }

@@ -214,7 +214,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
               </CarouselContent>
               <CarouselPrevious />
               <CarouselNext />
-              <CarouselDots className="mt-2" /> {/* Añadir los puntos de navegación aquí */}
+              <CarouselDots className="mt-2" /> {/* Mover los puntos de navegación aquí, dentro del Carousel */}
             </Carousel>
           ) : (
             <div className="aspect-[3/2] w-full relative mb-4 rounded-lg overflow-hidden shadow-lg">

@@ -16,7 +16,7 @@ export function CarouselDots({ className }: CarouselDotsProps) {
   }
 
   return (
-    <div className={cn('flex justify-center gap-2 mt-4', className)}>
+    <div className={cn('absolute bottom-4 left-1/2 -translate-x-1/2 flex justify-center gap-2 z-10', className)}>
       {scrollSnaps.map((_, index) => (
         <button
           key={index}
