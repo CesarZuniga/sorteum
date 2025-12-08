@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
@@ -18,7 +18,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'; // Import Carousel components
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel'; // Import Carousel components and CarouselApi
+import { cn } from '@/lib/utils'; // Import cn for utility classes
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -63,6 +64,11 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
   const { toast } = useToast();
 
+  // Carousel state
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
   useEffect(() => {
     async function resolveParams() {
       const resolved = await Promise.resolve(params);
@@ -84,6 +90,20 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       loadData();
     }
   }, [resolvedRaffleId]);
+
+  // Carousel effect
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
+
 
   if (resolvedRaffleId === null || raffle === undefined || tickets === null) {
     return <div>{tIndex('loading')}</div>;
@@ -194,7 +214,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div>
           {raffle.images.length > 0 ? (
-            <Carousel className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
+            <Carousel setApi={setApi} className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
               <CarouselContent>
                 {raffle.images.map((imageUrl, index) => (
                   <CarouselItem key={index}>
@@ -213,6 +233,21 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
               </CarouselContent>
               <CarouselPrevious />
               <CarouselNext />
+              {count > 1 && ( // Only show dots if there's more than one image
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                  {Array.from({ length: count }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => api?.scrollTo(index)}
+                      className={cn(
+                        "h-2 w-2 rounded-full bg-white/50 transition-all",
+                        index + 1 === current ? "w-6 bg-white" : ""
+                      )}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </Carousel>
           ) : (
             <div className="aspect-[3/2] w-full relative mb-4 rounded-lg overflow-hidden shadow-lg">
