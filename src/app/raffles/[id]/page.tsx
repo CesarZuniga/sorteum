@@ -18,7 +18,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'; // Import Carousel components
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { CarouselDots } from '@/components/ui/carousel-dots'; // Importar CarouselDots
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -60,7 +61,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
-  const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -213,6 +214,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
               </CarouselContent>
               <CarouselPrevious />
               <CarouselNext />
+              <CarouselDots className="mt-2" /> {/* Añadir los puntos de navegación aquí */}
             </Carousel>
           ) : (
             <div className="aspect-[3/2] w-full relative mb-4 rounded-lg overflow-hidden shadow-lg">
