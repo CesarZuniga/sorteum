@@ -146,11 +146,11 @@ const CarouselContent = React.forwardRef<
   const { carouselRef, orientation } = useCarousel()
 
   return (
-    <div ref={carouselRef} className="overflow-hidden">
+    <div ref={carouselRef} className="overflow-hidden h-full w-full"> {/* Added h-full w-full */}
       <div
         ref={ref}
         className={cn(
-          "flex",
+          "flex h-full", // Added h-full
           orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
           className
         )}
@@ -173,7 +173,7 @@ const CarouselItem = React.forwardRef<
       role="group"
       aria-roledescription="slide"
       className={cn(
-        "min-w-0 shrink-0 grow-0 basis-full",
+        "min-w-0 shrink-0 grow-0 basis-full relative h-full w-full", // Added relative h-full w-full
         orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
@@ -195,9 +195,9 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 z-10", // Added z-10 for layering
+        "absolute h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 z-10",
         orientation === "horizontal"
-          ? "left-4 bottom-4" // Adjusted position
+          ? "left-4 bottom-4"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
@@ -224,9 +224,9 @@ const CarouselNext = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 z-10", // Added z-10 for layering
+        "absolute h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 z-10",
         orientation === "horizontal"
-          ? "right-4 bottom-4" // Adjusted position
+          ? "right-4 bottom-4"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
