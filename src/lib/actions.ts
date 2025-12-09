@@ -181,6 +181,28 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
     }
 }
 
+export async function deleteRaffleAction(formData: FormData): Promise<void> {
+  const id = formData.get('id');
+  if (typeof id !== 'string') {
+    toast({ title: 'Error', description: 'Invalid Raffle ID.', variant: 'destructive' });
+    return;
+  }
+
+  try {
+    // Get existing raffle to delete associated images
+    const existingRaffle = await getRaffleById(id);
+    if (existingRaffle && existingRaffle.images && existingRaffle.images.length > 0) {
+      await deleteRaffleImages(existingRaffle.images);
+    }
+
+    await apiDeleteRaffle(id);
+    toast({ title: 'Success', description: 'Raffle deleted successfully.' });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
+  }
+}
+
 // --- FAQ Actions ---
 
 const FaqFormSchema = z.object({
