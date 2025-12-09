@@ -137,6 +137,7 @@
     "deleteRaffleConfirmationTitle": "Are you absolutely sure?",
     "deleteRaffleConfirmationDescription": "This action cannot be undone. This will permanently delete the \"{raffleName}\" raffle and all associated data.",
     "cancel": "Cancel",
+    "continue": "Continue",
     "newRaffleTitle": "Create New Raffle",
     "newRaffleDescription": "Fill out the details below to launch a new raffle.",
     "raffleName": "Raffle Name",
