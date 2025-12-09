@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react'; // Import useState
 import { useFormStatus } from 'react-dom';
 import { createRaffleAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2, Image as ImageIcon } from 'lucide-react'; // Import ImageIcon
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image'; // Import Image component
 
 function SubmitButton() {
   const t = useTranslations('Admin');
@@ -32,12 +32,23 @@ export default function NewRafflePage() {
   const router = useRouter();
   const initialState = { message: undefined, errors: {}, success: false, raffleId: undefined };
   const [state, dispatch] = useActionState(createRaffleAction, initialState);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // State for image previews
 
   useEffect(() => {
     if (state.success && state.raffleId) {
       router.push(`/admin/raffles/${state.raffleId}`);
     }
   }, [state.success, state.raffleId, router]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const filesArray = Array.from(event.target.files);
+      const previews = filesArray.map(file => URL.createObjectURL(file));
+      setImagePreviews(previews);
+    } else {
+      setImagePreviews([]);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -83,16 +94,27 @@ export default function NewRafflePage() {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageUrls">{t('imageURL')}</Label> {/* Updated label */}
+              <Label htmlFor="imageFiles">{t('imageUpload')}</Label> {/* Updated label */}
               <Input 
-                id="imageUrls" 
-                name="imageUrls" 
-                type="url" 
-                placeholder={t('exampleImageURL')} 
-                defaultValue={PlaceHolderImages[0].imageUrls[0]} // Use first image from array
+                id="imageFiles" 
+                name="imageFiles" 
+                type="file" 
+                multiple // Allow multiple file selection
+                accept="image/*" // Accept only image files
+                onChange={handleImageChange}
               />
-              <p className="text-xs text-muted-foreground">{t('multipleImagesHint')}</p> {/* New hint */}
-              {state.errors?.imageUrls && <p className="text-sm text-destructive">{state.errors.imageUrls[0]}</p>} {/* Updated error field */}
+              <p className="text-xs text-muted-foreground">{t('imageUploadHint')}</p> {/* New hint */}
+              {state.errors?.imageFiles && <p className="text-sm text-destructive">{state.errors.imageFiles[0]}</p>} {/* Updated error field */}
+              
+              {imagePreviews.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {imagePreviews.map((src, index) => (
+                    <div key={index} className="relative h-24 w-24 rounded-md overflow-hidden">
+                      <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {state.message && (

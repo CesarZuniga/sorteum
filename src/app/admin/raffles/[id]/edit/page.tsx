@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2, Image as ImageIcon } from 'lucide-react'; // Import ImageIcon
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -36,6 +36,7 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
   const t = useTranslations('Admin');
   const router = useRouter();
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // State for new image previews
   
   const initialState = { message: undefined, errors: {}, success: false, raffleId: undefined };
   const [state, dispatch] = useActionState(updateRaffleAction, initialState);
@@ -53,6 +54,16 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
       router.push(`/admin/raffles/${state.raffleId}`);
     }
   }, [state.success, state.raffleId, router]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const filesArray = Array.from(event.target.files);
+      const previews = filesArray.map(file => URL.createObjectURL(file));
+      setImagePreviews(previews);
+    } else {
+      setImagePreviews([]);
+    }
+  };
 
   if (raffle === undefined) {
     return <div>{t('loading')}</div>;
@@ -113,20 +124,35 @@ export default function EditRafflePage({ params }: { params: { id: string } }) {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageUrls">{t('imageURL')}</Label> {/* Updated label */}
-               <div className="flex items-center gap-4">
-                    {raffle.images.length > 0 && (
-                        <Image src={raffle.images[0]} alt={raffle.name} width={80} height={80} className="rounded-md object-cover" />
+              <Label htmlFor="imageFiles">{t('imageUpload')}</Label> {/* Updated label */}
+               <div className="flex flex-wrap items-center gap-4">
+                    {/* Display existing images if no new previews are selected */}
+                    {raffle.images.length > 0 && imagePreviews.length === 0 && (
+                        raffle.images.map((src, index) => (
+                            <div key={`existing-${index}`} className="relative h-24 w-24 rounded-md overflow-hidden">
+                                <Image src={src} alt={`${raffle.name} image ${index + 1}`} fill className="object-cover" />
+                            </div>
+                        ))
+                    )}
+                    {/* Display new image previews if selected */}
+                    {imagePreviews.length > 0 && (
+                        imagePreviews.map((src, index) => (
+                            <div key={`new-${index}`} className="relative h-24 w-24 rounded-md overflow-hidden">
+                                <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover" />
+                            </div>
+                        ))
                     )}
                     <Input 
-                        id="imageUrls" 
-                        name="imageUrls" 
-                        type="url" 
-                        defaultValue={raffle.images.join(', ')} // Join array for display
+                        id="imageFiles" 
+                        name="imageFiles" 
+                        type="file" 
+                        multiple // Allow multiple file selection
+                        accept="image/*" // Accept only image files
+                        onChange={handleImageChange}
                     />
                 </div>
-              <p className="text-xs text-muted-foreground">{t('multipleImagesHint')}</p> {/* New hint */}
-              {state.errors?.imageUrls && <p className="text-sm text-destructive">{state.errors.imageUrls[0]}</p>} {/* Updated error field */}
+              <p className="text-xs text-muted-foreground">{t('imageUploadHint')}</p> {/* New hint */}
+              {state.errors?.imageFiles && <p className="text-sm text-destructive">{state.errors.imageFiles[0]}</p>} {/* Updated error field */}
             </div>
 
             {state.message && (

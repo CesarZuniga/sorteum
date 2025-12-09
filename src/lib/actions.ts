@@ -1,9 +1,10 @@
 'use client';
 
 import { z } from 'zod';
-import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq } from './data';
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById } from './data';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import client-side supabase
+import { uploadRaffleImages, deleteRaffleImages } from '@/lib/storage'; // Import storage functions
 
 const RaffleFormSchema = z.object({
     id: z.string().optional(),
@@ -12,16 +13,11 @@ const RaffleFormSchema = z.object({
     price: z.coerce.number().min(0, 'Price must be a positive number'),
     ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1'),
     deadline: z.string().min(1, 'Deadline is required'),
-    // Change 'image' to 'imageUrls' and expect a string, then transform to array
-    imageUrls: z.string().min(1, 'Image URL(s) are required').transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
+    // imageUrls will be handled as files directly in the action
 });
 
-const CreateRaffle = RaffleFormSchema.omit({ id: true }).extend({
-    imageUrls: z.string().min(1, 'Image URL(s) are required'), // Keep as string for input validation
-});
-const UpdateRaffle = RaffleFormSchema.omit({ ticketCount: true }).extend({
-    imageUrls: z.string().min(1, 'Image URL(s) are required'), // Keep as string for input validation
-});
+const CreateRaffle = RaffleFormSchema.omit({ id: true });
+const UpdateRaffle = RaffleFormSchema.omit({ ticketCount: true });
 
 type RaffleActionState = {
     errors?: {
@@ -30,7 +26,7 @@ type RaffleActionState = {
         price?: string[];
         ticketCount?: string[];
         deadline?: string[];
-        imageUrls?: string[]; // Updated to imageUrls
+        imageFiles?: string[]; // Error for image files
     };
     message?: string;
     success?: boolean;
@@ -67,17 +63,35 @@ export async function createRaffleAction(prevState: RaffleActionState, formData:
             };
         }
 
-        const { imageUrls: imageUrlsString, ...restRaffleData } = validatedFields.data;
-        const imageUrlsArray = imageUrlsString.split(',').map(s => s.trim()).filter(Boolean);
-        
+        const files = formData.getAll('imageFiles') as File[];
+        const validFiles = files.filter(file => file.size > 0);
+
+        if (validFiles.length === 0) {
+            return {
+                errors: { imageFiles: ['At least one image is required.'] },
+                message: 'Failed to create raffle. Please upload at least one image.',
+                success: false,
+            };
+        }
+
+        // First create the raffle with empty images to get an ID
         const newRaffle = await apiCreateRaffle({
-            ...restRaffleData,
-            images: imageUrlsArray, // Pass as images array
-            deadline: new Date(restRaffleData.deadline).toISOString(),
-            adminId: userData.user.id, // Use the authenticated user's ID
+            ...validatedFields.data,
+            images: [], // Placeholder, will be updated after upload
+            deadline: new Date(validatedFields.data.deadline).toISOString(),
+            adminId: userData.user.id,
         });
 
-        return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
+        // Upload images using the new raffle ID
+        const uploadedImageUrls = await uploadRaffleImages(validFiles, newRaffle.id);
+
+        // Update the raffle with the actual image URLs
+        const updatedRaffle = await apiUpdateRaffle(newRaffle.id, {
+            images: uploadedImageUrls,
+            adminId: userData.user.id, // Ensure adminId is passed for RLS
+        });
+
+        return { success: true, raffleId: updatedRaffle?.id, message: 'Raffle created successfully!' };
 
     } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : String(e);
@@ -93,14 +107,12 @@ export async function createRaffleAction(prevState: RaffleActionState, formData:
 
 
 export async function updateRaffleAction(prevState: RaffleActionState, formData: FormData): Promise<RaffleActionState> {
-    const validatedFields = UpdateRaffle.safeParse({
-        id: formData.get('id'),
-        name: formData.get('name'),
-        description: formData.get('description'),
-        price: formData.get('price'),
-        deadline: formData.get('deadline'),
-        imageUrls: formData.get('imageUrls'), // Updated to imageUrls
-    });
+    const id = formData.get('id') as string;
+    if (!id) {
+        return { message: 'Raffle ID not found.', success: false };
+    }
+
+    const validatedFields = UpdateRaffle.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
         return {
@@ -108,13 +120,6 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
             message: 'Failed to update raffle. Please check the fields.',
             success: false,
         };
-    }
-
-    const { id, imageUrls: imageUrlsString, ...restDataToUpdate } = validatedFields.data;
-    const imageUrlsArray = imageUrlsString.split(',').map(s => s.trim()).filter(Boolean);
-
-    if (!id) {
-        return { message: 'Raffle ID not found.', success: false };
     }
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -126,13 +131,45 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
         };
     }
 
+    const files = formData.getAll('imageFiles') as File[];
+    const validFiles = files.filter(file => file.size > 0);
+
+    let finalImageUrls: string[] = [];
+
     try {
+        const existingRaffle = await getRaffleById(id);
+        if (!existingRaffle) {
+            return { message: 'Raffle not found for update.', success: false };
+        }
+
+        if (validFiles.length > 0) {
+            // If new files are uploaded, delete old ones and upload new ones
+            if (existingRaffle.images && existingRaffle.images.length > 0) {
+                await deleteRaffleImages(existingRaffle.images);
+            }
+            finalImageUrls = await uploadRaffleImages(validFiles, id);
+        } else {
+            // If no new files, keep existing images
+            finalImageUrls = existingRaffle.images || [];
+        }
+
+        if (finalImageUrls.length === 0) {
+             return {
+                errors: { imageFiles: ['At least one image is required.'] },
+                message: 'Failed to update raffle. Please upload at least one image.',
+                success: false,
+            };
+        }
+
         await apiUpdateRaffle(id, {
-            ...restDataToUpdate,
-            images: imageUrlsArray, // Pass as images array
-            deadline: new Date(restDataToUpdate.deadline).toISOString(),
+            ...validatedFields.data,
+            images: finalImageUrls,
+            deadline: new Date(validatedFields.data.deadline).toISOString(),
             adminId: userData.user.id,
         });
+
+        return { success: true, raffleId: id, message: 'Raffle updated successfully!' };
+
     } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : String(e);
         return { 
@@ -142,32 +179,6 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
             raffleId: undefined,
         };
     }
-
-    return { success: true, raffleId: id, message: 'Raffle updated successfully!' };
-}
-
-
-export async function deleteRaffleAction(formData: FormData): Promise<void> {
-  const id = formData.get('id');
-  if (typeof id !== 'string') {
-    toast({ title: 'Error', description: 'Invalid Raffle ID.', variant: 'destructive' });
-    return;
-  }
-  
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !userData?.user) {
-      toast({ title: 'Error', description: 'Authentication Error: User not logged in.', variant: 'destructive' });
-      return;
-  }
-
-  try {
-    await apiDeleteRaffle(id);
-    toast({ title: 'Success', description: 'Raffle deleted successfully.' });
-  } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
-    toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
-  }
 }
 
 // --- FAQ Actions ---
