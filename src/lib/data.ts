@@ -209,7 +209,7 @@ export const updateTicketStatus = async (
     updatePayload.purchase_date = null;
     updatePayload.reservation_expires_at = null;
     updatePayload.is_winner = false;
-  } else {
+  } else { // This 'else' block covers 'reserved' and 'paid'
     if (buyerInfo) {
       updatePayload.purchaser_name = buyerInfo.name;
       updatePayload.purchaser_email = buyerInfo.email;
@@ -218,6 +218,7 @@ export const updateTicketStatus = async (
     if (status === 'paid') {
       updatePayload.purchase_date = new Date().toISOString();
       updatePayload.reservation_expires_at = null;
+      updatePayload.is_winner = false; // Explicitly set is_winner to false when status is paid
     }
     if (status === 'reserved') {
       const RESERVATION_DURATION_MINUTES = 15;
