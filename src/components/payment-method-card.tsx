@@ -33,12 +33,12 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
       </CardHeader>
       <CardContent className="relative z-10 space-y-2 p-6">
         <div className="flex items-center gap-2 text-sm">
-          <CreditCardIcon className="h-4 w-4 text-primary" />
-          <span className="text-primary">{t('accountNumber')}: <strong>{method.accountNumber}</strong></span>
+          <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">{t('accountNumber')}: <strong>{method.accountNumber}</strong></span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <User className="h-4 w-4 text-primary" />
-          <span className="text-primary">{t('recipientName')}: <strong>{method.recipientName}</strong></span>
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">{t('recipientName')}: <strong>{method.recipientName}</strong></span>
         </div>
       </CardContent>
     </Card>
