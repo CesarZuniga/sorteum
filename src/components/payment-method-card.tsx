@@ -22,7 +22,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
             src={method.bankImageUrl}
             alt={method.bankName}
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
             data-ai-hint={`Bank logo for ${method.bankName}`}
           />
         </div>
