@@ -29,7 +29,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
       )}
       <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 p-6">
         <CardTitle className="text-lg font-semibold">{method.bankName}</CardTitle>
-        <Banknote className="h-5 w-5 text-primary" />
+        <Banknote className="h-5 w-5 text-muted-foreground" /> {/* Cambiado a text-muted-foreground */}
       </CardHeader>
       <CardContent className="relative z-10 space-y-2 p-6">
         <div className="flex items-center gap-2 text-sm">
