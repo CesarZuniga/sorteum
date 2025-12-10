@@ -33,7 +33,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
       </CardHeader>
       <CardContent className="relative z-10 space-y-2 p-6">
         <div className="flex items-center gap-2 text-sm">
-          <CreditCardIcon className="h-10 w-10 text-muted-foreground" />
+          <CreditCardIcon className="h-6 w-6 text-muted-foreground" />
           <span className="text-muted-foreground">{t('accountNumber')}: <strong>{method.accountNumber}</strong></span>
         </div>
         <div className="flex items-center gap-2 text-sm">
