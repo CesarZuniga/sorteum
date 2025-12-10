@@ -17,7 +17,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
   return (
     <Card className="relative overflow-hidden group">
       {method.bankImageUrl && (
-        <div className="absolute inset-0 z-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
+        <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300">
           <Image
             src={method.bankImageUrl}
             alt={method.bankName}
@@ -29,15 +29,15 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
       )}
       <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold">{method.bankName}</CardTitle>
-        <Banknote className="h-5 w-5 text-muted-foreground" />
+        <Banknote className="h-5 w-5 text-primary" />
       </CardHeader>
       <CardContent className="relative z-10 space-y-2">
         <div className="flex items-center gap-2 text-sm">
-          <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
+          <CreditCardIcon className="h-4 w-4 text-primary" />
           <span>{t('accountNumber')}: <strong>{method.accountNumber}</strong></span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <User className="h-4 w-4 text-muted-foreground" />
+          <User className="h-4 w-4 text-primary" />
           <span>{t('recipientName')}: <strong>{method.recipientName}</strong></span>
         </div>
       </CardContent>
