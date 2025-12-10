@@ -87,7 +87,9 @@
     "enterTicketNumber": "Enter ticket number",
     "selectedTicketsLabel": "Selected Tickets",
     "suggestedTicketsLabel": "Suggested Tickets",
-    "paymentMethodsTitle": "Payment Methods"
+    "paymentMethodsTitle": "Payment Methods",
+    "accountNumber": "Account Number",
+    "recipientName": "Recipient Name"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Status: Ticket Not Found",
@@ -253,5 +255,8 @@
     "editPaymentMethodTitle": "Edit Payment Method",
     "editPaymentMethodDescription": "Update the details for the payment method: \"{bankName}\".",
     "backToPaymentMethods": "Back to Payment Methods"
+  },
+  "Logo": {
+    "name": "Sorteum Digital"
   }
 }

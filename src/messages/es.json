@@ -87,7 +87,9 @@
     "enterTicketNumber": "Ingresa número de boleto",
     "selectedTicketsLabel": "Boletos Seleccionados",
     "suggestedTicketsLabel": "Boletos Sugeridos",
-    "paymentMethodsTitle": "Métodos de Pago"
+    "paymentMethodsTitle": "Métodos de Pago",
+    "accountNumber": "Número de Cuenta",
+    "recipientName": "Nombre del Beneficiario"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Estado: Boleto no encontrado",
@@ -253,5 +255,8 @@
     "editPaymentMethodTitle": "Editar Método de Pago",
     "editPaymentMethodDescription": "Actualiza los detalles del método de pago: \"{bankName}\".",
     "backToPaymentMethods": "Volver a Métodos de Pago"
+  },
+  "Logo": {
+    "name": "Sorteum Digital"
   }
 }
