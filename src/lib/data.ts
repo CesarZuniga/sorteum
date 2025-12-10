@@ -1,6 +1,6 @@
 'use client'; // Mark this file as a client component
 
-import type { Raffle, Ticket, FAQ } from './definitions';
+import type { Raffle, Ticket, FAQ, PaymentMethod } from './definitions';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import the client-side Supabase instance
 import { PlaceHolderImages } from './placeholder-images'; // Keep for initial image assignment
 
@@ -53,6 +53,15 @@ const mapSupabaseFaqToAppType = (dbFaq: any): FAQ => ({
   question: dbFaq.question,
   answer: dbFaq.answer,
   orderIndex: dbFaq.order_index,
+});
+
+// Helper to map Supabase payment method data to app PaymentMethod type
+const mapSupabasePaymentMethodToAppType = (dbPaymentMethod: any): PaymentMethod => ({
+  id: dbPaymentMethod.id,
+  bankName: dbPaymentMethod.bank_name,
+  accountNumber: dbPaymentMethod.account_number,
+  recipientName: dbPaymentMethod.recipient_name,
+  bankImageUrl: dbPaymentMethod.bank_image_url,
 });
 
 
@@ -316,6 +325,87 @@ export const deleteFaq = async (id: string): Promise<boolean> => {
   if (error) {
     console.error(`Supabase Error deleting FAQ ${id}:`, error);
     throw new Error(`Failed to delete FAQ with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return true;
+};
+
+// Payment Methods
+export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
+  const { data, error } = await supabase
+    .from('payment_methods')
+    .select('*')
+    .order('bank_name', { ascending: true });
+
+  if (error) {
+    console.error('Supabase Error fetching payment methods:', error);
+    throw new Error(`Failed to fetch payment methods: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return data.map(mapSupabasePaymentMethodToAppType);
+};
+
+export const getPaymentMethodById = async (id: string): Promise<PaymentMethod | undefined> => {
+  const { data, error } = await supabase
+    .from('payment_methods')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error(`Supabase Error fetching payment method by ID ${id}:`, error);
+    throw new Error(`Failed to fetch payment method with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return data ? mapSupabasePaymentMethodToAppType(data) : undefined;
+};
+
+export const createPaymentMethod = async (paymentMethodData: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> => {
+  const { data, error } = await supabase
+    .from('payment_methods')
+    .insert([{
+      bank_name: paymentMethodData.bankName,
+      account_number: paymentMethodData.accountNumber,
+      recipient_name: paymentMethodData.recipientName,
+      bank_image_url: paymentMethodData.bankImageUrl,
+    }])
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Supabase Error creating payment method:', error);
+    throw new Error(`Failed to create payment method: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return mapSupabasePaymentMethodToAppType(data);
+};
+
+export const updatePaymentMethod = async (id: string, paymentMethodData: Partial<Omit<PaymentMethod, 'id'>>): Promise<PaymentMethod | undefined> => {
+  const updatePayload: Partial<any> = {};
+  if (paymentMethodData.bankName !== undefined) updatePayload.bank_name = paymentMethodData.bankName;
+  if (paymentMethodData.accountNumber !== undefined) updatePayload.account_number = paymentMethodData.accountNumber;
+  if (paymentMethodData.recipientName !== undefined) updatePayload.recipient_name = paymentMethodData.recipientName;
+  if (paymentMethodData.bankImageUrl !== undefined) updatePayload.bank_image_url = paymentMethodData.bankImageUrl;
+
+  const { data, error } = await supabase
+    .from('payment_methods')
+    .update(updatePayload)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error(`Supabase Error updating payment method ${id}:`, error);
+    throw new Error(`Failed to update payment method with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
+  }
+  return data ? mapSupabasePaymentMethodToAppType(data) : undefined;
+};
+
+export const deletePaymentMethod = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('payment_methods')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Supabase Error deleting payment method ${id}:`, error);
+    throw new Error(`Failed to delete payment method with ID ${id}: ${error.message || 'Unknown Supabase error'}`);
   }
   return true;
 };

@@ -86,7 +86,8 @@
     "searchTickets": "Search Tickets",
     "enterTicketNumber": "Enter ticket number",
     "selectedTicketsLabel": "Selected Tickets",
-    "suggestedTicketsLabel": "Suggested Tickets"
+    "suggestedTicketsLabel": "Suggested Tickets",
+    "paymentMethodsTitle": "Payment Methods"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Status: Ticket Not Found",
@@ -227,9 +228,30 @@
     "createFaqButton": "Create FAQ",
     "editFaqTitle": "Edit FAQ",
     "editFaqDescription": "Update the details for the FAQ: \"{faqQuestion}\".",
-    "backToFaqs": "Back to FAQs"
-  },
-  "Logo": {
-    "name": "Sorteum"
+    "backToFaqs": "Back to FAQs",
+    "paymentMethodsTitle": "Payment Methods",
+    "paymentMethodsDescription": "Manage your available payment methods here.",
+    "createPaymentMethod": "Create Payment Method",
+    "paymentMethodBankNameColumn": "Bank Name",
+    "paymentMethodAccountNumberColumn": "Account Number",
+    "paymentMethodRecipientNameColumn": "Recipient Name",
+    "paymentMethodBankImageColumn": "Bank Image",
+    "deletePaymentMethodConfirmationTitle": "Are you absolutely sure?",
+    "deletePaymentMethodConfirmationDescription": "This action cannot be undone. This will permanently delete the payment method: \"{bankName}\".",
+    "newPaymentMethodTitle": "Create New Payment Method",
+    "newPaymentMethodDescription": "Fill out the details below to add a new payment method.",
+    "paymentMethodBankName": "Bank Name",
+    "exampleBankName": "e.g., Banco Nacional",
+    "paymentMethodAccountNumber": "Account Number / CLABE",
+    "exampleAccountNumber": "e.g., 123456789012345678 (CLABE) or 1234567890 (Account)",
+    "paymentMethodRecipientName": "Recipient Name",
+    "exampleRecipientName": "e.g., Sorteum Digital S.A. de C.V.",
+    "paymentMethodBankImageUrl": "Bank Image URL",
+    "exampleBankImageUrl": "e.g., https://example.com/bank-logo.png",
+    "paymentMethodBankImageUrlHint": "Provide a direct URL to the bank's logo or image.",
+    "createPaymentMethodButton": "Create Payment Method",
+    "editPaymentMethodTitle": "Edit Payment Method",
+    "editPaymentMethodDescription": "Update the details for the payment method: \"{bankName}\".",
+    "backToPaymentMethods": "Back to Payment Methods"
   }
 }

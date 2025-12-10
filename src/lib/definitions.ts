@@ -29,3 +29,11 @@ export type FAQ = {
   answer: string;
   orderIndex: number; // Corresponds to order_index in DB
 };
+
+export type PaymentMethod = {
+  id: string;
+  bankName: string; // Corresponds to bank_name in DB
+  accountNumber: string; // Corresponds to account_number in DB
+  recipientName: string; // Corresponds to recipient_name in DB
+  bankImageUrl?: string; // Corresponds to bank_image_url in DB
+};

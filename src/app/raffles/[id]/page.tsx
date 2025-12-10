@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { updateTicketStatus, getRaffleById, getTicketsByRaffleId } from '@/lib/data';
-import type { Ticket, Raffle } from '@/lib/definitions';
+import { updateTicketStatus, getRaffleById, getTicketsByRaffleId, getPaymentMethods } from '@/lib/data';
+import type { Ticket, Raffle, PaymentMethod } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
 import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { ChevronLeft } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel'; // Import Carousel components and CarouselApi
 import { cn } from '@/lib/utils'; // Import cn for utility classes
+import { PaymentMethodCard } from '@/components/payment-method-card'; // Import the new component
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -56,6 +57,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
 
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]); // New state for payment methods
   
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
@@ -80,12 +82,14 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
   useEffect(() => {
     if (resolvedRaffleId) {
       async function loadData() {
-          const [raffleData, ticketsData] = await Promise.all([
+          const [raffleData, ticketsData, paymentMethodsData] = await Promise.all([
               getRaffleById(resolvedRaffleId),
-              getTicketsByRaffleId(resolvedRaffleId)
+              getTicketsByRaffleId(resolvedRaffleId),
+              getPaymentMethods() // Fetch payment methods
           ]);
           setRaffle(raffleData);
           setTickets(ticketsData.sort((a,b) => a.number - b.number));
+          setPaymentMethods(paymentMethodsData); // Set payment methods
       }
       loadData();
     }
@@ -384,6 +388,18 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
                 </form>
               </CardContent>
             </Card>
+          )}
+
+          {/* New section for Payment Methods */}
+          {paymentMethods.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold font-headline">{t('paymentMethodsTitle')}</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {paymentMethods.map((method) => (
+                  <PaymentMethodCard key={method.id} method={method} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { z } from 'zod';
-import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById } from './data';
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById, createPaymentMethod as apiCreatePaymentMethod, updatePaymentMethod as apiUpdatePaymentMethod, deletePaymentMethod as apiDeletePaymentMethod } from './data';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import client-side supabase
 import { uploadRaffleImages, deleteRaffleImages } from '@/lib/storage'; // Import storage functions
@@ -298,5 +298,105 @@ export async function deleteFaqAction(formData: FormData): Promise<void> {
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     toast({ title: 'Error', description: `Database Error: Failed to Delete FAQ. ${errorMessage}`, variant: 'destructive' });
+  }
+}
+
+// --- Payment Method Actions ---
+
+const PaymentMethodFormSchema = z.object({
+    id: z.string().optional(),
+    bankName: z.string().min(1, 'Bank Name is required'),
+    accountNumber: z.string().min(1, 'Account Number is required'),
+    recipientName: z.string().min(1, 'Recipient Name is required'),
+    bankImageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')), // Optional URL
+});
+
+const CreatePaymentMethod = PaymentMethodFormSchema.omit({ id: true });
+const UpdatePaymentMethod = PaymentMethodFormSchema;
+
+type PaymentMethodActionState = {
+    errors?: {
+        bankName?: string[];
+        accountNumber?: string[];
+        recipientName?: string[];
+        bankImageUrl?: string[];
+    };
+    message?: string;
+    success?: boolean;
+    paymentMethodId?: string;
+};
+
+export async function createPaymentMethodAction(prevState: PaymentMethodActionState, formData: FormData): Promise<PaymentMethodActionState> {
+    try {
+        const validatedFields = CreatePaymentMethod.safeParse(Object.fromEntries(formData.entries()));
+
+        if (!validatedFields.success) {
+            return {
+                errors: validatedFields.error.flatten().fieldErrors,
+                message: 'Failed to create payment method. Please check the fields.',
+                success: false,
+            };
+        }
+
+        const newPaymentMethod = await apiCreatePaymentMethod(validatedFields.data);
+
+        return { success: true, paymentMethodId: newPaymentMethod.id, message: 'Payment method created successfully!' };
+
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        return {
+            message: `Database Error: ${errorMessage}`,
+            success: false,
+            errors: undefined,
+            paymentMethodId: undefined,
+        };
+    }
+}
+
+export async function updatePaymentMethodAction(prevState: PaymentMethodActionState, formData: FormData): Promise<PaymentMethodActionState> {
+    const validatedFields = UpdatePaymentMethod.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Failed to update payment method. Please check the fields.',
+            success: false,
+        };
+    }
+
+    const { id, ...dataToUpdate } = validatedFields.data;
+
+    if (!id) {
+        return { message: 'Payment Method ID not found.', success: false };
+    }
+
+    try {
+        await apiUpdatePaymentMethod(id, dataToUpdate);
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        return {
+            message: `Database Error: Failed to Update Payment Method. ${errorMessage}`,
+            success: false,
+            errors: undefined,
+            paymentMethodId: undefined,
+        };
+    }
+
+    return { success: true, paymentMethodId: id, message: 'Payment method updated successfully!' };
+}
+
+export async function deletePaymentMethodAction(formData: FormData): Promise<void> {
+  const id = formData.get('id');
+  if (typeof id !== 'string') {
+    toast({ title: 'Error', description: 'Invalid Payment Method ID.', variant: 'destructive' });
+    return;
+  }
+
+  try {
+    await apiDeletePaymentMethod(id);
+    toast({ title: 'Success', description: 'Payment method deleted successfully.' });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    toast({ title: 'Error', description: `Database Error: Failed to Delete Payment Method. ${errorMessage}`, variant: 'destructive' });
   }
 }

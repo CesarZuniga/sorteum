@@ -86,7 +86,8 @@
     "searchTickets": "Buscar Boletos",
     "enterTicketNumber": "Ingresa número de boleto",
     "selectedTicketsLabel": "Boletos Seleccionados",
-    "suggestedTicketsLabel": "Boletos Sugeridos"
+    "suggestedTicketsLabel": "Boletos Sugeridos",
+    "paymentMethodsTitle": "Métodos de Pago"
   },
   "TicketStatusDisplay": {
     "ticketNotFoundStatus": "Estado: Boleto no encontrado",
@@ -227,9 +228,30 @@
     "createFaqButton": "Crear Pregunta Frecuente",
     "editFaqTitle": "Editar Pregunta Frecuente",
     "editFaqDescription": "Actualiza los detalles de la pregunta frecuente: \"{faqQuestion}\".",
-    "backToFaqs": "Volver a Preguntas Frecuentes"
-  },
-  "Logo": {
-    "name": "Sorteum"
+    "backToFaqs": "Volver a Preguntas Frecuentes",
+    "paymentMethodsTitle": "Métodos de Pago",
+    "paymentMethodsDescription": "Gestiona tus métodos de pago disponibles aquí.",
+    "createPaymentMethod": "Crear Método de Pago",
+    "paymentMethodBankNameColumn": "Nombre del Banco",
+    "paymentMethodAccountNumberColumn": "Número de Cuenta / CLABE",
+    "paymentMethodRecipientNameColumn": "Nombre del Beneficiario",
+    "paymentMethodBankImageColumn": "Imagen del Banco",
+    "deletePaymentMethodConfirmationTitle": "¿Estás absolutamente seguro?",
+    "deletePaymentMethodConfirmationDescription": "Esta acción no se puede deshacer. Esto eliminará permanentemente el método de pago: \"{bankName}\".",
+    "newPaymentMethodTitle": "Crear Nuevo Método de Pago",
+    "newPaymentMethodDescription": "Completa los detalles a continuación para añadir un nuevo método de pago.",
+    "paymentMethodBankName": "Nombre del Banco",
+    "exampleBankName": "Ej., Banco Nacional",
+    "paymentMethodAccountNumber": "Número de Cuenta / CLABE",
+    "exampleAccountNumber": "Ej., 123456789012345678 (CLABE) o 1234567890 (Cuenta)",
+    "paymentMethodRecipientName": "Nombre del Beneficiario",
+    "exampleRecipientName": "Ej., Sorteum Digital S.A. de C.V.",
+    "paymentMethodBankImageUrl": "URL de la Imagen del Banco",
+    "exampleBankImageUrl": "Ej., https://ejemplo.com/logo-banco.png",
+    "paymentMethodBankImageUrlHint": "Proporciona una URL directa al logo o imagen del banco.",
+    "createPaymentMethodButton": "Crear Método de Pago",
+    "editPaymentMethodTitle": "Editar Método de Pago",
+    "editPaymentMethodDescription": "Actualiza los detalles del método de pago: \"{bankName}\".",
+    "backToPaymentMethods": "Volver a Métodos de Pago"
   }
 }
