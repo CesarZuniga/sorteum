@@ -17,7 +17,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
   return (
     <Card className="relative overflow-hidden group">
       {method.bankImageUrl && (
-        <div className="absolute inset-0 z-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300">
+        <div className="absolute inset-0 z-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
           <Image
             src={method.bankImageUrl}
             alt={method.bankName}
