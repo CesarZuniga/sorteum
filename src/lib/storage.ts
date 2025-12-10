@@ -53,3 +53,47 @@ export async function deleteRaffleImages(imageUrls: string[]): Promise<void> {
     }
   }
 }
+
+export async function uploadPaymentMethodImage(file: File, methodId: string): Promise<string> {
+  const fileExtension = file.name.split('.').pop();
+  const path = `payment-methods/${methodId}/${uuidv4()}.${fileExtension}`;
+
+  const { data, error } = await supabase.storage
+    .from('payment-method-images') // Asumiendo que este bucket existe
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+  if (error) {
+    console.error('Error uploading payment method image:', error);
+    throw new Error(`Failed to upload payment method image: ${error.message}`);
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from('payment-method-images')
+    .getPublicUrl(path);
+
+  if (!publicUrlData) {
+    throw new Error('Failed to get public URL for payment method image.');
+  }
+  return publicUrlData.publicUrl;
+}
+
+export async function deletePaymentMethodImage(imageUrl: string): Promise<void> {
+  if (!imageUrl) return;
+
+  const urlParts = imageUrl.split('/');
+  const bucketIndex = urlParts.indexOf('payment-method-images');
+  if (bucketIndex > -1 && urlParts.length > bucketIndex + 1) {
+    const pathToDelete = urlParts.slice(bucketIndex + 1).join('/');
+    const { error } = await supabase.storage
+      .from('payment-method-images')
+      .remove([pathToDelete]);
+
+    if (error) {
+      console.error('Error deleting payment method image:', error);
+      throw new Error(`Failed to delete payment method image: ${error.message}`);
+    }
+  }
+}

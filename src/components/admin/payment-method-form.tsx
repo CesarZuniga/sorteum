@@ -11,6 +11,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import type { PaymentMethod } from '@/lib/definitions';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import Image from 'next/image';
 
 function SubmitButton({ isEditing }: { isEditing: boolean }) {
   const t = useTranslations('Admin');
@@ -30,7 +32,7 @@ interface PaymentMethodFormProps {
       bankName?: string[];
       accountNumber?: string[];
       recipientName?: string[];
-      bankImageUrl?: string[];
+      imageFile?: string[]; // Error for image file
     };
     message?: string;
     success?: boolean;
@@ -42,6 +44,15 @@ interface PaymentMethodFormProps {
 export function PaymentMethodForm({ paymentMethod, state, action }: PaymentMethodFormProps) {
   const t = useTranslations('Admin');
   const isEditing = !!paymentMethod;
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setImagePreview(URL.createObjectURL(event.target.files[0]));
+    } else {
+      setImagePreview(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -78,10 +89,27 @@ export function PaymentMethodForm({ paymentMethod, state, action }: PaymentMetho
               {state.errors?.recipientName && <p className="text-sm text-destructive">{state.errors.recipientName[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankImageUrl">{t('paymentMethodBankImageUrl')}</Label>
-              <Input id="bankImageUrl" name="bankImageUrl" type="url" placeholder={t('exampleBankImageUrl')} defaultValue={paymentMethod?.bankImageUrl} />
-              <p className="text-xs text-muted-foreground">{t('paymentMethodBankImageUrlHint')}</p>
-              {state.errors?.bankImageUrl && <p className="text-sm text-destructive">{state.errors.bankImageUrl[0]}</p>}
+              <Label htmlFor="imageFile">{t('paymentMethodBankImage')}</Label>
+              <Input 
+                id="imageFile" 
+                name="imageFile" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageChange}
+              />
+              <p className="text-xs text-muted-foreground">{t('paymentMethodBankImageHint')}</p>
+              {state.errors?.imageFile && <p className="text-sm text-destructive">{state.errors.imageFile[0]}</p>}
+              
+              {(imagePreview || paymentMethod?.bankImageUrl) && (
+                <div className="mt-4 relative h-24 w-24 rounded-md overflow-hidden border">
+                  <Image 
+                    src={imagePreview || paymentMethod?.bankImageUrl || ''} 
+                    alt="Bank preview" 
+                    fill 
+                    className="object-contain" 
+                  />
+                </div>
+              )}
             </div>
 
             {state.message && (

@@ -1,10 +1,10 @@
 'use client';
 
 import { z } from 'zod';
-import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById, createPaymentMethod as apiCreatePaymentMethod, updatePaymentMethod as apiUpdatePaymentMethod, deletePaymentMethod as apiDeletePaymentMethod } from './data';
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById, createPaymentMethod as apiCreatePaymentMethod, updatePaymentMethod as apiUpdatePaymentMethod, deletePaymentMethod as apiDeletePaymentMethod, getPaymentMethodById } from './data';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import client-side supabase
-import { uploadRaffleImages, deleteRaffleImages } from '@/lib/storage'; // Import storage functions
+import { uploadRaffleImages, deleteRaffleImages, uploadPaymentMethodImage, deletePaymentMethodImage } from '@/lib/storage'; // Import storage functions
 
 const RaffleFormSchema = z.object({
     id: z.string().optional(),
@@ -308,10 +308,10 @@ const PaymentMethodFormSchema = z.object({
     bankName: z.string().min(1, 'Bank Name is required'),
     accountNumber: z.string().min(1, 'Account Number is required'),
     recipientName: z.string().min(1, 'Recipient Name is required'),
-    bankImageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')), // Optional URL
+    // bankImageUrl is now handled as a file upload, not a direct URL input
 });
 
-const CreatePaymentMethod = PaymentMethodFormSchema.omit({ id: true });
+const CreatePaymentMethod = PaymentMethodFormSchema; // No omitir id aquí, se maneja en la acción
 const UpdatePaymentMethod = PaymentMethodFormSchema;
 
 type PaymentMethodActionState = {
@@ -319,7 +319,7 @@ type PaymentMethodActionState = {
         bankName?: string[];
         accountNumber?: string[];
         recipientName?: string[];
-        bankImageUrl?: string[];
+        imageFile?: string[]; // Error for image file
     };
     message?: string;
     success?: boolean;
@@ -328,7 +328,8 @@ type PaymentMethodActionState = {
 
 export async function createPaymentMethodAction(prevState: PaymentMethodActionState, formData: FormData): Promise<PaymentMethodActionState> {
     try {
-        const validatedFields = CreatePaymentMethod.safeParse(Object.fromEntries(formData.entries()));
+        const entriesObj = Object.fromEntries(formData.entries());
+        const validatedFields = CreatePaymentMethod.safeParse(entriesObj);
 
         if (!validatedFields.success) {
             return {
@@ -338,9 +339,24 @@ export async function createPaymentMethodAction(prevState: PaymentMethodActionSt
             };
         }
 
-        const newPaymentMethod = await apiCreatePaymentMethod(validatedFields.data);
+        const file = formData.get('imageFile') as File;
+        let bankImageUrl: string | undefined = undefined;
 
-        return { success: true, paymentMethodId: newPaymentMethod.id, message: 'Payment method created successfully!' };
+        if (file && file.size > 0) {
+            // First create the payment method with a placeholder image URL to get an ID
+            const tempPaymentMethod = await apiCreatePaymentMethod({
+                ...validatedFields.data,
+                bankImageUrl: '', // Placeholder
+            });
+            
+            bankImageUrl = await uploadPaymentMethodImage(file, tempPaymentMethod.id);
+            await apiUpdatePaymentMethod(tempPaymentMethod.id, { bankImageUrl }); // Update with actual URL
+            return { success: true, paymentMethodId: tempPaymentMethod.id, message: 'Payment method created successfully!' };
+        } else {
+            // If no file, create without image URL
+            const newPaymentMethod = await apiCreatePaymentMethod(validatedFields.data);
+            return { success: true, paymentMethodId: newPaymentMethod.id, message: 'Payment method created successfully!' };
+        }
 
     } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : String(e);
@@ -354,7 +370,8 @@ export async function createPaymentMethodAction(prevState: PaymentMethodActionSt
 }
 
 export async function updatePaymentMethodAction(prevState: PaymentMethodActionState, formData: FormData): Promise<PaymentMethodActionState> {
-    const validatedFields = UpdatePaymentMethod.safeParse(Object.fromEntries(formData.entries()));
+    const entriesObj = Object.fromEntries(formData.entries());
+    const validatedFields = UpdatePaymentMethod.safeParse(entriesObj);
 
     if (!validatedFields.success) {
         return {
@@ -370,8 +387,24 @@ export async function updatePaymentMethodAction(prevState: PaymentMethodActionSt
         return { message: 'Payment Method ID not found.', success: false };
     }
 
+    const file = formData.get('imageFile') as File;
+    let finalBankImageUrl: string | undefined = undefined;
+
     try {
-        await apiUpdatePaymentMethod(id, dataToUpdate);
+        const existingPaymentMethod = await getPaymentMethodById(id);
+
+        if (file && file.size > 0) {
+            // New file uploaded: delete old image if exists, then upload new one
+            if (existingPaymentMethod?.bankImageUrl) {
+                await deletePaymentMethodImage(existingPaymentMethod.bankImageUrl);
+            }
+            finalBankImageUrl = await uploadPaymentMethodImage(file, id);
+        } else {
+            // No new file: keep existing image URL
+            finalBankImageUrl = existingPaymentMethod?.bankImageUrl;
+        }
+
+        await apiUpdatePaymentMethod(id, { ...dataToUpdate, bankImageUrl: finalBankImageUrl });
     } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : String(e);
         return {
@@ -393,6 +426,12 @@ export async function deletePaymentMethodAction(formData: FormData): Promise<voi
   }
 
   try {
+    // Get existing payment method to delete associated image
+    const existingPaymentMethod = await getPaymentMethodById(id);
+    if (existingPaymentMethod?.bankImageUrl) {
+      await deletePaymentMethodImage(existingPaymentMethod.bankImageUrl);
+    }
+
     await apiDeletePaymentMethod(id);
     toast({ title: 'Success', description: 'Payment method deleted successfully.' });
   } catch (e: unknown) {

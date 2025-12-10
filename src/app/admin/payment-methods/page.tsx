@@ -35,7 +35,9 @@ function PaymentMethodRow({ paymentMethod, refreshPaymentMethods }: { paymentMet
       <TableCell>{paymentMethod.recipientName}</TableCell>
       <TableCell>
         {paymentMethod.bankImageUrl ? (
-          <Image src={paymentMethod.bankImageUrl} alt={paymentMethod.bankName} width={60} height={30} className="object-contain" />
+          <div className="relative w-[60px] h-[30px]">
+            <Image src={paymentMethod.bankImageUrl} alt={paymentMethod.bankName} fill className="object-contain" />
+          </div>
         ) : (
           <span>N/A</span>
         )}
