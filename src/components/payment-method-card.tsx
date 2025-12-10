@@ -37,7 +37,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
           <span className="text-muted-foreground">{t('accountNumber')}: <strong>{method.accountNumber}</strong></span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <User className="h-4 w-4 text-muted-foreground" />
+          <User className="h-8 w-8 text-muted-foreground" />
           <span className="text-muted-foreground">{t('recipientName')}: <strong>{method.recipientName}</strong></span>
         </div>
       </CardContent>
