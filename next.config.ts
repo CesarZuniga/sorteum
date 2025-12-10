@@ -37,6 +37,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      { // Añadido para imágenes de bancos
+        protocol: 'https',
+        hostname: 'www.kardmatch.com.mx',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
