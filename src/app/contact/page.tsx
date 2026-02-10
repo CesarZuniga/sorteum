@@ -68,15 +68,11 @@ export default function ContactPage() {
              </div>
             <p className="text-xs text-muted-foreground px-4">
               {t.rich('privacyPolicyAcceptance', {
-                privacyPolicyLink: (chunks) => {
-                  // Ensure chunks is treated as a ReactNode, not a function
-                  const content = typeof chunks === 'function' ? chunks() : chunks;
-                  return (
-                    <Link href="#" className="underline hover:text-primary">
-                      {content}
-                    </Link>
-                  );
-                },
+                link: (chunks) => (
+                  <Link href="#" className="underline hover:text-primary">
+                    {chunks}
+                  </Link>
+                ),
               })}
             </p>
           </div>

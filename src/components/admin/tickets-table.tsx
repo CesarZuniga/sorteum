@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import type { Raffle, Ticket } from '@/lib/definitions';
 import type { TicketStatusFilter } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Clock, XCircle, RotateCcw, Trophy, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { getPaginatedTickets, getTicketStatusCounts, updateTicketStatus } from '@/lib/data';
+import { CheckCircle, Clock, XCircle, RotateCcw, Trophy, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
+import { getPaginatedTickets, getTicketStatusCounts, updateTicketStatus, getTicketByNumber } from '@/lib/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +57,10 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<TicketStatusFilter>('all');
   const [winnerCount, setWinnerCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResult, setSearchResult] = useState<Ticket | null | undefined>(undefined);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadTickets = useCallback(async () => {
     setIsLoading(true);
@@ -116,6 +121,11 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
           })
         });
         await loadTickets();
+        // Refresh search result if search is active
+        if (searchTerm) {
+          const updated = await getTicketByNumber(raffle.id, ticketNumber);
+          setSearchResult(updated ?? null);
+        }
         onTicketStatusChanged();
       }
     } catch {
@@ -126,6 +136,35 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
   const handleFilterChange = (value: string) => {
     setStatusFilter(value as TicketStatusFilter);
     setCurrentPage(1);
+    setSearchTerm('');
+    setSearchResult(undefined);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (!value.trim()) {
+      setSearchResult(undefined);
+      setIsSearching(false);
+      return;
+    }
+    const ticketNum = parseInt(value, 10);
+    if (isNaN(ticketNum) || ticketNum < 1) {
+      setSearchResult(null);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const ticket = await getTicketByNumber(raffle.id, ticketNum);
+        setSearchResult(ticket ?? null);
+      } catch {
+        setSearchResult(null);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
   };
 
   return (
@@ -141,7 +180,7 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
       </CardHeader>
       <CardContent>
         {/* Filter bar */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <Select value={statusFilter} onValueChange={handleFilterChange}>
               <SelectTrigger className="w-[200px]">
@@ -155,6 +194,17 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
                 <SelectItem value="winner">{t('ticketTableWinner')}</SelectItem>
               </SelectContent>
             </Select>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="number"
+                placeholder={t('ticketTableSearchTicket')}
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9 w-[180px]"
+                min={1}
+              />
+            </div>
           </div>
           <span className="text-sm text-muted-foreground">
             {t('ticketTableShowingCount', { count: totalCount })}
@@ -169,23 +219,97 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
               <TableHead>{t('ticketTableStatus')}</TableHead>
               <TableHead>{t('ticketTableBuyerName')}</TableHead>
               <TableHead>{t('ticketTableBuyerPhone')}</TableHead>
+              <TableHead>{t('ticketTableBuyerEmail')}</TableHead>
               <TableHead>{t('ticketTableActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && (
+            {/* Search mode */}
+            {searchTerm && (
+              <>
+                {isSearching && (
+                  <TableRow>
+                    <TableCell colSpan={6}>{t('ticketTableLoadingTickets')}</TableCell>
+                  </TableRow>
+                )}
+                {!isSearching && searchResult === null && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      {t('ticketTableNoTicketsFound')}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isSearching && searchResult && (() => {
+                  const ticket = searchResult;
+                  const { label, variant, icon: Icon } = statusConfig[ticket.status];
+                  return (
+                    <TableRow key={ticket.id} className={ticket.isWinner ? 'bg-yellow-100 dark:bg-yellow-900/30' : ''}>
+                      <TableCell className="font-medium">{String(ticket.number).padStart(3, '0')}</TableCell>
+                      <TableCell>
+                        {ticket.isWinner ? (
+                          <Badge variant="destructive" className="bg-yellow-500 text-yellow-950">
+                            <Trophy className="mr-2 h-4 w-4" />
+                            {t('ticketTableWinner')}
+                          </Badge>
+                        ) : (
+                          <Badge variant={variant as any}>
+                            <Icon className="mr-2 h-4 w-4" />
+                            {t(label)}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{ticket.buyerName || 'N/A'}</TableCell>
+                      <TableCell>{ticket.buyerPhone || 'N/A'}</TableCell>
+                      <TableCell>{ticket.buyerEmail || 'N/A'}</TableCell>
+                      <TableCell className="space-x-2">
+                        {ticket.status === 'reserved' && (
+                          <>
+                            <Button size="sm" onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
+                              {t('ticketTableConfirmPayment')}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(ticket.number, 'available')}>
+                              <RotateCcw className="mr-2 h-4 w-4" />
+                              {t('ticketTableRelease')}
+                            </Button>
+                          </>
+                        )}
+                        {ticket.status === 'paid' && !ticket.isWinner && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUpdateStatus(ticket.number, 'winner')}
+                            disabled={!canMarkMoreWinners}
+                          >
+                            <Trophy className="mr-2 h-4 w-4" />
+                            {t('ticketTableMarkAsWinner')}
+                          </Button>
+                        )}
+                        {ticket.isWinner && (
+                          <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleUpdateStatus(ticket.number, 'paid')}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            {t('ticketTableRemoveWinner')}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })()}
+              </>
+            )}
+            {/* Normal paginated mode */}
+            {!searchTerm && isLoading && (
               <TableRow>
-                <TableCell colSpan={5}>{t('ticketTableLoadingTickets')}</TableCell>
+                <TableCell colSpan={6}>{t('ticketTableLoadingTickets')}</TableCell>
               </TableRow>
             )}
-            {!isLoading && tickets.length === 0 && (
+            {!searchTerm && !isLoading && tickets.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   {t('ticketTableNoTicketsFound')}
                 </TableCell>
               </TableRow>
             )}
-            {!isLoading && tickets.map((ticket) => {
+            {!searchTerm && !isLoading && tickets.map((ticket) => {
               const { label, variant, icon: Icon } = statusConfig[ticket.status];
               return (
                 <TableRow key={ticket.id} className={ticket.isWinner ? 'bg-yellow-100 dark:bg-yellow-900/30' : ''}>
@@ -205,6 +329,7 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
                   </TableCell>
                   <TableCell>{ticket.buyerName || 'N/A'}</TableCell>
                   <TableCell>{ticket.buyerPhone || 'N/A'}</TableCell>
+                  <TableCell>{ticket.buyerEmail || 'N/A'}</TableCell>
                   <TableCell className="space-x-2">
                     {ticket.status === 'reserved' && (
                       <>
@@ -282,8 +407,8 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
           </TableBody>
         </Table>
 
-        {/* Pagination controls */}
-        <div className="flex items-center justify-between mt-4">
+        {/* Pagination controls (hidden in search mode) */}
+        {!searchTerm && <div className="flex items-center justify-between mt-4">
           <span className="text-sm text-muted-foreground">
             {t('ticketTablePageInfo', {
               currentPage,
@@ -324,7 +449,7 @@ export function TicketsTable({ raffle, maxWinners, onTicketStatusChanged, refres
               <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </div>}
       </CardContent>
     </Card>
   );

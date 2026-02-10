@@ -12,6 +12,15 @@ const BuyerInfoSchema = z.object({
   phone: z.string().min(7).max(20).regex(/^[+\d\s()-]+$/, 'Invalid phone number format'),
 });
 
+// --- Auth helper for admin-only operations (defense-in-depth, RLS is primary) ---
+const requireAuthForMutation = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    throw new Error('Authentication required');
+  }
+  return user;
+};
+
 // --- Data Access Functions ---
 
 // Helper to map Supabase raffle data to app Raffle type
@@ -104,6 +113,7 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
 };
 
 export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): Promise<Raffle> => {
+  await requireAuthForMutation();
   const supabaseData = mapAppRaffleToSupabaseType(raffleData);
   const { data, error } = await supabase
     .from('raffles')
@@ -125,6 +135,7 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
 };
 
 export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 'id' | 'tickets' | 'active' | 'ticketCount'>>): Promise<Raffle | undefined> => {
+  await requireAuthForMutation();
   const updatePayload: Partial<any> = {};
   if (raffleData.adminId !== undefined) updatePayload.admin_id = raffleData.adminId;
   if (raffleData.name !== undefined) updatePayload.name = raffleData.name;
@@ -156,7 +167,7 @@ export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 
 };
 
 export const deleteRaffle = async (id: string): Promise<boolean> => {
-  // RLS on tickets table ensures tickets are deleted via CASCADE
+  await requireAuthForMutation();
   const { error } = await supabase
     .from('raffles')
     .delete()
@@ -206,6 +217,11 @@ export const updateTicketStatus = async (
   status: 'reserved' | 'paid' | 'available' | 'winner',
   buyerInfo?: { name: string; email: string; phone: string }
 ): Promise<boolean> => {
+  // Only 'reserved' is allowed for anonymous users; all other status changes require auth
+  if (status !== 'reserved') {
+    await requireAuthForMutation();
+  }
+
   // Validate buyer info server-side when provided
   if (buyerInfo && (status === 'reserved' || status === 'paid')) {
     const parsed = BuyerInfoSchema.safeParse(buyerInfo);
@@ -351,6 +367,7 @@ export const drawWinnersServerSide = async (
   raffleId: string,
   winnerCount: number
 ): Promise<Ticket[]> => {
+  await requireAuthForMutation();
   const { data, error } = await supabase
     .rpc('draw_random_winners', {
       p_raffle_id: raffleId,
@@ -413,6 +430,7 @@ export const getSettings = async (): Promise<AppSettings> => {
 };
 
 export const updateSettings = async (settings: { reservationDurationMinutes: number }): Promise<AppSettings> => {
+  await requireAuthForMutation();
   const { data: current } = await supabase.from('settings').select('id').single();
   if (!current) throw new Error('Settings row not found');
 
@@ -468,6 +486,7 @@ export const getFaqById = async (id: string): Promise<FAQ | undefined> => {
 };
 
 export const createFaq = async (faqData: Omit<FAQ, 'id'>): Promise<FAQ> => {
+  await requireAuthForMutation();
   const { data, error } = await supabase
     .from('faqs')
     .insert([{
@@ -486,6 +505,7 @@ export const createFaq = async (faqData: Omit<FAQ, 'id'>): Promise<FAQ> => {
 };
 
 export const updateFaq = async (id: string, faqData: Partial<Omit<FAQ, 'id'>>): Promise<FAQ | undefined> => {
+  await requireAuthForMutation();
   const updatePayload: Partial<any> = {};
   if (faqData.question !== undefined) updatePayload.question = faqData.question;
   if (faqData.answer !== undefined) updatePayload.answer = faqData.answer;
@@ -506,6 +526,7 @@ export const updateFaq = async (id: string, faqData: Partial<Omit<FAQ, 'id'>>): 
 };
 
 export const deleteFaq = async (id: string): Promise<boolean> => {
+  await requireAuthForMutation();
   const { error } = await supabase
     .from('faqs')
     .delete()
@@ -547,6 +568,7 @@ export const getPaymentMethodById = async (id: string): Promise<PaymentMethod | 
 };
 
 export const createPaymentMethod = async (paymentMethodData: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> => {
+  await requireAuthForMutation();
   const { data, error } = await supabase
     .from('payment_methods')
     .insert([{
@@ -566,6 +588,7 @@ export const createPaymentMethod = async (paymentMethodData: Omit<PaymentMethod,
 };
 
 export const updatePaymentMethod = async (id: string, paymentMethodData: Partial<Omit<PaymentMethod, 'id'>>): Promise<PaymentMethod | undefined> => {
+  await requireAuthForMutation();
   const updatePayload: Partial<any> = {};
   if (paymentMethodData.bankName !== undefined) updatePayload.bank_name = paymentMethodData.bankName;
   if (paymentMethodData.accountNumber !== undefined) updatePayload.account_number = paymentMethodData.accountNumber;
@@ -587,6 +610,7 @@ export const updatePaymentMethod = async (id: string, paymentMethodData: Partial
 };
 
 export const deletePaymentMethod = async (id: string): Promise<boolean> => {
+  await requireAuthForMutation();
   const { error } = await supabase
     .from('payment_methods')
     .delete()

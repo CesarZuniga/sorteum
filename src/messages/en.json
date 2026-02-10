@@ -38,7 +38,7 @@
     "writeMessage": "Write your message here...",
     "sendMessage": "Send Message",
     "otherWaysToContact": "Other ways to contact us",
-    "privacyPolicyAcceptance": "By submitting this form, you accept our {privacyPolicyLink}."
+    "privacyPolicyAcceptance": "By submitting this form, you accept our <link>Privacy Policy</link>."
   },
   "CheckStatus": {
     "title": "Check Ticket Status",
@@ -197,6 +197,8 @@
     "ticketTableStatus": "Status",
     "ticketTableBuyerName": "Buyer Name",
     "ticketTableBuyerPhone": "Buyer Phone",
+    "ticketTableBuyerEmail": "Buyer Email",
+    "ticketTableSearchTicket": "Search ticket #",
     "ticketTableActions": "Actions",
     "ticketTableLoadingTickets": "Loading tickets...",
     "ticketTablePaid": "Paid",

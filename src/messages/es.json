@@ -38,7 +38,7 @@
     "writeMessage": "Escribe tu mensaje aquí...",
     "sendMessage": "Enviar Mensaje",
     "otherWaysToContact": "Otras formas de contactarnos",
-    "privacyPolicyAcceptance": "Al enviar este formulario, aceptas nuestra {privacyPolicyLink}."
+    "privacyPolicyAcceptance": "Al enviar este formulario, aceptas nuestra <link>Política de Privacidad</link>."
   },
   "CheckStatus": {
     "title": "Consultar Estado de Boleto",
@@ -197,6 +197,8 @@
     "ticketTableStatus": "Estado",
     "ticketTableBuyerName": "Nombre del Comprador",
     "ticketTableBuyerPhone": "Teléfono del Comprador",
+    "ticketTableBuyerEmail": "Email del Comprador",
+    "ticketTableSearchTicket": "Buscar boleto #",
     "ticketTableActions": "Acciones",
     "ticketTableLoadingTickets": "Cargando boletos...",
     "ticketTablePaid": "Pagado",

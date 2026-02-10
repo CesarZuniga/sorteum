@@ -18,11 +18,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         router.push('/admin');
+      } else {
+        setCheckingSession(false);
       }
     });
   }, [router]);
@@ -51,6 +54,14 @@ export default function LoginPage() {
       router.push('/admin');
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
