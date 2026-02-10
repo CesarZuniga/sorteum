@@ -1,44 +1,52 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useEffect, useState } from 'react'; // Import useState
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState, useRef } from 'react';
 import { createRaffleAction } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Loader2, Image as ImageIcon } from 'lucide-react'; // Import ImageIcon
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image'; // Import Image component
-
-function SubmitButton() {
-  const t = useTranslations('Admin');
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {t('createRaffleButton')}
-    </Button>
-  );
-}
+import Image from 'next/image';
 
 export default function NewRafflePage() {
   const t = useTranslations('Admin');
   const router = useRouter();
-  const initialState = { message: undefined, errors: {}, success: false, raffleId: undefined };
-  const [state, dispatch] = useActionState(createRaffleAction, initialState);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // State for image previews
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, setState] = useState<{
+    message?: string;
+    errors?: Record<string, string[]>;
+    success?: boolean;
+    raffleId?: string;
+  }>({});
+  const [isPending, setIsPending] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
-    if (state.success && state.raffleId) {
-      router.push(`/admin/raffles/${state.raffleId}`);
+    if (state.success) {
+      router.push('/admin/raffles');
     }
-  }, [state.success, state.raffleId, router]);
+  }, [state.success, router]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsPending(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await createRaffleAction({}, formData);
+      setState(result);
+    } catch {
+      setState({ message: 'An unexpected error occurred.', success: false });
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -59,7 +67,7 @@ export default function NewRafflePage() {
           </Link>
       </Button>
 
-      <form action={(f)=>dispatch(f)}>
+      <form ref={formRef} onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
             <CardTitle>{t('newRaffleTitle')}</CardTitle>
@@ -94,18 +102,18 @@ export default function NewRafflePage() {
               {state.errors?.deadline && <p className="text-sm text-destructive">{state.errors.deadline[0]}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageFiles">{t('imageUpload')}</Label> {/* Updated label */}
-              <Input 
-                id="imageFiles" 
-                name="imageFiles" 
-                type="file" 
-                multiple // Allow multiple file selection
-                accept="image/*" // Accept only image files
+              <Label htmlFor="imageFiles">{t('imageUpload')}</Label>
+              <Input
+                id="imageFiles"
+                name="imageFiles"
+                type="file"
+                multiple
+                accept="image/*"
                 onChange={handleImageChange}
               />
-              <p className="text-xs text-muted-foreground">{t('imageUploadHint')}</p> {/* New hint */}
-              {state.errors?.imageFiles && <p className="text-sm text-destructive">{state.errors.imageFiles[0]}</p>} {/* Updated error field */}
-              
+              <p className="text-xs text-muted-foreground">{t('imageUploadHint')}</p>
+              {state.errors?.imageFiles && <p className="text-sm text-destructive">{state.errors.imageFiles[0]}</p>}
+
               {imagePreviews.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {imagePreviews.map((src, index) => (
@@ -117,7 +125,7 @@ export default function NewRafflePage() {
               )}
             </div>
 
-            {state.message && (
+            {state.message && !state.success && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>{t('errorTitle')}</AlertTitle>
@@ -128,7 +136,10 @@ export default function NewRafflePage() {
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button variant="ghost" asChild><Link href="/admin/raffles">{t('cancel')}</Link></Button>
-            <SubmitButton />
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending ? t('creatingRaffle') : t('createRaffleButton')}
+            </Button>
           </CardFooter>
         </Card>
       </form>

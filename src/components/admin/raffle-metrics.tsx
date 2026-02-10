@@ -1,37 +1,43 @@
 'use client';
-import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
+import type { Raffle } from '@/lib/definitions';
+import type { TicketStatusCounts } from '@/lib/definitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Ticket, Clock, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
-import { useState, useMemo, useEffect } from 'react';
-import { getTicketsByRaffleId } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import { getTicketStatusCounts } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 
 
-export function RaffleMetrics({ raffle }: { raffle: Raffle }) {
+export function RaffleMetrics({ raffle, refreshTrigger }: { raffle: Raffle; refreshTrigger?: number }) {
   const t = useTranslations('Admin');
-  const [tickets, setTickets] = useState<TicketType[]>([]);
+  const [counts, setCounts] = useState<TicketStatusCounts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadTickets() {
+    async function loadCounts() {
       setIsLoading(true);
-      const ticketsData = await getTicketsByRaffleId(raffle.id);
-      setTickets(ticketsData);
-      setIsLoading(false);
+      try {
+        const data = await getTicketStatusCounts(raffle.id);
+        setCounts(data);
+      } catch (error) {
+        console.error('Error loading ticket counts:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    loadTickets();
-  }, [raffle.id]);
+    loadCounts();
+  }, [raffle.id, refreshTrigger]);
 
-  const paidTickets = useMemo(() => tickets.filter(t => t.status === 'paid').length, [tickets]);
-  const reservedTickets = useMemo(() => tickets.filter(t => t.status === 'reserved').length, [tickets]);
-  const availableTickets = useMemo(() => raffle.ticketCount - paidTickets - reservedTickets, [raffle.ticketCount, paidTickets, reservedTickets]);
-  
+  const paidTickets = counts?.paid ?? 0;
+  const reservedTickets = counts?.reserved ?? 0;
+  const availableTickets = counts?.available ?? 0;
+
   const soldTickets = paidTickets + reservedTickets;
   const totalRevenue = paidTickets * raffle.price;
   const potentialRevenue = raffle.ticketCount * raffle.price;
-  const salesProgress = soldTickets > 0 ? (soldTickets / raffle.ticketCount) * 100 : 0;
+  const salesProgress = raffle.ticketCount > 0 ? (soldTickets / raffle.ticketCount) * 100 : 0;
 
   const metrics = [
     { title: t('raffleMetricsRevenuePaid'), value: formatCurrency(totalRevenue), icon: DollarSign, loading: isLoading },

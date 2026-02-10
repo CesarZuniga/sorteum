@@ -1,19 +1,43 @@
 'use client';
 
 import { z } from 'zod';
-import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById, createPaymentMethod as apiCreatePaymentMethod, updatePaymentMethod as apiUpdatePaymentMethod, deletePaymentMethod as apiDeletePaymentMethod, getPaymentMethodById } from './data';
+import { createRaffle as apiCreateRaffle, updateRaffle as apiUpdateRaffle, deleteRaffle as apiDeleteRaffle, createFaq as apiCreateFaq, updateFaq as apiUpdateFaq, deleteFaq as apiDeleteFaq, getRaffleById, createPaymentMethod as apiCreatePaymentMethod, updatePaymentMethod as apiUpdatePaymentMethod, deletePaymentMethod as apiDeletePaymentMethod, getPaymentMethodById, updateSettings as apiUpdateSettings } from './data';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client-utils'; // Import client-side supabase
-import { uploadRaffleImages, deleteRaffleImages, uploadPaymentMethodImage, deletePaymentMethodImage } from '@/lib/storage'; // Import storage functions
+import { supabase } from '@/integrations/supabase/client-utils';
+import { uploadRaffleImages, deleteRaffleImages, uploadPaymentMethodImage, deletePaymentMethodImage } from '@/lib/storage';
 
+// --- Shared auth helper ---
+async function requireAuth(): Promise<{ userId: string } | { error: string }> {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+        return { error: 'Authentication Error: User not logged in.' };
+    }
+    return { userId: userData.user.id };
+}
+
+// --- File validation constants ---
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_COUNT = 10;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+function validateImageFile(file: File): string | null {
+    if (file.size > MAX_FILE_SIZE) {
+        return `File "${file.name}" exceeds the 5MB size limit.`;
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        return `File "${file.name}" has an unsupported type. Allowed: JPEG, PNG, WebP, GIF.`;
+    }
+    return null;
+}
+
+// --- Raffle Schemas ---
 const RaffleFormSchema = z.object({
     id: z.string().optional(),
-    name: z.string().min(1, 'Name is required'),
-    description: z.string().min(1, 'Description is required'),
-    price: z.coerce.number().min(0, 'Price must be a positive number'),
-    ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1'),
+    name: z.string().min(1, 'Name is required').max(200, 'Name must be 200 characters or less'),
+    description: z.string().min(1, 'Description is required').max(5000, 'Description must be 5000 characters or less'),
+    price: z.coerce.number().min(0, 'Price must be a positive number').max(1_000_000, 'Price must be 1,000,000 or less'),
+    ticketCount: z.coerce.number().min(1, 'Ticket count must be at least 1').max(100_000_000, 'Ticket count must be 100,000,000 or less'),
     deadline: z.string().min(1, 'Deadline is required'),
-    // imageUrls will be handled as files directly in the action
 });
 
 const CreateRaffle = RaffleFormSchema.omit({ id: true });
@@ -26,7 +50,7 @@ type RaffleActionState = {
         price?: string[];
         ticketCount?: string[];
         deadline?: string[];
-        imageFiles?: string[]; // Error for image files
+        imageFiles?: string[];
     };
     message?: string;
     success?: boolean;
@@ -53,14 +77,9 @@ export async function createRaffleAction(prevState: RaffleActionState, formData:
             };
         }
 
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !userData?.user) {
-            console.error('Authentication failed in createRaffleAction:', userError);
-            return {
-                message: 'Authentication Error: User not logged in.',
-                success: false,
-            };
+        const auth = await requireAuth();
+        if ('error' in auth) {
+            return { message: auth.error, success: false };
         }
 
         const files = formData.getAll('imageFiles') as File[];
@@ -74,33 +93,46 @@ export async function createRaffleAction(prevState: RaffleActionState, formData:
             };
         }
 
-        // First create the raffle with empty images to get an ID
+        if (validFiles.length > MAX_FILE_COUNT) {
+            return {
+                errors: { imageFiles: [`Maximum ${MAX_FILE_COUNT} images allowed.`] },
+                message: 'Too many images.',
+                success: false,
+            };
+        }
+
+        for (const file of validFiles) {
+            const fileError = validateImageFile(file);
+            if (fileError) {
+                return {
+                    errors: { imageFiles: [fileError] },
+                    message: 'Invalid image file.',
+                    success: false,
+                };
+            }
+        }
+
         const newRaffle = await apiCreateRaffle({
             ...validatedFields.data,
-            images: [], // Placeholder, will be updated after upload
+            images: [],
             deadline: new Date(validatedFields.data.deadline).toISOString(),
-            adminId: userData.user.id,
+            adminId: auth.userId,
         });
 
-        // Upload images using the new raffle ID
         const uploadedImageUrls = await uploadRaffleImages(validFiles, newRaffle.id);
 
-        // Update the raffle with the actual image URLs
-        const updatedRaffle = await apiUpdateRaffle(newRaffle.id, {
+        await apiUpdateRaffle(newRaffle.id, {
             images: uploadedImageUrls,
-            adminId: userData.user.id, // Ensure adminId is passed for RLS
+            adminId: auth.userId,
         });
 
-        return { success: true, raffleId: updatedRaffle?.id, message: 'Raffle created successfully!' };
+        return { success: true, raffleId: newRaffle.id, message: 'Raffle created successfully!' };
 
     } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        
+        console.error('Error in createRaffleAction:', e);
         return {
-            message: `Database Error: ${errorMessage}`,
+            message: 'An unexpected error occurred while creating the raffle.',
             success: false,
-            errors: undefined,
-            raffleId: undefined,
         };
     }
 }
@@ -122,17 +154,32 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
         };
     }
 
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !userData?.user) {
-        return {
-            message: 'Authentication Error: User not logged in.',
-            success: false,
-        };
+    const auth = await requireAuth();
+    if ('error' in auth) {
+        return { message: auth.error, success: false };
     }
 
     const files = formData.getAll('imageFiles') as File[];
     const validFiles = files.filter(file => file.size > 0);
+
+    if (validFiles.length > MAX_FILE_COUNT) {
+        return {
+            errors: { imageFiles: [`Maximum ${MAX_FILE_COUNT} images allowed.`] },
+            message: 'Too many images.',
+            success: false,
+        };
+    }
+
+    for (const file of validFiles) {
+        const fileError = validateImageFile(file);
+        if (fileError) {
+            return {
+                errors: { imageFiles: [fileError] },
+                message: 'Invalid image file.',
+                success: false,
+            };
+        }
+    }
 
     let finalImageUrls: string[] = [];
 
@@ -143,13 +190,11 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
         }
 
         if (validFiles.length > 0) {
-            // If new files are uploaded, delete old ones and upload new ones
             if (existingRaffle.images && existingRaffle.images.length > 0) {
                 await deleteRaffleImages(existingRaffle.images);
             }
             finalImageUrls = await uploadRaffleImages(validFiles, id);
         } else {
-            // If no new files, keep existing images
             finalImageUrls = existingRaffle.images || [];
         }
 
@@ -165,18 +210,16 @@ export async function updateRaffleAction(prevState: RaffleActionState, formData:
             ...validatedFields.data,
             images: finalImageUrls,
             deadline: new Date(validatedFields.data.deadline).toISOString(),
-            adminId: userData.user.id,
+            adminId: auth.userId,
         });
 
         return { success: true, raffleId: id, message: 'Raffle updated successfully!' };
 
     } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        return { 
-            message: `Database Error: Failed to Update Raffle. ${errorMessage}`, 
+        console.error('Error in updateRaffleAction:', e);
+        return {
+            message: 'An unexpected error occurred while updating the raffle.',
             success: false,
-            errors: undefined,
-            raffleId: undefined,
         };
     }
 }
@@ -188,8 +231,13 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> {
     return;
   }
 
+  const auth = await requireAuth();
+  if ('error' in auth) {
+    toast({ title: 'Error', description: auth.error, variant: 'destructive' });
+    return;
+  }
+
   try {
-    // Get existing raffle to delete associated images
     const existingRaffle = await getRaffleById(id);
     if (existingRaffle && existingRaffle.images && existingRaffle.images.length > 0) {
       await deleteRaffleImages(existingRaffle.images);
@@ -198,8 +246,8 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> {
     await apiDeleteRaffle(id);
     toast({ title: 'Success', description: 'Raffle deleted successfully.' });
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
-    toast({ title: 'Error', description: `Database Error: Failed to Delete Raffle. ${errorMessage}`, variant: 'destructive' });
+    console.error('Error in deleteRaffleAction:', e);
+    toast({ title: 'Error', description: 'An unexpected error occurred while deleting the raffle.', variant: 'destructive' });
   }
 }
 
@@ -207,9 +255,9 @@ export async function deleteRaffleAction(formData: FormData): Promise<void> {
 
 const FaqFormSchema = z.object({
     id: z.string().optional(),
-    question: z.string().min(1, 'Question is required'),
-    answer: z.string().min(1, 'Answer is required'),
-    orderIndex: z.coerce.number().min(0, 'Order index must be a non-negative number'),
+    question: z.string().min(1, 'Question is required').max(500, 'Question must be 500 characters or less'),
+    answer: z.string().min(1, 'Answer is required').max(5000, 'Answer must be 5000 characters or less'),
+    orderIndex: z.coerce.number().min(0, 'Order index must be a non-negative number').max(1000, 'Order index must be 1000 or less'),
 });
 
 const CreateFaq = FaqFormSchema.omit({ id: true });
@@ -228,6 +276,11 @@ type FaqActionState = {
 
 export async function createFaqAction(prevState: FaqActionState, formData: FormData): Promise<FaqActionState> {
     try {
+        const auth = await requireAuth();
+        if ('error' in auth) {
+            return { message: auth.error, success: false };
+        }
+
         const validatedFields = CreateFaq.safeParse(Object.fromEntries(formData.entries()));
 
         if (!validatedFields.success) {
@@ -243,17 +296,20 @@ export async function createFaqAction(prevState: FaqActionState, formData: FormD
         return { success: true, faqId: newFaq.id, message: 'FAQ created successfully!' };
 
     } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('Error in createFaqAction:', e);
         return {
-            message: `Database Error: ${errorMessage}`,
+            message: 'An unexpected error occurred while creating the FAQ.',
             success: false,
-            errors: undefined,
-            faqId: undefined,
         };
     }
 }
 
 export async function updateFaqAction(prevState: FaqActionState, formData: FormData): Promise<FaqActionState> {
+    const auth = await requireAuth();
+    if ('error' in auth) {
+        return { message: auth.error, success: false };
+    }
+
     const validatedFields = UpdateFaq.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -273,12 +329,10 @@ export async function updateFaqAction(prevState: FaqActionState, formData: FormD
     try {
         await apiUpdateFaq(id, dataToUpdate);
     } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('Error in updateFaqAction:', e);
         return {
-            message: `Database Error: Failed to Update FAQ. ${errorMessage}`,
+            message: 'An unexpected error occurred while updating the FAQ.',
             success: false,
-            errors: undefined,
-            faqId: undefined,
         };
     }
 
@@ -292,12 +346,18 @@ export async function deleteFaqAction(formData: FormData): Promise<void> {
     return;
   }
 
+  const auth = await requireAuth();
+  if ('error' in auth) {
+    toast({ title: 'Error', description: auth.error, variant: 'destructive' });
+    return;
+  }
+
   try {
     await apiDeleteFaq(id);
     toast({ title: 'Success', description: 'FAQ deleted successfully.' });
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
-    toast({ title: 'Error', description: `Database Error: Failed to Delete FAQ. ${errorMessage}`, variant: 'destructive' });
+    console.error('Error in deleteFaqAction:', e);
+    toast({ title: 'Error', description: 'An unexpected error occurred while deleting the FAQ.', variant: 'destructive' });
   }
 }
 
@@ -305,13 +365,12 @@ export async function deleteFaqAction(formData: FormData): Promise<void> {
 
 const PaymentMethodFormSchema = z.object({
     id: z.string().optional(),
-    bankName: z.string().min(1, 'Bank Name is required'),
-    accountNumber: z.string().min(1, 'Account Number is required'),
-    recipientName: z.string().min(1, 'Recipient Name is required'),
-    // bankImageUrl is now handled as a file upload, not a direct URL input
+    bankName: z.string().min(1, 'Bank Name is required').max(200, 'Bank Name must be 200 characters or less'),
+    accountNumber: z.string().min(1, 'Account Number is required').max(50, 'Account Number must be 50 characters or less'),
+    recipientName: z.string().min(1, 'Recipient Name is required').max(200, 'Recipient Name must be 200 characters or less'),
 });
 
-const CreatePaymentMethod = PaymentMethodFormSchema; // No omitir id aquí, se maneja en la acción
+const CreatePaymentMethod = PaymentMethodFormSchema;
 const UpdatePaymentMethod = PaymentMethodFormSchema;
 
 type PaymentMethodActionState = {
@@ -319,7 +378,7 @@ type PaymentMethodActionState = {
         bankName?: string[];
         accountNumber?: string[];
         recipientName?: string[];
-        imageFile?: string[]; // Error for image file
+        imageFile?: string[];
     };
     message?: string;
     success?: boolean;
@@ -328,6 +387,11 @@ type PaymentMethodActionState = {
 
 export async function createPaymentMethodAction(prevState: PaymentMethodActionState, formData: FormData): Promise<PaymentMethodActionState> {
     try {
+        const auth = await requireAuth();
+        if ('error' in auth) {
+            return { message: auth.error, success: false };
+        }
+
         const entriesObj = Object.fromEntries(formData.entries());
         const validatedFields = CreatePaymentMethod.safeParse(entriesObj);
 
@@ -340,36 +404,45 @@ export async function createPaymentMethodAction(prevState: PaymentMethodActionSt
         }
 
         const file = formData.get('imageFile') as File;
-        let bankImageUrl: string | undefined = undefined;
 
         if (file && file.size > 0) {
-            // First create the payment method with a placeholder image URL to get an ID
+            const fileError = validateImageFile(file);
+            if (fileError) {
+                return {
+                    errors: { imageFile: [fileError] },
+                    message: 'Invalid image file.',
+                    success: false,
+                };
+            }
+
             const tempPaymentMethod = await apiCreatePaymentMethod({
                 ...validatedFields.data,
-                bankImageUrl: '', // Placeholder
+                bankImageUrl: '',
             });
-            
-            bankImageUrl = await uploadPaymentMethodImage(file, tempPaymentMethod.id);
-            await apiUpdatePaymentMethod(tempPaymentMethod.id, { bankImageUrl }); // Update with actual URL
+
+            const bankImageUrl = await uploadPaymentMethodImage(file, tempPaymentMethod.id);
+            await apiUpdatePaymentMethod(tempPaymentMethod.id, { bankImageUrl });
             return { success: true, paymentMethodId: tempPaymentMethod.id, message: 'Payment method created successfully!' };
         } else {
-            // If no file, create without image URL
             const newPaymentMethod = await apiCreatePaymentMethod(validatedFields.data);
             return { success: true, paymentMethodId: newPaymentMethod.id, message: 'Payment method created successfully!' };
         }
 
     } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('Error in createPaymentMethodAction:', e);
         return {
-            message: `Database Error: ${errorMessage}`,
+            message: 'An unexpected error occurred while creating the payment method.',
             success: false,
-            errors: undefined,
-            paymentMethodId: undefined,
         };
     }
 }
 
 export async function updatePaymentMethodAction(prevState: PaymentMethodActionState, formData: FormData): Promise<PaymentMethodActionState> {
+    const auth = await requireAuth();
+    if ('error' in auth) {
+        return { message: auth.error, success: false };
+    }
+
     const entriesObj = Object.fromEntries(formData.entries());
     const validatedFields = UpdatePaymentMethod.safeParse(entriesObj);
 
@@ -388,30 +461,38 @@ export async function updatePaymentMethodAction(prevState: PaymentMethodActionSt
     }
 
     const file = formData.get('imageFile') as File;
+
+    if (file && file.size > 0) {
+        const fileError = validateImageFile(file);
+        if (fileError) {
+            return {
+                errors: { imageFile: [fileError] },
+                message: 'Invalid image file.',
+                success: false,
+            };
+        }
+    }
+
     let finalBankImageUrl: string | undefined = undefined;
 
     try {
         const existingPaymentMethod = await getPaymentMethodById(id);
 
         if (file && file.size > 0) {
-            // New file uploaded: delete old image if exists, then upload new one
             if (existingPaymentMethod?.bankImageUrl) {
                 await deletePaymentMethodImage(existingPaymentMethod.bankImageUrl);
             }
             finalBankImageUrl = await uploadPaymentMethodImage(file, id);
         } else {
-            // No new file: keep existing image URL
             finalBankImageUrl = existingPaymentMethod?.bankImageUrl;
         }
 
         await apiUpdatePaymentMethod(id, { ...dataToUpdate, bankImageUrl: finalBankImageUrl });
     } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('Error in updatePaymentMethodAction:', e);
         return {
-            message: `Database Error: Failed to Update Payment Method. ${errorMessage}`,
+            message: 'An unexpected error occurred while updating the payment method.',
             success: false,
-            errors: undefined,
-            paymentMethodId: undefined,
         };
     }
 
@@ -425,8 +506,13 @@ export async function deletePaymentMethodAction(formData: FormData): Promise<voi
     return;
   }
 
+  const auth = await requireAuth();
+  if ('error' in auth) {
+    toast({ title: 'Error', description: auth.error, variant: 'destructive' });
+    return;
+  }
+
   try {
-    // Get existing payment method to delete associated image
     const existingPaymentMethod = await getPaymentMethodById(id);
     if (existingPaymentMethod?.bankImageUrl) {
       await deletePaymentMethodImage(existingPaymentMethod.bankImageUrl);
@@ -435,7 +521,50 @@ export async function deletePaymentMethodAction(formData: FormData): Promise<voi
     await apiDeletePaymentMethod(id);
     toast({ title: 'Success', description: 'Payment method deleted successfully.' });
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
-    toast({ title: 'Error', description: `Database Error: Failed to Delete Payment Method. ${errorMessage}`, variant: 'destructive' });
+    console.error('Error in deletePaymentMethodAction:', e);
+    toast({ title: 'Error', description: 'An unexpected error occurred while deleting the payment method.', variant: 'destructive' });
   }
+}
+
+// --- Settings Actions ---
+
+const SettingsFormSchema = z.object({
+    reservationDurationMinutes: z.coerce.number().min(1, 'Minimum 1 minute').max(1440, 'Maximum 1440 minutes (24 hours)'),
+});
+
+type SettingsActionState = {
+    message?: string;
+    success?: boolean;
+    errors?: {
+        reservationDurationMinutes?: string[];
+    };
+};
+
+export async function updateSettingsAction(prevState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
+    try {
+        const auth = await requireAuth();
+        if ('error' in auth) {
+            return { message: auth.error, success: false };
+        }
+
+        const validatedFields = SettingsFormSchema.safeParse(Object.fromEntries(formData.entries()));
+
+        if (!validatedFields.success) {
+            return {
+                errors: validatedFields.error.flatten().fieldErrors,
+                message: 'Failed to update settings. Please check the fields.',
+                success: false,
+            };
+        }
+
+        await apiUpdateSettings(validatedFields.data);
+
+        return { success: true, message: 'Settings updated successfully!' };
+    } catch (e: unknown) {
+        console.error('Error in updateSettingsAction:', e);
+        return {
+            message: 'An unexpected error occurred while updating settings.',
+            success: false,
+        };
+    }
 }

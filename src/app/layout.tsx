@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import './globals.css'; // Ruta corregida
+import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
 import { SessionProvider } from '@/components/SessionProvider';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
-import { cookies } from 'next/headers'; // Importar cookies para leer en el servidor
+import { LocaleProvider } from '@/components/locale-provider';
+import messagesEs from '@/messages/es.json';
+import messagesEn from '@/messages/en.json';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,27 +18,22 @@ export const metadata: Metadata = {
   description: 'The easiest way to manage and participate in online raffles.',
 };
 
-export default async function RootLayout({
+const allMessages = { es: messagesEs, en: messagesEn };
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies(); // Fix 3: Await cookies()
-  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en'; // Leer el locale de la cookie
-
-  const messages = await getMessages();
-
   return (
-    <html lang={locale} suppressHydrationWarning className="scroll-smooth">
-      <head>
-        {/* Las etiquetas link para las fuentes se eliminan, next/font las inyecta automáticamente */}
-      </head>
+    <html lang="es" suppressHydrationWarning className="scroll-smooth">
+      <head />
       <body className={`${inter.variable} font-body antialiased bg-background text-foreground`}>
-        <NextIntlClientProvider messages={messages} locale={locale}> {/* Pasar el locale a NextIntlClientProvider */}
+        <LocaleProvider allMessages={allMessages}>
           <SessionProvider>
             {children}
           </SessionProvider>
-        </NextIntlClientProvider>
+        </LocaleProvider>
         <Toaster />
       </body>
     </html>

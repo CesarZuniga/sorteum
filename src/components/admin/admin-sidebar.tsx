@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, LogOut, Ticket, HelpCircle, CreditCard } from 'lucide-react'; // Importar CreditCard
+import { LayoutDashboard, LogOut, Ticket, HelpCircle, CreditCard, Settings } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -45,9 +45,14 @@ export function AdminSidebar() {
       icon: HelpCircle, // Nuevo icono
     },
     {
-      href: '/admin/payment-methods', // Nueva ruta para métodos de pago
-      label: t('paymentMethodsTitle'), // Nueva traducción
-      icon: CreditCard, // Nuevo icono
+      href: '/admin/payment-methods',
+      label: t('paymentMethodsTitle'),
+      icon: CreditCard,
+    },
+    {
+      href: '/admin/settings',
+      label: t('settingsTitle'),
+      icon: Settings,
     },
   ];
 

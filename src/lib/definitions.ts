@@ -19,6 +19,7 @@ export type Raffle = {
   images: string[]; // Corresponds to image_url (TEXT[]) in DB
   price: number;
   ticketCount: number; // Corresponds to total_tickets in DB
+  ticketsCreated: number; // Corresponds to tickets_created in DB
   deadline: string; // Corresponds to end_date in DB
   active: boolean; // Corresponds to is_active in DB
 };
@@ -36,4 +37,28 @@ export type PaymentMethod = {
   accountNumber: string; // Corresponds to account_number in DB
   recipientName: string; // Corresponds to recipient_name in DB
   bankImageUrl?: string; // Corresponds to bank_image_url in DB
+};
+
+export type AppSettings = {
+  id: string;
+  reservationDurationMinutes: number;
+  updatedAt: string;
+};
+
+export type TicketStatusFilter = 'available' | 'reserved' | 'paid' | 'winner' | 'all';
+
+export type PaginatedTicketsResult = {
+  tickets: Ticket[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type TicketStatusCounts = {
+  available: number;
+  reserved: number;
+  paid: number;
+  winner: number;
+  total: number;
 };

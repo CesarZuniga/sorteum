@@ -10,37 +10,31 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RaffleMetrics } from '@/components/admin/raffle-metrics';
-import { getRaffleById, getTicketsByRaffleId } from '@/lib/data'; // Import getTicketsByRaffleId
+import { getRaffleById } from '@/lib/data';
 import { useTranslations } from 'next-intl';
-import React from 'react'; // Importar React para usar React.use
+import React from 'react';
 
-export default function SingleRaffleAdminPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+export default function SingleRaffleAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('Admin');
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
   const [winnerCount, setWinnerCount] = useState(1);
-  const [tickets, setTickets] = useState<any[]>([]); // State to hold tickets
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Desenvolver la promesa de params
   const resolvedParams = React.use(params);
   const raffleId = resolvedParams.id;
 
-  const loadRaffleAndTickets = useCallback(async () => {
+  const loadRaffle = useCallback(async () => {
     const raffleData = await getRaffleById(raffleId);
     setRaffle(raffleData);
-    if (raffleData) {
-      const ticketsData = await getTicketsByRaffleId(raffleData.id);
-      setTickets(ticketsData);
-    }
-  }, [raffleId]); // Depende del raffleId resuelto
+  }, [raffleId]);
 
   useEffect(() => {
-    loadRaffleAndTickets();
-  }, [loadRaffleAndTickets]);
+    loadRaffle();
+  }, [loadRaffle]);
 
-  const refreshTickets = useCallback(() => {
-    loadRaffleAndTickets();
-  }, [loadRaffleAndTickets]);
-
+  const handleDataChanged = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   if (raffle === undefined) {
     return <div>{t('loading')}</div>;
@@ -63,7 +57,7 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
         <p className="text-muted-foreground">{raffle.description}</p>
       </div>
 
-      <RaffleMetrics raffle={raffle} />
+      <RaffleMetrics raffle={raffle} refreshTrigger={refreshKey} />
 
       <Tabs defaultValue="tickets">
         <TabsList className="grid w-full grid-cols-2">
@@ -71,10 +65,10 @@ export default function SingleRaffleAdminPage({ params }: { params: { id: string
             <TabsTrigger value="draw">{t('drawWinners')}</TabsTrigger>
         </TabsList>
         <TabsContent value="tickets">
-            <TicketsTable raffle={raffle} maxWinners={winnerCount} refreshTickets={refreshTickets} />
+            <TicketsTable raffle={raffle} maxWinners={winnerCount} onTicketStatusChanged={handleDataChanged} refreshTrigger={refreshKey} />
         </TabsContent>
         <TabsContent value="draw">
-            <WinnerDrawing raffle={raffle} winnerCount={winnerCount} setWinnerCount={setWinnerCount} tickets={tickets} refreshTickets={refreshTickets} />
+            <WinnerDrawing raffle={raffle} winnerCount={winnerCount} setWinnerCount={setWinnerCount} onWinnersDrawn={handleDataChanged} />
         </TabsContent>
       </Tabs>
     </div>

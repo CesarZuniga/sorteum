@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { updateTicketStatus, getRaffleById, getTicketsByRaffleId, getPaymentMethods } from '@/lib/data';
+import { updateTicketStatus, getRaffleById, getPaginatedTickets, getPaymentMethods, getRandomAvailableTickets, getSettings, getTicketByNumber } from '@/lib/data';
 import type { Ticket, Raffle, PaymentMethod } from '@/lib/definitions';
 import { formatCurrency } from '@/lib/utils';
-import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock, Search } from 'lucide-react';
+import { Calendar, DollarSign, Ticket as TicketIcon, Shuffle, Check, Clock, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,11 @@ import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel'; // Import Carousel components and CarouselApi
-import { cn } from '@/lib/utils'; // Import cn for utility classes
-import { PaymentMethodCard } from '@/components/payment-method-card'; // Import the new component
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
+import { cn } from '@/lib/utils';
+import { PaymentMethodCard } from '@/components/payment-method-card';
+
+const PAGE_SIZE = 200;
 
 const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Ticket, onSelect: (ticket: Ticket) => void, isSelected: boolean, isSuggested: boolean }) => {
   const getStatusClasses = () => {
@@ -50,83 +51,142 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
   );
 };
 
-export default function RaffleDetailPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+export default function RaffleDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = React.use(params);
+  const resolvedRaffleId = resolvedParams.id;
   const t = useTranslations('RaffleDetail');
   const tIndex = useTranslations('Index');
-  const [resolvedRaffleId, setResolvedRaffleId] = useState<string | null>(null);
 
   const [raffle, setRaffle] = useState<Raffle | null | undefined>(undefined);
-  const [tickets, setTickets] = useState<Ticket[] | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]); // New state for payment methods
-  
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+
+  const [reservationMinutes, setReservationMinutes] = useState<number>(15);
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [suggestedTickets, setSuggestedTickets] = useState<Ticket[]>([]);
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
-  const [searchTerm, setSearchTerm] = useState(''); // Nuevo estado para el término de búsqueda
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResult, setSearchResult] = useState<Ticket | null | undefined>(undefined); // undefined=no search, null=not found
+  const [isReserving, setIsReserving] = useState(false);
   const { toast } = useToast();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Carousel state
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    async function resolveParams() {
-      const resolved = await Promise.resolve(params);
-      setResolvedRaffleId(resolved.id);
-    }
-    resolveParams();
-  }, [params]);
-
+  // Load raffle data and first page of tickets
   useEffect(() => {
     if (resolvedRaffleId) {
-      async function loadData() {
-          const [raffleData, ticketsData, paymentMethodsData] = await Promise.all([
-              getRaffleById(resolvedRaffleId),
-              getTicketsByRaffleId(resolvedRaffleId),
-              getPaymentMethods() // Fetch payment methods
-          ]);
-          setRaffle(raffleData);
-          setTickets(ticketsData.sort((a,b) => a.number - b.number));
-          setPaymentMethods(paymentMethodsData); // Set payment methods
+      async function loadInitialData() {
+        setIsInitialLoad(true);
+        const [raffleData, ticketsResult, paymentMethodsData, settingsData] = await Promise.all([
+          getRaffleById(resolvedRaffleId),
+          getPaginatedTickets(resolvedRaffleId, { page: 1, pageSize: PAGE_SIZE }),
+          getPaymentMethods(),
+          getSettings(),
+        ]);
+        setRaffle(raffleData);
+        setTickets(ticketsResult.tickets);
+        setTotalCount(ticketsResult.totalCount);
+        setHasMore(ticketsResult.page < ticketsResult.totalPages);
+        setCurrentPage(1);
+        setPaymentMethods(paymentMethodsData);
+        setReservationMinutes(settingsData.reservationDurationMinutes);
+        setIsInitialLoad(false);
       }
-      loadData();
+      loadInitialData();
     }
   }, [resolvedRaffleId]);
 
+  // Load more tickets (next page)
+  const loadMoreTickets = useCallback(async () => {
+    if (!resolvedRaffleId || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const result = await getPaginatedTickets(resolvedRaffleId, {
+        page: nextPage,
+        pageSize: PAGE_SIZE,
+      });
+      setTickets(prev => [...prev, ...result.tickets]);
+      setCurrentPage(nextPage);
+      setHasMore(nextPage < result.totalPages);
+    } catch (error) {
+      console.error('Error loading more tickets:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [resolvedRaffleId, currentPage, isLoadingMore, hasMore]);
+
+  // IntersectionObserver for infinite scroll
+  // isInitialLoad in deps ensures the observer is created after the full UI renders (refs become available)
+  useEffect(() => {
+    if (isInitialLoad) return;
+    const sentinel = sentinelRef.current;
+    const container = scrollContainerRef.current;
+    if (!sentinel || !container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMoreTickets();
+        }
+      },
+      {
+        root: container,
+        rootMargin: '200px',
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isInitialLoad, hasMore, isLoadingMore, loadMoreTickets]);
+
   // Carousel effect
   useEffect(() => {
-    if (!api) {
-      return;
-    }
+    if (!api) return;
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
-
     api.on('select', () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
   }, [api]);
 
 
-  if (resolvedRaffleId === null || raffle === undefined || tickets === null) {
+  if (raffle === undefined || isInitialLoad) {
     return <div>{tIndex('loading')}</div>;
   }
 
   if (!raffle) {
     notFound();
   }
-  
+
   const refreshTickets = async () => {
     if (resolvedRaffleId) {
-      const ticketsData = await getTicketsByRaffleId(resolvedRaffleId);
-      setTickets(ticketsData.sort((a,b) => a.number - b.number));
+      const result = await getPaginatedTickets(resolvedRaffleId, { page: 1, pageSize: PAGE_SIZE });
+      setTickets(result.tickets);
+      setTotalCount(result.totalCount);
+      setCurrentPage(1);
+      setHasMore(result.page < result.totalPages);
     }
-  }
+  };
 
   const handleSelectTicket = (ticket: Ticket) => {
     if (suggestedTickets.find(st => st.id === ticket.id)) {
-        setSuggestedTickets(prev => prev.filter(st => st.id !== ticket.id));
+      setSuggestedTickets(prev => prev.filter(st => st.id !== ticket.id));
     }
 
     setSelectedTickets((prev) =>
@@ -136,33 +196,41 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
     );
   };
 
-  const handleRandomSelect = () => {
-    if (!tickets) return;
-    const availableTickets = tickets.filter(
-      (t) => t.status === 'available' && !selectedTickets.find(st => st.id === t.id)
-    );
+  const handleRandomSelect = async () => {
+    if (!resolvedRaffleId) return;
+    try {
+      const excludeNumbers = selectedTickets.map(t => t.number);
+      const randomTickets = await getRandomAvailableTickets(resolvedRaffleId, randomCount, excludeNumbers);
 
-    if (randomCount > availableTickets.length) {
-      toast({
-        title: t('insufficientTicketsTitle'),
-        description: t.rich('insufficientTicketsDescription', {
-          availableCount: availableTickets.length,
-        }),
-        variant: 'destructive',
-      });
-      setSuggestedTickets([]);
-      return;
+      if (randomTickets.length === 0) {
+        toast({
+          title: t('insufficientTicketsTitle'),
+          description: t.rich('insufficientTicketsDescription', { availableCount: 0 }),
+          variant: 'destructive',
+        });
+        setSuggestedTickets([]);
+        return;
+      }
+
+      if (randomTickets.length < randomCount) {
+        toast({
+          title: t('insufficientTicketsTitle'),
+          description: t.rich('insufficientTicketsDescription', { availableCount: randomTickets.length }),
+          variant: 'destructive',
+        });
+      }
+
+      setSuggestedTickets(randomTickets);
+    } catch (error) {
+      console.error('Error getting random tickets:', error);
+      toast({ title: t('insufficientTicketsTitle'), description: String(error), variant: 'destructive' });
     }
-
-    const shuffled = availableTickets.sort(() => 0.5 - Math.random());
-    const randomSelection = shuffled.slice(0, randomCount);
-    setSuggestedTickets(randomSelection);
   };
-  
+
   const acceptSuggestion = () => {
     setSelectedTickets(prev => {
-        const newTickets = suggestedTickets.filter(st => !prev.find(pt => pt.id === st.id));
-        return [...prev, ...newTickets];
+      const newTickets = suggestedTickets.filter(st => !prev.find(pt => pt.id === st.id));
+      return [...prev, ...newTickets];
     });
     setSuggestedTickets([]);
   };
@@ -178,34 +246,80 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
       return;
     }
 
-    const promises = selectedTickets.map(ticket => {
-      return updateTicketStatus(resolvedRaffleId!, ticket.number, 'reserved', buyerInfo);
-    });
-    
-    await Promise.all(promises);
+    setIsReserving(true);
+    try {
+      const currentTotal = formatCurrency(selectedTickets.length * raffle.price);
 
-    await refreshTickets();
+      const promises = selectedTickets.map(ticket => {
+        return updateTicketStatus(resolvedRaffleId, ticket.number, 'reserved', buyerInfo);
+      });
 
-    setSelectedTickets([]);
-    setSuggestedTickets([]);
-    setBuyerInfo({ name: '', email: '', phone: '' });
+      await Promise.all(promises);
 
-    toast({
-      title: t('ticketsReservedTitle'),
-      description: t.rich('ticketsReservedDescription', {
-        totalPrice: formatCurrency(totalPrice),
-      }),
-      action: (<div className="flex items-center"><Clock className="mr-2"/> {t('completePayment')}</div>)
-    });
+      await refreshTickets();
+
+      setSelectedTickets([]);
+      setSuggestedTickets([]);
+      setBuyerInfo({ name: '', email: '', phone: '' });
+
+      toast({
+        title: t('ticketsReservedTitle'),
+        description: t.rich('ticketsReservedDescription', {
+          minutes: reservationMinutes,
+          totalPrice: currentTotal,
+        }),
+        action: (<div className="flex items-center"><Clock className="mr-2"/> {t('completePayment')}</div>)
+      });
+    } catch (error) {
+      console.error('Error reserving tickets:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reserve tickets',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsReserving(false);
+    }
+  };
+
+  // Search: query DB directly for specific ticket number
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+
+    // Debounce the DB search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!value.trim()) {
+      setSearchResult(undefined);
+      return;
+    }
+
+    const ticketNum = parseInt(value, 10);
+    if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > raffle.ticketCount) {
+      setSearchResult(null); // not found
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const ticket = await getTicketByNumber(resolvedRaffleId, ticketNum);
+        setSearchResult(ticket ?? null);
+      } catch {
+        setSearchResult(null);
+      }
+    }, 300);
   };
 
   const totalPrice = selectedTickets.length * raffle.price;
-  const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]); // Use first image for placeholder hint
+  const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]);
 
-  // Filtrar boletos basados en el término de búsqueda
-  const filteredTickets = tickets?.filter(ticket => 
-    String(ticket.number).padStart(3, '0').includes(searchTerm)
-  ) || [];
+  // When searching, show the single DB result; otherwise show paginated tickets
+  const isSearching = searchTerm.trim().length > 0;
+  const filteredTickets = isSearching
+    ? (searchResult ? [searchResult] : [])
+    : tickets;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -229,7 +343,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
                         fill
                         className="object-cover"
                         data-ai-hint={placeholder?.imageHint || 'raffle image'}
-                        priority={index === 0} // Prioritize loading the first image
+                        priority={index === 0}
                       />
                     </div>
                   </CarouselItem>
@@ -237,7 +351,7 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
               </CarouselContent>
               <CarouselPrevious />
               <CarouselNext />
-              {count > 1 && ( // Only show dots if there's more than one image
+              {count > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
                   {Array.from({ length: count }).map((_, index) => (
                     <button
@@ -281,55 +395,58 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-4 font-headline">{t('selectYourTickets')}</h2>
-              
-              {/* Campo de búsqueda */}
+
+              {/* Search field */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder={t('enterTicketNumber')}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearch(e.target.value)}
                   className="pl-9"
                   aria-label={t('searchTickets')}
                 />
               </div>
 
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Input 
-                    type="number" 
-                    min="1"
-                    value={randomCount}
-                    onChange={(e) => setRandomCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="w-24"
-                    aria-label="Number of random tickets to select"
-                  />
-                  <Button variant="outline" onClick={handleRandomSelect}>
-                    <Shuffle className="h-4 w-4 mr-2" />
-                    {t('quickSelect')}
+                <Input
+                  type="number"
+                  min="1"
+                  value={randomCount}
+                  onChange={(e) => setRandomCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  className="w-24"
+                  aria-label="Number of random tickets to select"
+                />
+                <Button variant="outline" onClick={handleRandomSelect}>
+                  <Shuffle className="h-4 w-4 mr-2" />
+                  {t('quickSelect')}
+                </Button>
+                {suggestedTickets.length > 0 && (
+                  <Button onClick={acceptSuggestion}>
+                    <Check className="h-4 w-4 mr-2" />
+                    {t('acceptSuggestion')}
                   </Button>
-                  {suggestedTickets.length > 0 && (
-                    <Button onClick={acceptSuggestion}>
-                        <Check className="h-4 w-4 mr-2" />
-                        {t('acceptSuggestion')}
-                    </Button>
-                  )}
+                )}
               </div>
 
-              {/* Nueva etiqueta para mostrar los boletos sugeridos */}
+              {/* Suggested tickets label */}
               {suggestedTickets.length > 0 && (
-                 <p className="text-sm text-blue-600 dark:text-blue-300 mb-4">
-                   <strong>{t('suggestedTicketsLabel')}:</strong> {suggestedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
-                 </p>
+                <p className="text-sm text-blue-600 dark:text-blue-300 mb-4">
+                  <strong>{t('suggestedTicketsLabel')}:</strong> {suggestedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
+                </p>
               )}
 
-              {/* Sección de boletos con scroll */}
-              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              {/* Ticket grid with infinite scroll */}
+              <div
+                ref={scrollContainerRef}
+                className="h-[300px] w-full rounded-md border p-4 overflow-y-auto"
+              >
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                   {filteredTickets.map((ticket) => (
                     <TicketItem
@@ -341,10 +458,28 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
                     />
                   ))}
                 </div>
-                <ScrollBar orientation="vertical" />
-              </ScrollArea>
+                {/* Search: no result message */}
+                {isSearching && searchResult === null && (
+                  <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                    {t('enterTicketNumber')}
+                  </div>
+                )}
+                {/* Sentinel for infinite scroll */}
+                {!isSearching && (
+                  <div ref={sentinelRef} className="flex items-center justify-center py-4">
+                    {isLoadingMore && (
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    )}
+                    {!hasMore && tickets.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {tickets.length} / {totalCount}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
 
-               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-400"></span>{t('available')}</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-300"></span>{t('suggested')}</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500"></span>{t('reserved')}</div>
@@ -356,41 +491,40 @@ export default function RaffleDetailPage({ params }: { params: { id: string } | 
           {selectedTickets.length > 0 && (
             <Card>
               <CardContent className="p-6">
-                 <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
-                 {/* Etiqueta para mostrar los boletos seleccionados */}
-                 <p className="text-sm text-muted-foreground mb-4">
-                   <strong>{t('selectedTicketsLabel')}:</strong> {selectedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
-                 </p>
+                <h2 className="text-2xl font-bold mb-4 font-headline">{t('confirmPurchase')}</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  <strong>{t('selectedTicketsLabel')}:</strong> {selectedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
+                </p>
                 <form onSubmit={handleReserve} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
-                     <div>
-                        <Label htmlFor="name">{t('fullName')}</Label>
-                        <Input id="name" value={buyerInfo.name} onChange={e => setBuyerInfo({...buyerInfo, name: e.target.value})} placeholder="John Doe" required />
-                      </div>
-                      <div>
-                        <Label htmlFor="phone">{t('phoneNumber')}</Label>
-                        <Input id="phone" type="tel" value={buyerInfo.phone} onChange={e => setBuyerInfo({...buyerInfo, phone: e.target.value})} placeholder="555-555-5555" required />
-                      </div>
+                    <div>
+                      <Label htmlFor="name">{t('fullName')}</Label>
+                      <Input id="name" value={buyerInfo.name} onChange={e => setBuyerInfo({...buyerInfo, name: e.target.value})} placeholder="John Doe" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">{t('phoneNumber')}</Label>
+                      <Input id="phone" type="tel" value={buyerInfo.phone} onChange={e => setBuyerInfo({...buyerInfo, phone: e.target.value})} placeholder="555-555-5555" required />
+                    </div>
                   </div>
-                   <div>
+                  <div>
                     <Label htmlFor="email">{t('email')}</Label>
                     <Input id="email" type="email" value={buyerInfo.email} onChange={e => setBuyerInfo({...buyerInfo, email: e.target.value})} placeholder="you@example.com" required />
                   </div>
                   <div className="text-xl font-bold">
                     {t('total')} {formatCurrency(totalPrice)}
                   </div>
-                  <Button type="submit" className="w-full" size="lg">
-                    {t('reserveTickets')}
+                  <Button type="submit" className="w-full" size="lg" disabled={isReserving}>
+                    {isReserving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('reserveTickets')}</> : t('reserveTickets')}
                   </Button>
-                   <p className="text-xs text-center text-muted-foreground pt-2">
-                    {t('reservationNotice')}
+                  <p className="text-xs text-center text-muted-foreground pt-2">
+                    {t('reservationNotice', { minutes: reservationMinutes })}
                   </p>
                 </form>
               </CardContent>
             </Card>
           )}
 
-          {/* New section for Payment Methods */}
+          {/* Payment Methods */}
           {paymentMethods.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-2xl font-bold font-headline">{t('paymentMethodsTitle')}</h2>

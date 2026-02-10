@@ -1,35 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-const locales = ['en', 'es'];
-const defaultLocale = 'es'; // Cambiado a 'es'
-const COOKIE_NAME = 'NEXT_LOCALE';
 
-export function middleware(request: NextRequest) {
-  let locale: string | undefined = request.cookies.get(COOKIE_NAME)?.value;
+export async function middleware(request: NextRequest) {
+  // --- Admin route protection (server-side) ---
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!locale) {
-    // Try to get the locale from the Accept-Language header
-    const acceptLanguageHeader = request.headers.get('Accept-Language');
-    if (acceptLanguageHeader) {
-      const preferredLocales = acceptLanguageHeader.split(',').map(l => l.split(';')[0].trim());
-      locale = preferredLocales.find(l => locales.includes(l));
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (!locale) {
-      locale = defaultLocale;
+
+    // Read the Supabase auth tokens from cookies
+    const accessToken = request.cookies.get('sb-' + new URL(supabaseUrl).hostname.split('.')[0] + '-auth-token');
+    // Supabase stores session as a base64 JSON array in the cookie
+    let isAuthenticated = false;
+
+    if (accessToken?.value) {
+      try {
+        // Supabase JS v2 stores the token as a base64-encoded JSON array [access_token, refresh_token]
+        const decoded = JSON.parse(
+          Buffer.from(accessToken.value.replace(/^base64-/, ''), 'base64').toString('utf-8')
+        );
+        const token = Array.isArray(decoded) ? decoded[0] : decoded?.access_token;
+
+        if (token) {
+          const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+            global: { headers: { Authorization: `Bearer ${token}` } },
+          });
+          const { data: { user }, error } = await supabase.auth.getUser();
+          isAuthenticated = !error && !!user;
+        }
+      } catch {
+        isAuthenticated = false;
+      }
+    }
+
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  const response = NextResponse.next();
-
-  // Set the locale cookie if it's not already set or if it was just determined
-  if (request.cookies.get(COOKIE_NAME)?.value !== locale) {
-    response.cookies.set(COOKIE_NAME, locale, { path: '/', maxAge: 31536000 }); // 1 year
-  }
-
-  // Set a header for next-intl to read the locale on the server
-  response.headers.set('x-next-intl-locale', locale);
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

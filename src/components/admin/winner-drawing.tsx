@@ -6,21 +6,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Sparkles, Trophy, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Trophy, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateTicketStatus } from '@/lib/data'; // Import updateTicketStatus
+import { getTicketStatusCounts, drawWinnersServerSide } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 
 interface WinnerDrawingProps {
     raffle: Raffle;
     winnerCount: number;
     setWinnerCount: (count: number) => void;
-    tickets: Ticket[]; // All tickets for the raffle
-    refreshTickets: () => void; // Function to refresh tickets in parent
+    onWinnersDrawn: () => void;
 }
 
-export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, refreshTickets }: WinnerDrawingProps) {
+export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, onWinnersDrawn }: WinnerDrawingProps) {
   const t = useTranslations('Admin');
   const { toast } = useToast();
   const [drawnWinners, setDrawnWinners] = useState<Ticket[]>([]);
@@ -31,66 +29,58 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
     if (!isNaN(count) && count >= 1) {
         setWinnerCount(count);
     } else if (e.target.value === '') {
-        setWinnerCount(0); // Allow clearing the input
+        setWinnerCount(0);
     }
   };
 
   const handleDrawWinners = async () => {
     setIsDrawing(true);
-    setDrawnWinners([]); // Clear previous winners
-
-    const paidTickets = tickets.filter(t => t.status === 'paid' && !t.isWinner);
-
-    if (paidTickets.length === 0) {
-      toast({
-        title: t('errorTitle'),
-        description: t('noPaidTickets'),
-        variant: 'destructive',
-      });
-      setIsDrawing(false);
-      return;
-    }
-
-    if (winnerCount === 0) {
-        toast({
-            title: t('errorTitle'),
-            description: t('invalidWinnerCount'),
-            variant: 'destructive',
-        });
-        setIsDrawing(false);
-        return;
-    }
-
-    if (winnerCount > paidTickets.length) {
-      toast({
-        title: t('errorTitle'),
-        description: t.rich('insufficientPaidTickets', {
-          paidTicketsCount: paidTickets.length,
-          winnerCount: winnerCount,
-        }),
-        variant: 'destructive',
-      });
-      setIsDrawing(false);
-      return;
-    }
-
-    // Shuffle and select winners
-    const shuffledTickets = [...paidTickets].sort(() => 0.5 - Math.random());
-    const selectedWinners = shuffledTickets.slice(0, winnerCount);
-
-    // Update status in DB for selected winners
-    const updatePromises = selectedWinners.map(winner => 
-      updateTicketStatus(raffle.id, winner.number, 'winner')
-    );
+    setDrawnWinners([]);
 
     try {
-      await Promise.all(updatePromises);
-      setDrawnWinners(selectedWinners);
+      // Validate using counts instead of loading all tickets
+      const counts = await getTicketStatusCounts(raffle.id);
+      const eligibleCount = counts.paid;
+
+      if (eligibleCount === 0) {
+        toast({
+          title: t('errorTitle'),
+          description: t('noPaidTickets'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (winnerCount === 0) {
+        toast({
+          title: t('errorTitle'),
+          description: t('invalidWinnerCount'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (winnerCount > eligibleCount) {
+        toast({
+          title: t('errorTitle'),
+          description: t.rich('insufficientPaidTickets', {
+            paidTicketsCount: eligibleCount,
+            winnerCount: winnerCount,
+          }),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Draw winners atomically on the server via PostgreSQL RPC
+      const winners = await drawWinnersServerSide(raffle.id, winnerCount);
+      setDrawnWinners(winners);
       toast({
         title: t('drawingSuccess', { winnerCount: winnerCount }),
         description: `Se han seleccionado ${winnerCount} ganadores.`,
       });
-      refreshTickets(); // Refresh tickets in parent to update tables
+      onWinnersDrawn();
+
     } catch (error) {
       console.error('Error drawing winners:', error);
       toast({
@@ -118,14 +108,14 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, tickets, re
         <CardContent className="space-y-4">
             <div>
               <Label htmlFor="winnerCount">{t('numberOfWinners')}</Label>
-              <Input 
-                id="winnerCount" 
-                name="winnerCount" 
-                type="number" 
-                min="1" 
-                value={winnerCount} 
-                onChange={handleWinnerCountChange} 
-                required 
+              <Input
+                id="winnerCount"
+                name="winnerCount"
+                type="number"
+                min="1"
+                value={winnerCount}
+                onChange={handleWinnerCountChange}
+                required
                 disabled={isDrawing}
               />
             </div>

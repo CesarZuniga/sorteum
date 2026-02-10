@@ -8,13 +8,18 @@ import { useTranslations } from 'next-intl';
 
 
 export type TicketStatus = {
-  status: 'paid' | 'reserved' | 'available' | 'not-found' | 'winner'; // Added 'winner' status
+  status: 'paid' | 'reserved' | 'available' | 'not-found' | 'winner';
   ticket?: Ticket;
   raffle?: Raffle;
 };
 
 export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
   const t = useTranslations('TicketStatusDisplay');
+
+  const richTags = {
+    b: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
+  };
+
   if (result.status === 'not-found') {
     return (
       <div className="mt-6 p-4 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 flex items-center gap-4">
@@ -48,7 +53,7 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
         <Hourglass className="h-8 w-8" />
         <div>
           <h3 className="font-bold">{t('reservedStatus')}</h3>
-          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: String(t.rich('reservedBy', { buyerName: result.ticket.buyerName })) }} /> : null} {/* Fix 5: Convert ReactNode to string */}
+          {result.ticket?.buyerName ? <p>{t.rich('reservedBy', { buyerName: result.ticket.buyerName, ...richTags })}</p> : null}
           <p>{t.rich('reservedDescription', { raffleName: result.raffle?.name || t('unknownRaffle') })}</p>
         </div>
       </div>
@@ -61,7 +66,7 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
         <CheckCircle2 className="h-8 w-8" />
         <div>
           <h3 className="font-bold">{t('paidStatus')}</h3>
-          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: String(t.rich('purchasedBy', { buyerName: result.ticket.buyerName })) }} /> : null} {/* Fix 6: Convert ReactNode to string */}
+          {result.ticket?.buyerName ? <p>{t.rich('purchasedBy', { buyerName: result.ticket.buyerName, ...richTags })}</p> : null}
           <p>{t.rich('paidDescription', { raffleName: result.raffle?.name || t('unknownRaffle') })}</p>
         </div>
       </div>
@@ -74,7 +79,7 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
         <Trophy className="h-8 w-8" />
         <div>
           <h3 className="font-bold">{t('winnerStatus')}</h3>
-          {result.ticket?.buyerName ? <p dangerouslySetInnerHTML={{ __html: String(t.rich('purchasedBy', { buyerName: result.ticket.buyerName })) }} /> : null} {/* Fix 7: Convert ReactNode to string */}
+          {result.ticket?.buyerName ? <p>{t.rich('purchasedBy', { buyerName: result.ticket.buyerName, ...richTags })}</p> : null}
           <p>{t.rich('winnerDescription', { raffleName: result.raffle?.name || t('unknownRaffle') })}</p>
         </div>
       </div>

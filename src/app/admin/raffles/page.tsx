@@ -11,6 +11,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import Link from 'next/link';
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -20,12 +22,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { Raffle, Ticket as TicketType } from '@/lib/definitions';
 import { deleteRaffleAction } from '@/lib/actions';
-import { ButtonWithConfirmation } from '@/components/ui/button-with-confirmation';
 import { getRaffles, getTicketsByRaffleId } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 
 
-function RaffleRow({raffle}: {raffle: Raffle}) {
+function RaffleRow({raffle, onDeleted}: {raffle: Raffle; onDeleted: () => void}) {
   const t = useTranslations('Admin');
   const [soldTicketsCount, setSoldTicketsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +42,12 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
     loadTickets();
   }, [raffle.id]);
 
+  const handleDelete = async () => {
+    const formData = new FormData();
+    formData.append('id', raffle.id);
+    await deleteRaffleAction(formData);
+    onDeleted();
+  };
 
   return (
       <TableRow key={raffle.id}>
@@ -48,9 +55,15 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
             <Link href={`/admin/raffles/${raffle.id}`} className="hover:underline">{raffle.name}</Link>
         </TableCell>
         <TableCell>
-          <Badge variant={raffle.active ? 'default' : 'secondary'}>
-            {raffle.active ? t('active') : t('ended')}
-          </Badge>
+          {raffle.ticketsCreated < raffle.ticketCount ? (
+            <Badge variant="outline" className="border-amber-500 text-amber-600">
+              {t('processing')} ({Math.round((raffle.ticketsCreated / raffle.ticketCount) * 100)}%)
+            </Badge>
+          ) : (
+            <Badge variant={raffle.active ? 'default' : 'secondary'}>
+              {raffle.active ? t('active') : t('ended')}
+            </Badge>
+          )}
         </TableCell>
         <TableCell>{formatCurrency(raffle.price)}</TableCell>
         <TableCell>{isLoading ? t('loading') : soldTicketsCount} / {raffle.ticketCount}</TableCell>
@@ -81,14 +94,10 @@ function RaffleRow({raffle}: {raffle: Raffle}) {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <form action={deleteRaffleAction} className="flex-grow">
-                            <input type="hidden" name="id" value={raffle.id} />
-                            <ButtonWithConfirmation
-                                variant="destructive"
-                                confirmationText={t('delete')}
-                                cancelText={t('cancel')}
-                            />
-                        </form>
+                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        {t('delete')}
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -104,13 +113,14 @@ export default function RafflesPage() {
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadData = async () => {
+    setIsLoading(true);
+    const data = await getRaffles();
+    setRaffles(data);
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      const data = await getRaffles();
-      setRaffles(data);
-      setIsLoading(false);
-    }
     loadData();
   }, []);
 
@@ -146,7 +156,7 @@ export default function RafflesPage() {
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={5}>{t('loading')}</TableCell></TableRow>}
               {raffles?.map((raffle) => (
-                <RaffleRow key={raffle.id} raffle={raffle} />
+                <RaffleRow key={raffle.id} raffle={raffle} onDeleted={loadData} />
               ))}
             </TableBody>
           </Table>

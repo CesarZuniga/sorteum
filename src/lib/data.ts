@@ -1,8 +1,16 @@
 'use client'; // Mark this file as a client component
 
-import type { Raffle, Ticket, FAQ, PaymentMethod } from './definitions';
+import type { Raffle, Ticket, FAQ, PaymentMethod, PaginatedTicketsResult, TicketStatusCounts, TicketStatusFilter, AppSettings } from './definitions';
 import { supabase } from '@/integrations/supabase/client-utils'; // Import the client-side Supabase instance
 import { PlaceHolderImages } from './placeholder-images'; // Keep for initial image assignment
+import { z } from 'zod';
+
+// --- Buyer info validation schema ---
+const BuyerInfoSchema = z.object({
+  name: z.string().min(1).max(200).regex(/^[^<>"'&]*$/, 'Name contains invalid characters'),
+  email: z.string().email('Invalid email format').max(254),
+  phone: z.string().min(7).max(20).regex(/^[+\d\s()-]+$/, 'Invalid phone number format'),
+});
 
 // --- Data Access Functions ---
 
@@ -12,10 +20,10 @@ const mapSupabaseRaffleToAppType = (dbRaffle: any): Raffle => ({
   adminId: dbRaffle.admin_id,
   name: dbRaffle.name,
   description: dbRaffle.description,
-  images: dbRaffle.image_url || [], // Now expects an array
-  price: parseFloat(dbRaffle.price), // Ensure price is a number
+  images: dbRaffle.image_url || [],
+  price: parseFloat(dbRaffle.price),
   ticketCount: dbRaffle.total_tickets,
-  // Aseguramos que deadline siempre sea un string ISO
+  ticketsCreated: dbRaffle.tickets_created ?? 0,
   deadline: dbRaffle.end_date ? new Date(dbRaffle.end_date).toISOString() : new Date().toISOString(),
   active: dbRaffle.is_active,
 });
@@ -25,11 +33,12 @@ const mapAppRaffleToSupabaseType = (appRaffle: Omit<Raffle, 'id' | 'active'>): a
   admin_id: appRaffle.adminId,
   name: appRaffle.name,
   description: appRaffle.description,
-  image_url: appRaffle.images, // Now expects an array
+  image_url: appRaffle.images,
   price: appRaffle.price,
   total_tickets: appRaffle.ticketCount,
+  tickets_created: 0,
   end_date: appRaffle.deadline,
-  is_active: new Date(appRaffle.deadline) > new Date(), // Determine active status based on deadline
+  is_active: false, // Starts inactive; pg_cron activates after tickets are created
 });
 
 // Helper to map Supabase ticket data to app Ticket type
@@ -109,22 +118,8 @@ export const createRaffle = async (raffleData: Omit<Raffle, 'id' | 'active'>): P
 
   const newRaffle = mapSupabaseRaffleToAppType(data);
 
-  // Create initial tickets for the new raffle
-  const newTicketsData = Array.from({ length: newRaffle.ticketCount }, (_, i) => ({
-    raffle_id: newRaffle.id,
-    ticket_number: i + 1,
-    status: 'available',
-  }));
-
-  const { error: ticketsError } = await supabase
-    .from('tickets')
-    .insert(newTicketsData);
-
-  if (ticketsError) {
-    console.error('Supabase Error creating tickets for new raffle:', ticketsError);
-    // Optionally, you might want to delete the created raffle here if ticket creation fails
-    throw new Error(`Failed to create tickets for raffle: ${ticketsError.message || 'Unknown Supabase error'}`);
-  }
+  // Tickets are created asynchronously by pg_cron job (process_pending_raffle_tickets)
+  // The raffle starts as inactive and will be activated once all tickets are created
 
   return newRaffle;
 };
@@ -138,7 +133,11 @@ export const updateRaffle = async (id: string, raffleData: Partial<Omit<Raffle, 
   if (raffleData.price !== undefined) updatePayload.price = raffleData.price;
   if (raffleData.deadline !== undefined) {
     updatePayload.end_date = raffleData.deadline;
-    updatePayload.is_active = new Date(raffleData.deadline) > new Date();
+    // is_active is managed by pg_cron: only active when tickets are ready AND deadline not passed
+    // If deadline is in the past, force inactive; otherwise leave for pg_cron to manage
+    if (new Date(raffleData.deadline) <= new Date()) {
+      updatePayload.is_active = false;
+    }
   }
 
   const { data, error } = await supabase
@@ -207,6 +206,17 @@ export const updateTicketStatus = async (
   status: 'reserved' | 'paid' | 'available' | 'winner',
   buyerInfo?: { name: string; email: string; phone: string }
 ): Promise<boolean> => {
+  // Validate buyer info server-side when provided
+  if (buyerInfo && (status === 'reserved' || status === 'paid')) {
+    const parsed = BuyerInfoSchema.safeParse(buyerInfo);
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      const firstError = Object.values(errors).flat()[0] || 'Invalid buyer information';
+      throw new Error(firstError);
+    }
+    buyerInfo = parsed.data;
+  }
+
   const updatePayload: Partial<any> = { status };
 
   if (status === 'winner') {
@@ -230,23 +240,202 @@ export const updateTicketStatus = async (
       updatePayload.is_winner = false; // Explicitly set is_winner to false when status is paid
     }
     if (status === 'reserved') {
-      const RESERVATION_DURATION_MINUTES = 15;
+      const settings = await getSettings();
+      const durationMinutes = settings.reservationDurationMinutes;
       updatePayload.purchase_date = null;
-      updatePayload.reservation_expires_at = new Date(Date.now() + RESERVATION_DURATION_MINUTES * 60 * 1000).toISOString();
+      updatePayload.reservation_expires_at = new Date(Date.now() + durationMinutes * 60 * 1000).toISOString();
     }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('tickets')
     .update(updatePayload)
     .eq('raffle_id', raffleId)
-    .eq('ticket_number', ticketNumber);
+    .eq('ticket_number', ticketNumber)
+    .select('id');
 
   if (error) {
     console.error(`Supabase Error updating ticket #${ticketNumber} for raffle ${raffleId}:`, error);
     throw new Error(`Failed to update ticket status: ${error.message || 'Unknown Supabase error'}`);
   }
+
+  if (!data || data.length === 0) {
+    throw new Error(`Ticket #${ticketNumber} could not be updated. It may have already been reserved by someone else.`);
+  }
+
   return true;
+};
+
+// --- Paginated Tickets ---
+
+export const getPaginatedTickets = async (
+  raffleId: string,
+  options: {
+    page?: number;
+    pageSize?: number;
+    statusFilter?: TicketStatusFilter;
+  } = {}
+): Promise<PaginatedTicketsResult> => {
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = Math.min(500, Math.max(1, options.pageSize ?? 50));
+  const statusFilter = options.statusFilter ?? 'all';
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from('tickets')
+    .select('*', { count: 'exact' })
+    .eq('raffle_id', raffleId);
+
+  if (statusFilter !== 'all') {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error, count } = await query
+    .order('ticket_number', { ascending: true })
+    .range(from, to);
+
+  if (error) {
+    console.error(`Supabase Error fetching paginated tickets for raffle ${raffleId}:`, error);
+    throw new Error(`Failed to fetch tickets: ${error.message || 'Unknown Supabase error'}`);
+  }
+
+  const totalCount = count ?? 0;
+
+  return {
+    tickets: (data ?? []).map(mapSupabaseTicketToAppType),
+    totalCount,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
+  };
+};
+
+export const getTicketStatusCounts = async (raffleId: string): Promise<TicketStatusCounts> => {
+  const statuses = ['available', 'reserved', 'paid', 'winner'] as const;
+
+  const countPromises = statuses.map(async (status) => {
+    const { count, error } = await supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('raffle_id', raffleId)
+      .eq('status', status);
+
+    if (error) {
+      console.error(`Error counting ${status} tickets:`, error);
+      return { status, count: 0 };
+    }
+    return { status, count: count ?? 0 };
+  });
+
+  const results = await Promise.all(countPromises);
+
+  const counts: TicketStatusCounts = {
+    available: 0,
+    reserved: 0,
+    paid: 0,
+    winner: 0,
+    total: 0,
+  };
+
+  for (const { status, count } of results) {
+    counts[status] = count;
+    counts.total += count;
+  }
+
+  return counts;
+};
+
+export const drawWinnersServerSide = async (
+  raffleId: string,
+  winnerCount: number
+): Promise<Ticket[]> => {
+  const { data, error } = await supabase
+    .rpc('draw_random_winners', {
+      p_raffle_id: raffleId,
+      p_winner_count: winnerCount,
+    });
+
+  if (error) {
+    console.error('Error drawing winners via RPC:', error);
+    throw new Error(`Failed to draw winners: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('No eligible tickets found for drawing.');
+  }
+
+  return data.map(mapSupabaseTicketToAppType);
+};
+
+export const getRandomAvailableTickets = async (
+  raffleId: string,
+  count: number,
+  excludeNumbers: number[] = []
+): Promise<Ticket[]> => {
+  const { data, error } = await supabase
+    .rpc('get_random_available_tickets', {
+      p_raffle_id: raffleId,
+      p_count: count,
+      p_exclude_numbers: excludeNumbers,
+    });
+
+  if (error) {
+    console.error('Error fetching random available tickets:', error);
+    throw new Error(`Failed to get random tickets: ${error.message}`);
+  }
+
+  return (data ?? []).map(mapSupabaseTicketToAppType);
+};
+
+// Settings
+export const getSettings = async (): Promise<AppSettings> => {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Supabase Error fetching settings:', error);
+      return { id: '', reservationDurationMinutes: 15, updatedAt: new Date().toISOString() };
+    }
+
+    return {
+      id: data.id,
+      reservationDurationMinutes: data.reservation_duration_minutes,
+      updatedAt: data.updated_at,
+    };
+  } catch {
+    return { id: '', reservationDurationMinutes: 15, updatedAt: new Date().toISOString() };
+  }
+};
+
+export const updateSettings = async (settings: { reservationDurationMinutes: number }): Promise<AppSettings> => {
+  const { data: current } = await supabase.from('settings').select('id').single();
+  if (!current) throw new Error('Settings row not found');
+
+  const { data, error } = await supabase
+    .from('settings')
+    .update({
+      reservation_duration_minutes: settings.reservationDurationMinutes,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', current.id)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Supabase Error updating settings:', error);
+    throw new Error('Failed to update settings');
+  }
+
+  return {
+    id: data.id,
+    reservationDurationMinutes: data.reservation_duration_minutes,
+    updatedAt: data.updated_at,
+  };
 };
 
 // FAQs

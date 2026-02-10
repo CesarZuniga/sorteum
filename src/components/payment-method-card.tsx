@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import type { PaymentMethod } from '@/lib/definitions';
-import { Banknote, User, CreditCard as CreditCardIcon } from 'lucide-react';
+import { User, CreditCard as CreditCardIcon, Banknote } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface PaymentMethodCardProps {
@@ -15,30 +15,33 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
   const t = useTranslations('RaffleDetail');
 
   return (
-    <Card className="relative overflow-hidden group">
-      {method.bankImageUrl && (
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={method.bankImageUrl}
-            alt={method.bankName}
-            fill
-            className="object-contain object-center"
-            data-ai-hint={`Bank logo for ${method.bankName}`}
-          />
-        </div>
-      )}
-      <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 p-6">
-        
-        {/* Cambiado a text-muted-foreground */}
-      </CardHeader>
-      <CardContent className="relative z-10 space-y-2 p-6">
-        <div className="flex items-center gap-2 text-sm">
-          <CreditCardIcon className="h-7 w-7 text-muted-foreground" />
-          <span className="text-muted-foreground">{t('accountNumber')}: <strong>{method.accountNumber}</strong></span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <User className="h-7 w-7 text-muted-foreground" />
-          <span className="text-muted-foreground">{t('recipientName')}: <strong>{method.recipientName}</strong></span>
+    <Card className="overflow-hidden">
+      <CardContent className="flex items-center gap-4 p-4">
+        {method.bankImageUrl ? (
+          <div className="relative h-12 w-12 flex-shrink-0">
+            <Image
+              src={method.bankImageUrl}
+              alt={method.bankName}
+              fill
+              className="object-contain"
+              data-ai-hint={`Bank logo for ${method.bankName}`}
+            />
+          </div>
+        ) : (
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-muted">
+            <Banknote className="h-6 w-6 text-muted-foreground" />
+          </div>
+        )}
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold truncate">{method.bankName}</p>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CreditCardIcon className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">{method.accountNumber}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">{method.recipientName}</span>
+          </div>
         </div>
       </CardContent>
     </Card>

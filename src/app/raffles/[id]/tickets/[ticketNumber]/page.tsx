@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TicketStatusDisplay, TicketStatus } from '@/components/ticket-status-display';
 import { Ticket as TicketIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -11,20 +11,21 @@ import { getRaffleById, getTicketByNumber } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 
 
-export default function TicketStatusPage({ params }: { params: { id: string, ticketNumber: string } }) {
+export default function TicketStatusPage({ params }: { params: Promise<{ id: string, ticketNumber: string }> }) {
+  const resolvedParams = React.use(params);
   const t = useTranslations('TicketStatusDisplay');
-  const tIndex = useTranslations('Index'); // Usar traducciones de Index para el botón de regreso
+  const tIndex = useTranslations('Index');
   const [result, setResult] = useState<TicketStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
     async function loadData() {
         setIsLoading(true);
-        const ticketNum = parseInt(params.ticketNumber, 10);
-        
+        const ticketNum = parseInt(resolvedParams.ticketNumber, 10);
+
         const [raffle, ticket] = await Promise.all([
-            getRaffleById(params.id),
-            getTicketByNumber(params.id, ticketNum)
+            getRaffleById(resolvedParams.id),
+            getTicketByNumber(resolvedParams.id, ticketNum)
         ]);
 
         if (!raffle) {
@@ -38,7 +39,7 @@ export default function TicketStatusPage({ params }: { params: { id: string, tic
     }
 
     loadData();
-  }, [params.id, params.ticketNumber]);
+  }, [resolvedParams.id, resolvedParams.ticketNumber]);
 
 
   if (isLoading || !result) {
@@ -55,7 +56,7 @@ export default function TicketStatusPage({ params }: { params: { id: string, tic
     <div className="container mx-auto px-4 py-12 flex justify-center">
       <div className="w-full max-w-md">
          <Button variant="outline" size="sm" asChild className="mb-4">
-            <Link href={`/raffles/${params.id}`}>
+            <Link href={`/raffles/${resolvedParams.id}`}>
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 {tIndex('backToRaffle')}
             </Link>
@@ -64,7 +65,7 @@ export default function TicketStatusPage({ params }: { params: { id: string, tic
           <div className="flex items-center justify-center h-16 w-16 bg-primary/10 rounded-full mb-6">
             <TicketIcon className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">{t('title')} #{params.ticketNumber}</h1>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">{t('title')} #{resolvedParams.ticketNumber}</h1>
           <p className="text-muted-foreground mt-2">Rifa: {result?.raffle?.name || t('unknownRaffle')}</p>
         </div>
 
