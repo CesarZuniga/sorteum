@@ -339,7 +339,7 @@ export const getTicketStatusCounts = async (raffleId: string): Promise<TicketSta
       .eq('status', status);
 
     if (error) {
-      console.error(`Error counting ${status} tickets:`, error);
+      console.error(`Error counting ${status} tickets:`, error.message || error.code || JSON.stringify(error));
       return { status, count: 0 };
     }
     return { status, count: count ?? 0 };

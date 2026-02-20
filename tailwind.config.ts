@@ -10,9 +10,14 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['var(--font-inter)', 'sans-serif'], // Usar la variable CSS de next/font
-        headline: ['var(--font-inter)', 'sans-serif'], // Usar la variable CSS de next/font
+        body: ['var(--font-inter)', 'sans-serif'],
+        headline: ['var(--font-inter)', 'sans-serif'],
         code: ['monospace'],
+      },
+      fontSize: {
+        'display-2xl': ['4.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '800' }],
+        'display-xl': ['3.75rem', { lineHeight: '1.1', letterSpacing: '-0.025em', fontWeight: '800' }],
+        'display-lg': ['3rem', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -91,7 +96,7 @@ export default {
         'fade-in-up': {
           'from': {
             opacity: '0',
-            transform: 'translateY(20px)',
+            transform: 'translateY(16px)',
           },
           'to': {
             opacity: '1',

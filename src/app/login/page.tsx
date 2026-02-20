@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client-utils'; // Import from client-utils
+import { supabase } from '@/integrations/supabase/client-utils';
 import { useTranslations } from 'next-intl';
+import { FadeIn } from '@/components/fade-in';
 
 export default function LoginPage() {
   const t = useTranslations('Admin');
@@ -57,14 +58,15 @@ export default function LoginPage() {
 
   if (checkingSession) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 bg-muted">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 bg-muted">
+      <FadeIn direction="none">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
@@ -106,6 +108,7 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Card>
+      </FadeIn>
     </div>
   );
 }

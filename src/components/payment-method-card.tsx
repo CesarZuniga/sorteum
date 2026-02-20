@@ -15,7 +15,7 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
   const t = useTranslations('RaffleDetail');
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20">
       <CardContent className="flex items-center gap-4 p-4">
         {method.bankImageUrl ? (
           <div className="relative h-12 w-12 flex-shrink-0">
@@ -28,8 +28,8 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
             />
           </div>
         ) : (
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-muted">
-            <Banknote className="h-6 w-6 text-muted-foreground" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <Banknote className="h-6 w-6 text-primary" />
           </div>
         )}
         <div className="min-w-0 space-y-1">

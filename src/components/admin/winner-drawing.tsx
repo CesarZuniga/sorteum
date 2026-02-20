@@ -38,7 +38,6 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, onWinnersDr
     setDrawnWinners([]);
 
     try {
-      // Validate using counts instead of loading all tickets
       const counts = await getTicketStatusCounts(raffle.id);
       const eligibleCount = counts.paid;
 
@@ -72,7 +71,6 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, onWinnersDr
         return;
       }
 
-      // Draw winners atomically on the server via PostgreSQL RPC
       const winners = await drawWinnersServerSide(raffle.id, winnerCount);
       setDrawnWinners(winners);
       toast({
@@ -120,19 +118,28 @@ export function WinnerDrawing({ raffle, winnerCount, setWinnerCount, onWinnersDr
               />
             </div>
             {drawnWinners.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <h3 className="text-lg font-semibold">{t('drawnWinners')}</h3>
-                    <ul className="list-disc pl-5">
+                    <div className="space-y-2">
                         {drawnWinners.map((winner, index) => (
-                            <li key={winner.id}>
-                                {t.rich('winnerNumber', {
-                                  index: index + 1,
-                                  ticketNumber: String(winner.number).padStart(3, '0'),
-                                  buyerName: winner.buyerName || 'N/A',
-                                })}
-                            </li>
+                            <div key={winner.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border">
+                                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-yellow-400 text-yellow-900 font-bold text-sm flex-shrink-0">
+                                    {String(winner.number).padStart(3, '0')}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium truncate">{winner.buyerName || 'N/A'}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t.rich('winnerNumber', {
+                                          index: index + 1,
+                                          ticketNumber: String(winner.number).padStart(3, '0'),
+                                          buyerName: winner.buyerName || 'N/A',
+                                        })}
+                                    </p>
+                                </div>
+                                <Trophy className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             )}
           </CardContent>

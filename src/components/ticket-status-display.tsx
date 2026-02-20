@@ -22,8 +22,8 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
 
   if (result.status === 'not-found') {
     return (
-      <div className="mt-6 p-4 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 flex items-center gap-4">
-        <AlertCircle className="h-8 w-8" />
+      <div className="mt-6 p-5 rounded-2xl bg-destructive/10 border border-destructive/20 text-red-700 dark:text-red-300 flex items-center gap-4">
+        <AlertCircle className="h-8 w-8 flex-shrink-0" />
         <div>
           <h3 className="font-bold">{t('ticketNotFoundStatus')}</h3>
           <p>{t('ticketNotFoundDescription')}</p>
@@ -34,8 +34,8 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
 
   if (result.status === 'available') {
     return (
-      <div className="mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center gap-4">
-        <ShoppingCart className="h-8 w-8" />
+      <div className="mt-6 p-5 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 flex items-center gap-4">
+        <ShoppingCart className="h-8 w-8 flex-shrink-0" />
         <div>
           <h3 className="font-bold">{t('availableStatus')}</h3>
           <p>{t('availableDescription')}</p>
@@ -49,8 +49,8 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
 
   if (result.status === 'reserved') {
     return (
-      <div className="mt-6 p-4 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 flex items-center gap-4">
-        <Hourglass className="h-8 w-8" />
+      <div className="mt-6 p-5 rounded-2xl bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 flex items-center gap-4">
+        <Hourglass className="h-8 w-8 flex-shrink-0" />
         <div>
           <h3 className="font-bold">{t('reservedStatus')}</h3>
           {result.ticket?.buyerName ? <p>{t.rich('reservedBy', { buyerName: result.ticket.buyerName, ...richTags })}</p> : null}
@@ -62,8 +62,8 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
 
   if (result.status === 'paid') {
     return (
-      <div className="mt-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 flex items-center gap-4">
-        <CheckCircle2 className="h-8 w-8" />
+      <div className="mt-6 p-5 rounded-2xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 flex items-center gap-4">
+        <CheckCircle2 className="h-8 w-8 flex-shrink-0" />
         <div>
           <h3 className="font-bold">{t('paidStatus')}</h3>
           {result.ticket?.buyerName ? <p>{t.rich('purchasedBy', { buyerName: result.ticket.buyerName, ...richTags })}</p> : null}
@@ -75,8 +75,8 @@ export function TicketStatusDisplay({ result }: { result: TicketStatus }) {
 
   if (result.status === 'winner') {
     return (
-      <div className="mt-6 p-4 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 flex items-center gap-4">
-        <Trophy className="h-8 w-8" />
+      <div className="mt-6 p-5 rounded-2xl bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 flex items-center gap-4">
+        <Trophy className="h-8 w-8 flex-shrink-0" />
         <div>
           <h3 className="font-bold">{t('winnerStatus')}</h3>
           {result.ticket?.buyerName ? <p>{t.rich('purchasedBy', { buyerName: result.ticket.buyerName, ...richTags })}</p> : null}

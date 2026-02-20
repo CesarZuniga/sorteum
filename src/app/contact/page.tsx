@@ -7,13 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Facebook, Instagram, Twitter } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import React from 'react'; // Import React for React.ReactNode type
+import React from 'react';
+import { FadeIn } from '@/components/fade-in';
 
 export default function ContactPage() {
   const t = useTranslations('Contact');
   const tIndex = useTranslations('Index');
   return (
-    <div className="bg-gray-50 dark:bg-gray-900/50 min-h-screen">
+    <div className="bg-muted min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-lg">
         <header className="relative flex items-center justify-center mb-8">
             <Link href="/" className="absolute left-0">
@@ -26,14 +27,17 @@ export default function ContactPage() {
         </header>
 
         <main>
+          <FadeIn>
           <div className="text-left mb-8">
             <h2 className="text-3xl font-bold tracking-tight font-headline">{t('headline')}</h2>
             <p className="text-muted-foreground mt-2">
               {t('subtitle')}
             </p>
           </div>
+          </FadeIn>
 
-          <form className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
+          <FadeIn delay={150}>
+          <form className="space-y-6 bg-card rounded-xl shadow-sm border border-border p-8">
             <div className="space-y-2">
               <Label htmlFor="name">{t('fullName')}</Label>
               <Input id="name" placeholder={t('enterName')} />
@@ -46,10 +50,11 @@ export default function ContactPage() {
               <Label htmlFor="message">{t('yourMessage')}</Label>
               <Textarea id="message" placeholder={t('writeMessage')} rows={5} />
             </div>
-            <Button type="submit" size="lg" className="w-full !mt-8 bg-red-600 hover:bg-red-700">
+            <Button type="submit" size="lg" className="w-full !mt-8">
               {t('sendMessage')}
             </Button>
           </form>
+          </FadeIn>
 
           <div className="text-center mt-8 space-y-4">
              <div>

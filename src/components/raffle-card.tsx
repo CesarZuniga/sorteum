@@ -28,22 +28,21 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
     }
     loadTickets();
   }, [raffle.id]);
-  
+
   const progress = soldTicketsCount > 0 ? (soldTicketsCount / raffle.ticketCount) * 100 : 0;
-  
-  // Determinar la URL de la imagen, usando un marcador de posición si no hay imágenes
+
   const imageUrl = raffle.images.length > 0 ? raffle.images[0] : 'https://placehold.co/600x400';
   const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]);
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl dark:bg-gray-800/80">
-        <Link href={`/raffles/${raffle.id}`} className="block">
+    <Card className="group flex flex-col overflow-hidden transition-all duration-300 ease-out hover:-translate-y-2 hover:shadow-2xl dark:bg-card">
+        <Link href={`/raffles/${raffle.id}`} className="block overflow-hidden">
           <div className="aspect-[16/9] w-full relative">
             <Image
-              src={imageUrl} // Usar la URL de imagen resuelta
+              src={imageUrl}
               alt={raffle.name}
               fill
-              className="object-cover"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               data-ai-hint={placeholder?.imageHint || 'placeholder image'}
             />
@@ -51,23 +50,23 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
         </Link>
       <CardContent className="p-4 flex-grow flex flex-col">
         <h3 className="font-headline text-lg font-semibold mb-2 flex-grow">
-          <Link href={`/raffles/${raffle.id}`} className="hover:text-primary">{raffle.name}</Link>
+          <Link href={`/raffles/${raffle.id}`} className="hover:text-primary transition-colors">{raffle.name}</Link>
         </h3>
-        
+
         <div className="mt-4 space-y-3 text-sm text-muted-foreground">
           <div>
             <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-primary">{formatCurrency(raffle.price)}</span>
+                <span className="font-bold text-base text-primary">{formatCurrency(raffle.price)}</span>
                 <div className="flex items-center gap-1">
                     <TicketIcon className="h-4 w-4" />
                     <span>{soldTicketsCount} / {raffle.ticketCount}</span>
                 </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                <div className="bg-primary h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+            <div className="w-full bg-muted rounded-full h-2.5">
+                <div className="bg-gradient-to-r from-primary to-orange-400 h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
             </div>
           </div>
-          <Button asChild className="w-full">
+          <Button asChild className="w-full hover:shadow-glow-primary transition-shadow">
             <Link href={`/raffles/${raffle.id}`}>{t('buyTickets')}</Link>
           </Button>
         </div>

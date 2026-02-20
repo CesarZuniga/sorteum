@@ -20,6 +20,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
 import { PaymentMethodCard } from '@/components/payment-method-card';
+import { FadeIn } from '@/components/fade-in';
 
 const PAGE_SIZE = 200;
 
@@ -31,9 +32,9 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
       case 'reserved':
         return 'bg-yellow-500 text-white cursor-not-allowed';
       case 'available':
-        if (isSelected) return 'bg-primary text-primary-foreground';
+        if (isSelected) return 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1 scale-105';
         if (isSuggested) return 'bg-blue-300 dark:bg-blue-700 hover:bg-blue-400 dark:hover:bg-blue-600';
-        return 'bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800';
+        return 'bg-muted hover:bg-secondary';
       default:
         return 'bg-gray-200';
     }
@@ -43,7 +44,7 @@ const TicketItem = ({ ticket, onSelect, isSelected, isSuggested }: { ticket: Tic
     <button
       disabled={ticket.status !== 'available'}
       onClick={() => onSelect(ticket)}
-      className={`flex items-center justify-center p-2 rounded-md font-semibold transition-colors duration-200 ${getStatusClasses()}`}
+      className={`flex items-center justify-center p-2 min-h-[44px] rounded-lg font-semibold transition-all duration-200 ${getStatusClasses()}`}
       aria-label={`Ticket number ${ticket.number}, status ${ticket.status}${isSelected ? ', selected' : ''}${isSuggested ? ', suggested' : ''}`}
     >
       {String(ticket.number).padStart(3, '0')}
@@ -67,11 +68,10 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
   const [buyerInfo, setBuyerInfo] = useState({ name: '', email: '', phone: '' });
   const [randomCount, setRandomCount] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResult, setSearchResult] = useState<Ticket | null | undefined>(undefined); // undefined=no search, null=not found
+  const [searchResult, setSearchResult] = useState<Ticket | null | undefined>(undefined);
   const [isReserving, setIsReserving] = useState(false);
   const { toast } = useToast();
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -81,12 +81,10 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Carousel state
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
 
-  // Load raffle data and first page of tickets
   useEffect(() => {
     if (resolvedRaffleId) {
       async function loadInitialData() {
@@ -110,7 +108,6 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
     }
   }, [resolvedRaffleId]);
 
-  // Load more tickets (next page)
   const loadMoreTickets = useCallback(async () => {
     if (!resolvedRaffleId || isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
@@ -130,8 +127,6 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
     }
   }, [resolvedRaffleId, currentPage, isLoadingMore, hasMore]);
 
-  // IntersectionObserver for infinite scroll
-  // isInitialLoad in deps ensures the observer is created after the full UI renders (refs become available)
   useEffect(() => {
     if (isInitialLoad) return;
     const sentinel = sentinelRef.current;
@@ -155,7 +150,6 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
     return () => observer.disconnect();
   }, [isInitialLoad, hasMore, isLoadingMore, loadMoreTickets]);
 
-  // Carousel effect
   useEffect(() => {
     if (!api) return;
     setCount(api.scrollSnapList().length);
@@ -167,7 +161,20 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
 
 
   if (raffle === undefined || isInitialLoad) {
-    return <div>{tIndex('loading')}</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+          <div className="space-y-4">
+            <div className="aspect-[3/2] w-full rounded-lg animate-shimmer" />
+            <div className="h-10 w-3/4 rounded-lg animate-shimmer" />
+            <div className="h-6 w-full rounded-lg animate-shimmer" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-96 w-full rounded-lg animate-shimmer" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!raffle) {
@@ -282,11 +289,9 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Search: query DB directly for specific ticket number
   const handleSearch = (value: string) => {
     setSearchTerm(value);
 
-    // Debounce the DB search
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
@@ -298,7 +303,7 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
 
     const ticketNum = parseInt(value, 10);
     if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > raffle.ticketCount) {
-      setSearchResult(null); // not found
+      setSearchResult(null);
       return;
     }
 
@@ -315,7 +320,6 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
   const totalPrice = selectedTickets.length * raffle.price;
   const placeholder = PlaceHolderImages.find(p => p.imageUrls[0] === raffle.images[0]);
 
-  // When searching, show the single DB result; otherwise show paginated tickets
   const isSearching = searchTerm.trim().length > 0;
   const filteredTickets = isSearching
     ? (searchResult ? [searchResult] : [])
@@ -330,6 +334,7 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
         </Link>
       </Button>
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        <FadeIn direction="left">
         <div>
           {raffle.images.length > 0 ? (
             <Carousel setApi={setApi} className="w-full max-w-full mb-4 rounded-lg overflow-hidden shadow-lg">
@@ -391,17 +396,18 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              <span>{t('ends')} {format(new Date(raffle.deadline), 'PPP')}</span>
+              <span>{t('ends')} {format(new Date(raffle.deadline), 'dd/MM/yyyy')}</span>
             </div>
           </div>
         </div>
+        </FadeIn>
 
+        <FadeIn direction="right" delay={150}>
         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold mb-4 font-headline">{t('selectYourTickets')}</h2>
 
-              {/* Search field */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -435,14 +441,12 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
                 )}
               </div>
 
-              {/* Suggested tickets label */}
               {suggestedTickets.length > 0 && (
                 <p className="text-sm text-blue-600 dark:text-blue-300 mb-4">
                   <strong>{t('suggestedTicketsLabel')}:</strong> {suggestedTickets.map(t => String(t.number).padStart(3, '0')).join(', ')}
                 </p>
               )}
 
-              {/* Ticket grid with infinite scroll */}
               <div
                 ref={scrollContainerRef}
                 className="h-[300px] w-full rounded-md border p-4 overflow-y-auto"
@@ -458,13 +462,11 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
                     />
                   ))}
                 </div>
-                {/* Search: no result message */}
                 {isSearching && searchResult === null && (
                   <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
                     {t('enterTicketNumber')}
                   </div>
                 )}
-                {/* Sentinel for infinite scroll */}
                 {!isSearching && (
                   <div ref={sentinelRef} className="flex items-center justify-center py-4">
                     {isLoadingMore && (
@@ -480,7 +482,7 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
               </div>
 
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-400"></span>{t('available')}</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-muted border border-border"></span>{t('available')}</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-300"></span>{t('suggested')}</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500"></span>{t('reserved')}</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500"></span>{t('paid')}</div>
@@ -524,7 +526,6 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
             </Card>
           )}
 
-          {/* Payment Methods */}
           {paymentMethods.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-2xl font-bold font-headline">{t('paymentMethodsTitle')}</h2>
@@ -536,6 +537,7 @@ export default function RaffleDetailPage({ params }: { params: Promise<{ id: str
             </div>
           )}
         </div>
+        </FadeIn>
       </div>
     </div>
   );

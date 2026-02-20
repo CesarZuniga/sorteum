@@ -270,7 +270,23 @@
     "saveSettings": "Save Settings",
     "savingSettings": "Saving...",
     "settingsUpdatedSuccess": "Settings updated successfully!",
-    "failedToUpdateSettings": "Failed to update settings."
+    "failedToUpdateSettings": "Failed to update settings.",
+    "chartLastUpdated": "Last updated",
+    "chartRefresh": "Refresh",
+    "chartConversionRate": "Conversion Rate",
+    "chartRevenueByRaffle": "Revenue by Raffle",
+    "chartRevenueByRaffleDesc": "Paid and reserved revenue breakdown per raffle",
+    "chartPaidRevenue": "Paid",
+    "chartReservedRevenue": "Reserved",
+    "chartTicketDistribution": "Ticket Distribution",
+    "chartTicketDistributionDesc": "Overall ticket status across all raffles",
+    "chartWinners": "Winners",
+    "chartSalesActivity": "Sales Activity",
+    "chartSalesActivityDesc": "Paid and reserved tickets over the last 14 days",
+    "chartPaidTickets": "Paid",
+    "chartRafflePerformance": "Raffle Performance",
+    "chartRafflePerformanceDesc": "Sales progress and revenue for each raffle",
+    "chartNoData": "No data available yet"
   },
   "Logo": {
     "name": "Sorteum Digital"

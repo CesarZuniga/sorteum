@@ -2,27 +2,39 @@
 
 import { useAppLocale } from './locale-provider';
 
-export function LocaleSwitcher() {
+interface LocaleSwitcherProps {
+  isScrolled?: boolean;
+}
+
+export function LocaleSwitcher({ isScrolled = false }: LocaleSwitcherProps) {
   const { locale, setLocale } = useAppLocale();
 
   return (
     <div className="flex items-center gap-1 text-sm">
       <button
         onClick={() => setLocale('es')}
-        className={`px-2 py-1 rounded transition-colors ${
+        className={`px-3 py-1.5 min-h-[44px] min-w-[44px] rounded-md font-medium transition-colors ${
           locale === 'es'
-            ? 'bg-white text-black font-bold'
-            : 'text-white/70 hover:text-white'
+            ? isScrolled
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-white/20 text-white backdrop-blur-sm'
+            : isScrolled
+              ? 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              : 'text-white/70 hover:text-white'
         }`}
       >
         ES
       </button>
       <button
         onClick={() => setLocale('en')}
-        className={`px-2 py-1 rounded transition-colors ${
+        className={`px-3 py-1.5 min-h-[44px] min-w-[44px] rounded-md font-medium transition-colors ${
           locale === 'en'
-            ? 'bg-white text-black font-bold'
-            : 'text-white/70 hover:text-white'
+            ? isScrolled
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-white/20 text-white backdrop-blur-sm'
+            : isScrolled
+              ? 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              : 'text-white/70 hover:text-white'
         }`}
       >
         EN

@@ -11,8 +11,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
 import { useTranslations } from 'next-intl';
-import { Logo } from '@/components/logo'; // Importar el componente Logo
-import { HomePaymentMethods } from '@/components/home-payment-methods'; // Importar el nuevo componente
+import { Logo } from '@/components/logo';
+import { HomePaymentMethods } from '@/components/home-payment-methods';
+import { FadeIn } from '@/components/fade-in';
 
 
 function FaqSection() {
@@ -31,12 +32,14 @@ function FaqSection() {
     }, []);
 
     return (
-        <section className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900/50">
+        <section className="py-16 md:py-24 bg-muted">
             <div className="container mx-auto px-4">
+                <FadeIn>
                 <div className="text-center mb-10">
                     <h2 className="text-3xl font-bold tracking-tight mb-2 font-headline">{t('faqTitle')}</h2>
                     <p className="text-muted-foreground">{t('faqSubtitle')}</p>
                 </div>
+                </FadeIn>
                 {isLoading ? (
                     <p className="text-center">{t('loadingFaqs')}</p>
                 ) : (
@@ -59,36 +62,36 @@ function FaqSection() {
 function SiteFooter() {
     const t = useTranslations('Index');
     return (
-        <footer className="bg-gray-900 text-gray-300">
+        <footer className="bg-[hsl(var(--sidebar-background))] text-[hsl(var(--sidebar-foreground))]">
             <div className="container mx-auto px-4 py-8">
                 <div className="grid md:grid-cols-3 gap-8 text-center md:text-left">
                      <div>
-                        <Logo className="text-white" /> {/* Usar el componente Logo aquí */}
-                        <p className="text-sm text-gray-400 mt-2">{t('footerTagline')}</p>
+                        <Logo className="text-white" />
+                        <p className="text-sm text-muted-foreground mt-2">{t('footerTagline')}</p>
                     </div>
                     <div>
                         <h4 className="font-semibold mb-3">{t('quickLinks')}</h4>
                         <ul className="space-y-2">
-                            <li><Link href="/#active-raffles" className="hover:text-white text-sm">{t('activeRafflesLink')}</Link></li>
-                            <li><Link href="/contact" className="hover:text-white text-sm">{t('contactLink')}</Link></li>
-                            <li><Link href="/#faq" className="hover:text-white text-sm">{t('faqLink')}</Link></li>
+                            <li><Link href="/#active-raffles" className="text-sm text-muted-foreground hover:text-white transition-colors">{t('activeRafflesLink')}</Link></li>
+                            <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-white transition-colors">{t('contactLink')}</Link></li>
+                            <li><Link href="/#faq" className="text-sm text-muted-foreground hover:text-white transition-colors">{t('faqLink')}</Link></li>
                         </ul>
                     </div>
                     <div>
                          <h4 className="font-semibold mb-3">{t('followUs')}</h4>
                         <div className="flex space-x-4 justify-center md:justify-start">
-                            <Link href="#" className="hover:text-white"><Twitter className="h-5 w-5"/></Link>
-                            <Link href="#" className="hover:text-white"><Facebook className="h-5 w-5"/></Link>
-                            <Link href="#" className="hover:text-white"><Instagram className="h-5 w-5"/></Link>
+                            <Link href="#" className="text-muted-foreground hover:text-white transition-colors"><Twitter className="h-5 w-5"/></Link>
+                            <Link href="#" className="text-muted-foreground hover:text-white transition-colors"><Facebook className="h-5 w-5"/></Link>
+                            <Link href="#" className="text-muted-foreground hover:text-white transition-colors"><Instagram className="h-5 w-5"/></Link>
                         </div>
                     </div>
                 </div>
-                <div className="text-center text-xs text-gray-500 mt-8 pt-6 border-t border-gray-700">
-                    <p>© {new Date().getFullYear()} {t('copyright')}</p>
+                <div className="text-center text-xs text-muted-foreground mt-8 pt-6 border-t border-[hsl(var(--sidebar-border))]">
+                    <p>&copy; {new Date().getFullYear()} {t('copyright')}</p>
                     <div className="mt-2">
-                        <Link href="#" className="hover:text-white">{t('termsAndConditions')}</Link>
+                        <Link href="#" className="hover:text-white transition-colors">{t('termsAndConditions')}</Link>
                         <span className="mx-2">|</span>
-                        <Link href="#" className="hover:text-white">{t('privacyPolicy')}</Link>
+                        <Link href="#" className="hover:text-white transition-colors">{t('privacyPolicy')}</Link>
                     </div>
                 </div>
             </div>
@@ -116,8 +119,8 @@ export default function Home() {
     <>
       <SiteHeader />
       <main>
-          <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
-              <Image 
+          <section className="relative h-[70vh] md:h-[80vh] flex items-center justify-center text-center text-white">
+              <Image
                   src="https://picsum.photos/seed/car-hero/1200/800"
                   alt="Fondo de un carro de lujo"
                   fill
@@ -125,40 +128,44 @@ export default function Home() {
                   priority
                   data-ai-hint="luxury car"
               />
-              <div className="absolute inset-0 bg-black/60 -z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/55 to-black/80 -z-10"></div>
               <div className="container px-4">
-                  <h1 className="text-4xl md:text-6xl font-bold tracking-tight !leading-tight font-headline mb-4 animate-fade-in-up">
+                  <h1 className="text-5xl md:text-display-xl font-bold tracking-tight !leading-tight font-headline mb-4 animate-fade-in-up">
                       {t('heroTitle')}
                   </h1>
                   <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-200 mb-8 animate-fade-in-up animation-delay-300">
                       {t('heroSubtitle')}
                   </p>
-                  <Button size="lg" asChild className="animate-fade-in-up animation-delay-600">
+                  <Button size="lg" asChild className="animate-fade-in-up animation-delay-600 shadow-glow-primary hover:scale-105 transition-transform">
                       <Link href="#active-raffles">{t('participateNow')}</Link>
                   </Button>
               </div>
           </section>
 
-          <section id="active-raffles" className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900/50">
+          <section id="active-raffles" className="py-16 md:py-24 bg-muted">
               <div className="container mx-auto px-4">
+                  <FadeIn>
                   <header className="text-center mb-12">
-                      <h2 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-200 mb-2 font-headline">
+                      <h2 className="text-3xl font-bold tracking-tight text-foreground mb-2 font-headline">
                       {t('activeRafflesTitle')}
                       </h2>
-                      <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
+                      <p className="text-lg text-muted-foreground max-w-xl mx-auto">
                       {t('activeRafflesSubtitle')}
                       </p>
                   </header>
+                  </FadeIn>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {isLoading && <p>{t('loadingRaffles')}</p>}
-                  {raffles && raffles.map((raffle) => (
-                      <RaffleCard key={raffle.id} raffle={raffle} />
+                  {raffles && raffles.map((raffle, i) => (
+                      <FadeIn key={raffle.id} delay={i * 100}>
+                      <RaffleCard raffle={raffle} />
+                      </FadeIn>
                   ))}
                   </div>
               </div>
           </section>
 
-          <HomePaymentMethods /> {/* Usamos el nuevo componente aquí */}
+          <HomePaymentMethods />
           <div id="faq">
           <FaqSection />
           </div>

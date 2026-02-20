@@ -270,7 +270,23 @@
     "saveSettings": "Guardar Configuración",
     "savingSettings": "Guardando...",
     "settingsUpdatedSuccess": "¡Configuración actualizada exitosamente!",
-    "failedToUpdateSettings": "No se pudo actualizar la configuración."
+    "failedToUpdateSettings": "No se pudo actualizar la configuración.",
+    "chartLastUpdated": "Actualizado",
+    "chartRefresh": "Actualizar",
+    "chartConversionRate": "Tasa de Conversión",
+    "chartRevenueByRaffle": "Ingresos por Rifa",
+    "chartRevenueByRaffleDesc": "Desglose de ingresos pagados y reservados por rifa",
+    "chartPaidRevenue": "Pagado",
+    "chartReservedRevenue": "Reservado",
+    "chartTicketDistribution": "Distribución de Boletos",
+    "chartTicketDistributionDesc": "Estado general de boletos en todas las rifas",
+    "chartWinners": "Ganadores",
+    "chartSalesActivity": "Actividad de Ventas",
+    "chartSalesActivityDesc": "Boletos pagados y reservados en los últimos 14 días",
+    "chartPaidTickets": "Pagados",
+    "chartRafflePerformance": "Rendimiento de Rifas",
+    "chartRafflePerformanceDesc": "Progreso de ventas e ingresos por cada rifa",
+    "chartNoData": "No hay datos disponibles aún"
   },
   "Logo": {
     "name": "Sorteum Digital"

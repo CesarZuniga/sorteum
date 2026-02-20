@@ -6,13 +6,13 @@ import { Logo } from '@/components/logo';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
-import { LocaleSwitcher } from './locale-switcher'; // Importar el nuevo componente
+import { LocaleSwitcher } from './locale-switcher';
 
 
 export function SiteHeader() {
   const t = useTranslations('Index');
-  const tCheckStatus = useTranslations('CheckStatus'); // Nuevo hook para CheckStatus
-  const tAdmin = useTranslations('Admin'); // Nuevo hook para Admin
+  const tCheckStatus = useTranslations('CheckStatus');
+  const tAdmin = useTranslations('Admin');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -26,22 +26,34 @@ export function SiteHeader() {
 
   const NavLinks = () => (
     <>
-      <Button asChild variant="ghost">
+      <Button asChild variant="ghost" className={cn(
+        "transition-colors",
+        isScrolled ? "hover:bg-accent" : "hover:bg-white/10"
+      )}>
         <Link href="/#active-raffles" onClick={() => setIsMenuOpen(false)}>
           <span>{t('activeRafflesLink')}</span>
         </Link>
       </Button>
-       <Button asChild variant="ghost">
+       <Button asChild variant="ghost" className={cn(
+        "transition-colors",
+        isScrolled ? "hover:bg-accent" : "hover:bg-white/10"
+      )}>
         <Link href="/check-status" onClick={() => setIsMenuOpen(false)}>
           <span>{tCheckStatus('title')}</span>
         </Link>
       </Button>
-       <Button asChild variant="ghost">
+       <Button asChild variant="ghost" className={cn(
+        "transition-colors",
+        isScrolled ? "hover:bg-accent" : "hover:bg-white/10"
+      )}>
         <Link href="/contact" onClick={() => setIsMenuOpen(false)}>
           <span>{t('contactLink')}</span>
         </Link>
       </Button>
-      <Button asChild variant="ghost">
+      <Button asChild variant="ghost" className={cn(
+        "transition-colors",
+        isScrolled ? "hover:bg-accent" : "hover:bg-white/10"
+      )}>
         <Link href="/login">
           <span>{tAdmin('loginTitle')}</span>
         </Link>
@@ -50,8 +62,8 @@ export function SiteHeader() {
   );
 
   return (
-    <header className={cn("sticky top-0 z-40 w-full transition-colors duration-300", 
-        isScrolled ? "bg-background/80 backdrop-blur-sm border-b" : "bg-transparent text-white"
+    <header className={cn("sticky top-0 z-40 w-full transition-all duration-300",
+        isScrolled ? "glass" : "bg-transparent text-white"
     )}>
       <div className="container flex h-20 items-center justify-between">
         <Link href="/" aria-label="Go to homepage">
@@ -59,10 +71,10 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden md:flex items-center gap-2">
           <NavLinks />
-          <LocaleSwitcher /> {/* Usar el LocaleSwitcher */}
+          <LocaleSwitcher isScrolled={isScrolled} />
         </nav>
         <div className="md:hidden flex items-center gap-2">
-            <LocaleSwitcher /> {/* Usar el LocaleSwitcher */}
+            <LocaleSwitcher isScrolled={isScrolled} />
             <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X/> : <Menu />}
                 <span className="sr-only">Toggle Menu</span>
